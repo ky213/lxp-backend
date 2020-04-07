@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+################################
+# API 
+################################
+  server: 
+    container_name: lxp-api
+    hostname: lxp-api
+    build: ./
+    expose:
+      - 4001
+    environment:
+      - NODE_ENV=development
+    ports:
+      - 4001:4001
+    volumes:
+      - ./:/srv/app/lxp-server
+      - /srv/app/lxp-server/node_modules
+    command: npm run start
+    links:
+      - db
+################################
+# Database 
+################################
+  db:
+    image: postgres:12
+    container_name: lxp-postgresdb
+    hostname: lxp-postgresdb
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=lxpdb
+    ports:
+      - 54321:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+################################
+# Database admin
+################################
+  dbadmin:
+    image: dpage/pgadmin4
+    container_name: lxp-pgadmin
+    hostname: lxp-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@lxp.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    ports:
+      - "8069:80"
+    links:
+      - db
+
+################################
+# Volumes
+################################
+volumes:
+  postgres-data:
+    external: false

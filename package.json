@@ -1,0 +1,33 @@
+{
+    "name": "rms-module-api",
+    "version": "1.0.0",
+    "description": "RMS API",
+    "license": "MIT",
+    "scripts": {
+        "start": "nodemon -L ./server.js"
+    },
+    "dependencies": {
+        "bcrypt": "^3.0.6",
+        "body-parser": "^1.18.3",
+        "cookie-parser": "^1.4.4",
+        "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
+        "dotenv-extended": "^2.4.0",
+        "express": "^4.16.4",
+        "express-async-await": "^1.1.0",
+        "express-jwt": "^5.3.1",
+        "jsonwebtoken": "^8.4.0",
+        "knex": "^0.19.5",
+        "moment": "^2.24.0",
+        "moment-timezone": "^0.5.27",
+        "node-fetch": "^2.6.0",
+        "nodemailer": "^6.4.2",
+        "nodemailer-sendgrid": "^1.0.3",
+        "pg": "^7.12.1",
+        "rootpath": "^0.1.2",
+        "rrule": "^2.6.4"
+    },
+    "devDependencies": {
+        "nodemon": "^1.18.6"
+    }
+}
