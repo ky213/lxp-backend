@@ -1,91 +1,94 @@
 const express = require('express');
 const router = express.Router();
-const announcementService = require('./announcement.service');
+const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");
+var zlib = require('zlib');
+var fs = require('fs');
+var unzipper = require('unzipper');
+
+
 
 // routes
 router.get('/getById', authorize(), getById);
 router.get('/getAll', authorize(), getAll);
 router.get('/getByUser', authorize(), getByUser);
 router.get('/getByUserAll', authorize(), getByUserAll);
-router.get('/downloadFile/:id', authorize(), downloadFile);
 
 router.post('/', authorize(), create);
-router.post('/addFile', authorize(), addFile);
-router.post('/markAnnouncementAsRead/:announcementId', authorize(), markAnnouncementAsRead);
+router.post('/uploadFile', authorize(), uploadFile);
 
 router.put('/', authorize(), update);
 
-router.delete('/deleteFile/:id', authorize(), deleteFile);
-router.delete('/deleteAnnouncements', authorize(), deleteAnnouncements);
+router.delete('/:id', authorize(), deleteCourse);
+
+
 
 module.exports = router;
 
 async function getAll(req, res, next)  {
   //console.log('getAll', req.query.instituteId);
-  announcementService.getAll(req.user, req.query.instituteId)
+  
+  courseService.getAll(req.user, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function getById(req, res, next)  {
   //console.log('announcementService.getById', req.query.announcementId, req.query.instituteId);
-  announcementService.getById(req.user, req.query.announcementId, req.query.instituteId)
+  courseService.getById(req.user, req.query.announcementId, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function getByUser(req, res, next)  {
   //console.log('getByUser', req.user);
-  announcementService.getByUser(req.user, false, req.query.instituteId)
+  courseService.getByUser(req.user, false, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function getByUserAll(req, res, next)  {
   //console.log('getByUser', req.user);
-  announcementService.getByUser(req.user, true, req.query.instituteId)
+  courseService.getByUser(req.user, true, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function create(req, res, next)  {
   console.log('create', req.body);
-  announcementService.create(req.user, req.body)
+  courseService.create(req.user, req.body)
       .then(data => res.json(data));
 }
 
 async function update(req, res, next)  {
   console.log('update', req.body);
-  announcementService.update(req.user, req.body)
+  courseService.update(req.user, req.body)
       .then(data => res.json(data));
 }
 
-async function addFile(req, res, next)  {
-  console.log('addFile', req.body);
-  announcementService.addFile(req.user, req.body)
+async function deleteCourse(req, res, next)  {
+  console.log('deleteCourse', req.params.id);
+  courseService.deleteCourse(req.user, req.params.id)
       .then(data => res.json(data));
 }
 
-async function deleteFile(req, res, next)  {
-  console.log('deleteFile', req.params.id);
-  announcementService.deleteFile(req.user, req.params.id)
-      .then(data => res.json(data));
-}
+async function uploadFile(req, res, next)  {
+  console.log('uploadFile', req.body);
 
-async function downloadFile(req, res, next)  {
-  console.log('downloadFile', req.params.id);
-  announcementService.downloadFile(req.user, req.params.id)
-      .then(data => {
-        res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})        
-      });
-}
+  var block = req.body.content.split(";");
+  var contentType = block[0].split(":")[1];
+  var realData = block[1].split(",")[1];
 
-async function markAnnouncementAsRead(req, res, next)  {
-  console.log('markAnnouncementAsRead', req.params.announcementId);
-  announcementService.markAnnouncementAsRead(req.user, req.params.announcementId)
-    .then(data => res.json(data));
-}
+  const imgBuffer = Buffer.from(realData)
 
-async function deleteAnnouncements(req, res, next) {      
-  announcementService.deleteAnnouncements(req.user, req.body)
-      .then(() => res.json(true))
-      .catch(err => next(err));
+  console.log('realData', realData);
+  
+  var Readable = require('stream').Readable
+
+  var s = new Readable()
+
+  s.push(imgBuffer)   
+  s.push(null)
+
+  s.pipe(fs.createWriteStream("test.zip"));
+
+  // fs.createReadStream(req.body.content)
+  //   .pipe(unzipper.Extract({ path: './' }));
 }
