@@ -12,6 +12,7 @@ services:
       - 4001
     environment:
       - NODE_ENV=development
+      - FRONTEND_URL=http://localhost:5000
     ports:
       - 4001:4001
     volumes:

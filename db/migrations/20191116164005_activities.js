@@ -31,5 +31,5 @@ exports.up = function(knex) {
 };
 
 exports.down = function(knex) {
-  return knex.schema.dropTable('calendar_events');
+  return knex.schema.dropTable('activities');
 };

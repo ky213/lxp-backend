@@ -25,7 +25,8 @@
         "nodemailer-sendgrid": "^1.0.3",
         "pg": "^7.12.1",
         "rootpath": "^0.1.2",
-        "rrule": "^2.6.4"
+        "rrule": "^2.6.4",
+        "unzipper": "^0.10.10"
     },
     "devDependencies": {
         "nodemon": "^1.18.6"

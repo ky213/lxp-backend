@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({limit: '10mb'}));
 
 //app.use(cors());
-app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:4101', credentials: true}));
+app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:5000', credentials: true}));
 
 // api routes
 // because of hosting and nginx there has to be prefix api in all the routes
@@ -32,6 +32,8 @@ app.use('/api/activity_type', require('./activity_type/activity_type.controller'
 app.use('/api/exp-levels', require('./experience_levels/experience_levels.controller'));
 app.use('/api/announcements', require('./announcements/announcements.controller'));
 app.use('/api/notifications', require('./notifications/notifications.controller'));
+app.use('/xapi/statements', require('./xapi/statements.controller'));
+app.use('/xapi/activities/state', require('./xapi/state.controller'));
 // global error handler
 app.use(errorHandler);
 
