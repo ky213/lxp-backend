@@ -18,8 +18,6 @@ router.put('/', authorize(), update);
 
 router.delete('/:id', authorize(), deleteCourse);
 
-
-
 module.exports = router;
 
 async function getAll(req, res, next)  {
@@ -77,10 +75,10 @@ async function uploadFile(fileData, programId)  {
   var buffer = Buffer.from(base64_data, 'base64');
 
   var zip = new AdmZip(buffer);
-  var path = `./courses-data/${programId}`
+  var path = `./upload/${programId}/`
   zip.extractAllTo(/*target path*/ path, /*overwrite*/true);
   
-  return path;
+  return `/${programId}/`;
 }
 
 function bufferToStream(binary) {
