@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tincan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://projecttincan.com/tincan.xsd">
+	<activities>
+		<activity id="http://6ZlMGA999mo_course_id" type="http://adlnet.gov/expapi/activities/course">
+			<name lang="und">CYBER SECURITY Arabic M1</name>
+			<description lang="und" />
+			<launch lang="und">story.html</launch>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/64arWOl6EP8" type="http://adlnet.gov/expapi/activities/objective">
+			<name lang="und">CYBER SECURITY Arabic M1</name>
+			<description lang="und">CYBER SECURITY Arabic M1</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/5yTZKrSzNIO" type="http://adlnet.gov/expapi/activities/objective">
+			<name lang="und">CYBER SECURITY Arabic M1</name>
+			<description lang="und">CYBER SECURITY Arabic M1</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/609nnQu12hr" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">MODULE 1</name>
+			<description lang="und">MODULE 1</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/5axCT69IYNS" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">ANIMATION</name>
+			<description lang="und">ANIMATION</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6C4AJxabbMr" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">0.1.0 Introduction to the course</name>
+			<description lang="und">0.1.0 Introduction to the course</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6IC2mLBhGFq" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">0.1.0 Introduction to the course</name>
+			<description lang="und">0.1.0 Introduction to the course</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6hZJPzQIuRR" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">3 SCENARIOs</name>
+			<description lang="und">3 SCENARIOs</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6f7uzYrdPlF" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">SCENARIO 1</name>
+			<description lang="und">SCENARIO 1</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6f7uzYrdPlF/5fjAEOz37UY" type="http://adlnet.gov/expapi/activities/cmi.interaction">
+			<name lang="und">Pick Many</name>
+			<description lang="und">Pick Many</description>
+			<interactionType>choice</interactionType>
+			<correctResponsePatterns>
+				<correctResponsePattern>choice_5tWAiLHJ3dr</correctResponsePattern>
+			</correctResponsePatterns>
+			<choices>
+				<component>
+					<id>choice_5tWAiLHJ3dr</id>
+					<description lang="und">تقوم بأخذ الوثائق إلى رئيس القسم الخاص بك والذي سيقوم بدوره بالعثور على المالك.</description>
+				</component>
+				<component>
+					<id>choice_5WlaExftso1</id>
+					<description lang="und">تقوم بقراءة العقد وتشاركه مع زميل ومن ثم تأخذ العقد إلى مشرف ما.</description>
+				</component>
+				<component>
+					<id>choice_5oyGpFXtSiN</id>
+					<description lang="und">تقوم بالبحث عن المالك بنفسك أثناء قيامك بقراءة تفاصيل العقد. </description>
+				</component>
+				<component>
+					<id>choice_5lpJmr8DFRs</id>
+					<description lang="und">لا تفعل شيئاً. سيأتي المالك ويستلمه.</description>
+				</component>
+			</choices>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6AE11U5rlz6" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">SCENARIO 2</name>
+			<description lang="und">SCENARIO 2</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6AE11U5rlz6/5w9GNyqp0Ey" type="http://adlnet.gov/expapi/activities/cmi.interaction">
+			<name lang="und">Pick Many</name>
+			<description lang="und">Pick Many</description>
+			<interactionType>choice</interactionType>
+			<correctResponsePatterns>
+				<correctResponsePattern>choice_5pgkLwfnj9U</correctResponsePattern>
+				<correctResponsePattern>choice_5eTwYtaelme</correctResponsePattern>
+				<correctResponsePattern>choice_6pHiMNPPp6r</correctResponsePattern>
+			</correctResponsePatterns>
+			<choices>
+				<component>
+					<id>choice_5mIQCtgBE9B</id>
+					<description lang="und">تقوم بتنزيل وفك الملف.</description>
+				</component>
+				<component>
+					<id>choice_5pgkLwfnj9U</id>
+					<description lang="und">تقوم بحذف البريد الإلكتروني.</description>
+				</component>
+				<component>
+					<id>choice_5eTwYtaelme</id>
+					<description lang="und">تطلب من زميلك عدم القيام بإرسال أي وثائق غير متعلّقة بالعمل عبر نظام البريد الخاص بالشركة. </description>
+				</component>
+				<component>
+					<id>choice_6pHiMNPPp6r</id>
+					<description lang="und">تقوم  بإجراء فحص إضافي للحاسب الآلي  الخاص بك بحثاً عن برمجيّات ضارة.</description>
+				</component>
+			</choices>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6b2pMJ5nlqi" type="http://adlnet.gov/expapi/activities/module">
+			<name lang="und">SCENARIO 3</name>
+			<description lang="und">SCENARIO 3</description>
+		</activity>
+		<activity id="http://6ZlMGA999mo_course_id/6b2pMJ5nlqi/5WzEMALTiZ8" type="http://adlnet.gov/expapi/activities/cmi.interaction">
+			<name lang="und">Pick Many</name>
+			<description lang="und">Pick Many</description>
+			<interactionType>choice</interactionType>
+			<correctResponsePatterns>
+				<correctResponsePattern>choice_5fNUXwrXFCF</correctResponsePattern>
+				<correctResponsePattern>choice_5exczxpPFCn</correctResponsePattern>
+				<correctResponsePattern>choice_62vrodLuFcd</correctResponsePattern>
+			</correctResponsePatterns>
+			<choices>
+				<component>
+					<id>choice_5fNUXwrXFCF</id>
+					<description lang="und">تقوم بالتلميح لمشرفك أنّ القيام بتنظيم تدريب على الوعي الأمني قد يكون فكرة جيدة.</description>
+				</component>
+				<component>
+					<id>choice_66jmALmUjxC</id>
+					<description lang="und">قم بإرسال بريد إلكتروني مثير للشبهة من حساب بريده الإلكتروني لتعرضه للمشاكل.</description>
+				</component>
+				<component>
+					<id>choice_5exczxpPFCn</id>
+					<description lang="und">قم بإقفال جهاز حاسبه الآلي.</description>
+				</component>
+				<component>
+					<id>choice_62vrodLuFcd</id>
+					<description lang="und">تحذير المشرف من العواقب المحتملة.</description>
+				</component>
+			</choices>
+		</activity>
+	</activities>
+</tincan>

@@ -6,9 +6,9 @@ exports.up = function(knex) {
       table.uuid('institute_id').notNullable();
       table.uuid('program_id').notNullable();
       table.string('name', 150).notNullable();
-      table.string('description', 500).notNullable();
+      table.string('description', 500);
       table.text('content_path').notNullable();
-      table.text('image').notNullable();
+      table.text('image');
       table.integer('period_days');
       table.timestamp('starting_date');
 

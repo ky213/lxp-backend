@@ -2,6 +2,8 @@ const config = require('config.json');
 const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const knex = require('../db'); 
+const moment = require('moment');
+require('moment-timezone');
 
 module.exports = {
     getAll,
@@ -10,42 +12,71 @@ module.exports = {
     update
 };
 
-async function getAll(user, pageId, recordsPerPage, filter) {
-    //console.log("Get all institutes:", user, pageId, recordsPerPage, filter)
-    let offset = ((pageId || 1) - 1) * recordsPerPage;
+async function getAll(user, statementId, voidedStatementId, agent, verbId, activityId, since, until, limit, ascending, page, take) {
+    console.log("Get all statements:", statementId, voidedStatementId, agent, verbId, activityId, since, until, limit, ascending, page, take)
+    let offset = ((page || 1) - 1) * take;
 
-    let model = knex.table('institutes');
+    let model = knex.table('statements');
 
-    if (filter) {
-        model.whereRaw(`LOWER(institutes.name) LIKE ?`, [`%${filter.toLowerCase().trim()}%`]);
+    if (statementId) {
+        model.where('statementId', statementId);
     }
 
-    const totalNumberOfRecords = await model.clone().count();
-    //console.log("Total rows:", totalNumberOfRecords)
-    if (totalNumberOfRecords[0].count <= offset) {
-        offset = 0;
+    if (agent) {
+        model.whereRaw(`payload->'actor' = ?`, [agent]);
     }
 
-    const institutes = await model.clone()        
-        .orderBy('institutes.is_active', 'desc')
-        .orderBy('institutes.created_at', 'desc')
-        .offset(offset)
-        .limit(recordsPerPage)
-        .select([
-            'institutes.institute_id as instituteId', 
-            'institutes.name', 
-            'institutes.logo',
-            'institutes.color_code as colorCode',       
-            'institutes.background_color_code as backgroundColorCode',        
-            'institutes.created_at as createdAt',
-            'institutes.created_by as createdBy',
-            'institutes.modified_at as modifiedAt',
-            'institutes.modified_by as modifiedBy',
-            'institutes.is_active as isActive'
-        ]);
+    if (verbId) {
+        model.whereRaw(`payload->'verb'->'id' = ?`, [verbId]);
+    }
 
-    //console.log("Got institutes:", institutes)
-    return { institutes, totalNumberOfRecords: totalNumberOfRecords[0].count };
+    if (activityId) {
+        model.whereRaw(`payload->'object'->'objectType' = ?`, ["Activity"])
+        model.whereRaw(`payload->'object'->'id' = ?`, [activityId]);
+    }
+
+    if(since) {
+        model.where('generated', '>=', moment(since, 'DDMMYYYY').startOf('day').toDate());
+    }
+
+    if(until) {
+        model.where('generated', '<=', moment(until, 'DDMMYYYY').endOf('day').toDate());
+    }
+
+   
+
+
+    if(page && take) {
+        const totalNumberOfRecords = await model.clone().count();
+        //console.log("Total rows:", totalNumberOfRecords)
+        if (totalNumberOfRecords[0].count <= offset) {
+            offset = 0;
+        }
+
+        model.orderBy(knex.raw(`payload->>'timestamp'`), ascending ? 'asc': 'desc');
+    
+        const statements = await model.clone()          
+            .offset(offset)
+            .limit(take)
+            .select([
+                knex.raw(`payload->>'timestamp'`),
+                'payload', 
+            ]);
+
+        return { statements: statements.map(s => s.payload), totalNumberOfRecords: totalNumberOfRecords[0].count };
+    }
+    else {
+        if(limit) {
+            model.limit(limit);
+        }
+        model.orderBy(knex.raw(`payload->>'timestamp'`), ascending ? 'asc': 'desc');
+        const statements = await model.clone()          
+            .select([
+                'payload', 
+            ]);
+
+        return { statements: statements.map(s => s.payload), more: `page=${(page || 1) + 1}` };
+    }
 }
 
 async function getById(id, user) {

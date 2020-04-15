@@ -10,11 +10,11 @@ const bodyParser = require('body-parser');
 const errorHandler = require('helpers/error-handler');
 
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json({limit: '10mb'}));
+app.use(bodyParser.json({limit: '250mb'}));
 
 //app.use(cors());
-app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:5000', credentials: true}));
-
+app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:4101', credentials: true}));
+app.use('/api/static', express.static('upload'));
 // api routes
 // because of hosting and nginx there has to be prefix api in all the routes
 app.use('/api/users', require('./users/users.controller'));
@@ -34,6 +34,9 @@ app.use('/api/announcements', require('./announcements/announcements.controller'
 app.use('/api/notifications', require('./notifications/notifications.controller'));
 app.use('/xapi/statements', require('./xapi/statements.controller'));
 app.use('/xapi/activities/state', require('./xapi/state.controller'));
+app.use('/api/courses', require('./courses/courses.controller'));
+
+
 // global error handler
 app.use(errorHandler);
 
