@@ -8,9 +8,7 @@ module.exports = {
   create,
   update,
   addFile,
-  deleteFile,
-  downloadFile,
-  deleteCourses
+  deleteCourse
 };
 
 async function getAll(loggedInUser, selectedInstituteId, programId) {
@@ -28,9 +26,6 @@ async function getAll(loggedInUser, selectedInstituteId, programId) {
 }
 
 async function getById(loggedInUser, selectedInstituteId, courseId) {
-  if (!announcementId) {
-    return null;
-  }
 
   return await knex('courses')
     .where('courses.institute_id', loggedInUser.role == Role.SuperAdmin && selectedInstituteId ? selectedInstituteId : loggedInUser.institute)
@@ -47,30 +42,6 @@ async function getById(loggedInUser, selectedInstituteId, courseId) {
 }
 
 
-async function create(loggedInUser, data) {
-
-  return knex
-  .transaction(async function(t) {
-    /*
-    const ids = await knex("announcements")
-      .transacting(t)
-      .insert({
-        title: data.title,
-        text: data.text,
-        date_from: data.dateFrom,
-        date_to: data.dateTo,
-        is_active: data.isActive,
-        institute_id: data.instituteId
-      })
-      .returning("announcement_id");
-  */
-  });
-}
-
-async function update(loggedInUser, data) {
-  
-}
-
 async function addFile(loggedInUser, data) {
   console.log('addFile', data);
 
@@ -84,57 +55,49 @@ async function addFile(loggedInUser, data) {
       size: data.size
     })
     .returning('announcement_file_id');
+};
+
+
+async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
+  
+  if (!loggedInUser || !loggedInUser.employeeId)
+    return;
+
+  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  
+  return knex('courses')
+    .where('course_id', courseId);
 }
 
-async function deleteFile(loggedInUser, id) {
-  console.log('deleteFile => ', id);
-  
-  return knex("announcement_files")
-    .where("announcement_file_id", id)
+async function create(loggedInUser, data) {
+  console.log('loggedInUser', loggedInUser);
+  return knex("courses")
+    .insert({
+      institute_id: data.instituteId,
+      program_id: data.programId,
+      name: data.name,
+      description: data.description,
+      // content_path
+      // image: 
+      period_days: data.periodDays,
+      starting_date: data.startingDate,
+      generated: new Date()
+    });
+}
+
+async function update(loggedInUser, data) {
+  console.log('update', data);
+  // return knex
+  // .transaction(async function(t) {
+  //   await knex("courses")
+  //       .transacting(t)
+  //       .where('course_id', data.courseId);        
+  // });
+}
+
+async function deleteCourse(loggedInUser, id) {
+  return knex("courses")
+    .where("course_id", id)
     .del();
 }
 
-async function downloadFile(loggedInUser, id) {
-  console.log('downloadFile => ', id);
-  return knex("announcement_files")
-    .where("announcement_file_id", id)
-    .select([
-      "announcement_files.name",
-      "announcement_files.file"      
-    ])
-    .first();
-}
-
-async function deleteCourses(loggedInUser, courses) {
-  console.log("Delete courses: ", courses); 
-
-  /*
-  return knex
-  .transaction(async function(t) {
-    await knex("employee_announcement_reads")
-      .transacting(t)
-      .whereIn("announcement_id", announcements)
-      .del();
-    
-    await knex("announcement_files")
-      .transacting(t)
-      .whereIn("announcement_id", announcements)
-      .del();
-
-    await knex("announcement_roles")
-      .transacting(t)
-      .whereIn("announcement_id", announcements)
-      .del();
-
-    await knex("announcement_programs")
-      .transacting(t)
-      .whereIn("announcement_id", announcements)
-      .del();
-
-    await knex("announcements")
-      .transacting(t)
-      .whereIn("announcement_id", announcements)
-      .del();
-  });
-  */
-}

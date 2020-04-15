@@ -64,9 +64,9 @@ module.exports = {
       /* host: 'localhost',
        port: 54320,  */
 
-      database: "rmsdb",
-      user: "rmsdb",
-      password: "admin"
+      database: "lxpdb",
+      user: "lxpuser",
+      password: "^$nDUPog6!zB"
     },
     pool: {
       min: 2,

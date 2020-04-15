@@ -31,6 +31,7 @@ app.use('/api/activities', require('./activities/activities.controller'));
 app.use('/api/activity_type', require('./activity_type/activity_type.controller'));
 app.use('/api/exp-levels', require('./experience_levels/experience_levels.controller'));
 app.use('/api/announcements', require('./announcements/announcements.controller'));
+app.use('/api/courses', require('./courses/courses.controller'));
 app.use('/api/notifications', require('./notifications/notifications.controller'));
 app.use('/xapi/statements', require('./xapi/statements.controller'));
 app.use('/xapi/activities/state', require('./xapi/state.controller'));
