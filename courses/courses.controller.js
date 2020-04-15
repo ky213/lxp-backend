@@ -3,11 +3,7 @@ const router = express.Router();
 const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");
-var zlib = require('zlib');
-var fs = require('fs');
-var unzipper = require('unzipper');
-
-
+var AdmZip = require('adm-zip');
 
 // routes
 router.get('/:id', authorize(), getById);
@@ -42,8 +38,7 @@ async function getAll(req, res, next)  {
 }
 
 async function getById(req, res, next)  {
-  //console.log('announcementService.getById', req.query.announcementId, req.query.instituteId);
-  courseService.getById(req.user, req.query.announcementId, req.query.instituteId)
+  courseService.getById(req.user, req.query.courseId, req.query.instituteId)
       .then(data => res.json(data));
 }
 
@@ -59,16 +54,20 @@ async function getByUserAll(req, res, next)  {
       .then(data => res.json(data));
 }
 
-async function create(req, res, next)  {
-  console.log('create', req.body);
-  courseService.create(req.user, req.body)
-      .then(data => res.json(data));
+async function create(req, res, next)  {  
+  console.log('body', req.body);
+  uploadFile(req.body.courseData.fileData, req.body.courseData.programId).then(contentPath => 
+    courseService.create(req.user, {...req.body.courseData, contentPath}, req.body.selectedInstitute)
+      .then(data => res.json(data))
+  );  
 }
 
 async function update(req, res, next)  {
-  console.log('update', req.body);
-  courseService.update(req.user, req.body)
-      .then(data => res.json(data));
+  console.log('body', req.body);
+  uploadFile(req.body.courseData.fileData, req.body.courseData.programId).then(contentPath =>
+    courseService.update(req.user, {...req.body.courseData, contentPath}, req.body.selectedInstitute)
+      .then(data => res.json(data))
+  );  
 }
 
 async function deleteFile(req, res, next)  {
@@ -91,26 +90,28 @@ async function deleteCourse(req, res, next)  {
       .then(data => res.json(data));
 }
 
-async function uploadFile(req, res, next)  {
-  console.log('uploadFile', req.body);
-
-  var block = req.body.content.split(";");
-  var contentType = block[0].split(":")[1];
-  var realData = block[1].split(",")[1];
-
-  const imgBuffer = Buffer.from(realData)
-
-  console.log('realData', realData);
+async function uploadFile(fileData, programId)  {
   
-  var Readable = require('stream').Readable
+  var data_url = fileData;
+  var matches = data_url.match(/^data:.+\/(.+);base64,(.*)$/);
+  // var ext = matches[1];
+  var base64_data = matches[2];
+  var buffer = Buffer.from(base64_data, 'base64');
 
-  var s = new Readable()
+  var zip = new AdmZip(buffer);
+  var path = `./courses-data/${programId}`
+  zip.extractAllTo(/*target path*/ path, /*overwrite*/true);
+  
+  return path;
+}
 
-  s.push(imgBuffer)   
-  s.push(null)
+function bufferToStream(binary) {
+  const readableInstanceStream = new Readable({
+    read() {
+      this.push(binary);
+      this.push(null);
+    }
+  });
 
-  s.pipe(fs.createWriteStream("test.zip"));
-
-  // fs.createReadStream(req.body.content)
-  //   .pipe(unzipper.Extract({ path: './' }));
+  return readableInstanceStream;
 }

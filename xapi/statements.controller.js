@@ -12,7 +12,7 @@ router.put('/', create);
 module.exports = router;
 
 function getAll(req, res, next) {
-    statementService.getAll(req.user, req.query.statementId, req.query.voidedStatementId, req.query.agent, req.query.verb, req.query.activity, 
+    statementService.getAll(req.user, req.query.statementId, req.query.voidedStatementId, req.query.registration, req.query.agent, req.query.verb, req.query.activity, 
         req.query.since, req.query.until, req.query.limit, req.query.ascending, req.query.page, req.query.take)
     .then(statements => res.json(statements))
     .catch(err => next(err));

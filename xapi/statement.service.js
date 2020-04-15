@@ -12,8 +12,8 @@ module.exports = {
     update
 };
 
-async function getAll(user, statementId, voidedStatementId, agent, verbId, activityId, since, until, limit, ascending, page, take) {
-    console.log("Get all statements:", statementId, voidedStatementId, agent, verbId, activityId, since, until, limit, ascending, page, take)
+async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, page, take) {
+    console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, page, take)
     let offset = ((page || 1) - 1) * take;
 
     let model = knex.table('statements');
@@ -22,17 +22,21 @@ async function getAll(user, statementId, voidedStatementId, agent, verbId, activ
         model.where('statementId', statementId);
     }
 
+    if (registration) {
+        model.whereRaw(`payload->'context'->>'registration' = ?`, [registration]);
+    }
+
     if (agent) {
-        model.whereRaw(`payload->'actor' = ?`, [agent]);
+        model.whereRaw(`payload->>'actor' = ?`, [agent]);
     }
 
     if (verbId) {
-        model.whereRaw(`payload->'verb'->'id' = ?`, [verbId]);
+        model.whereRaw(`payload->'verb'->>'id' = ?`, [verbId]);
     }
 
     if (activityId) {
-        model.whereRaw(`payload->'object'->'objectType' = ?`, ["Activity"])
-        model.whereRaw(`payload->'object'->'id' = ?`, [activityId]);
+        model.whereRaw(`payload->'object'->>'objectType' = ?`, ["Activity"])
+        model.whereRaw(`payload->'object'->>'id' = ?`, [activityId]);
     }
 
     if(since) {
@@ -42,9 +46,6 @@ async function getAll(user, statementId, voidedStatementId, agent, verbId, activ
     if(until) {
         model.where('generated', '<=', moment(until, 'DDMMYYYY').endOf('day').toDate());
     }
-
-   
-
 
     if(page && take) {
         const totalNumberOfRecords = await model.clone().count();
