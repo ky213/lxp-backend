@@ -75,19 +75,26 @@ async function uploadFile(fileData, programId)  {
   var buffer = Buffer.from(base64_data, 'base64');
 
   var zip = new AdmZip(buffer);
-  var path = `./upload/${programId}/`
-  zip.extractAllTo(/*target path*/ path, /*overwrite*/true);
-  
+  var uploadPath = `./upload/${programId}/`
+
+  deleteFolderContent(uploadPath);
+
+  zip.extractAllTo(/*target path*/ uploadPath, /*overwrite*/true);
+
   return `/${programId}/`;
 }
 
-function bufferToStream(binary) {
-  const readableInstanceStream = new Readable({
-    read() {
-      this.push(binary);
-      this.push(null);
+function deleteFolderContent (folderPath) {
+  const fs = require('fs');
+  const path = require('path');
+
+  fs.readdir(folderPath, (err, files) => {
+    if (err) throw err;
+
+    for (const file of files) {
+      fs.unlink(path.join(folderPath, file), err => {
+        if (err) throw err;
+      });
     }
   });
-
-  return readableInstanceStream;
 }
