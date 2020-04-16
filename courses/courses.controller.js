@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
-const converter = require("helpers/converter");
+const converter = require("helpers/converter");7
+const uuid = require("uuid");
 var AdmZip = require('adm-zip');
 var fs = require('fs');
 
@@ -11,7 +12,6 @@ router.get('/:id', authorize(), getById);
 router.get('/', authorize(), getAll);
 
 router.get('/downloadFile/:id', authorize(), downloadFile);
-
 
 router.put('/', authorize(), update);
 
@@ -54,19 +54,24 @@ async function getByUserAll(req, res, next)  {
 }
 
 async function create(req, res, next)  {  
-  console.log('body', req.body);
-  uploadFile(req.body.courseData.fileData, req.body.courseData.programId).then(contentPath => 
-    courseService.create(req.user, {...req.body.courseData, contentPath}, req.body.selectedInstitute)
+  let contentPath = `/${uuid()}/`;
+
+  if (req.files && req.files.file)
+    uploadFile(req.files.file, contentPath);
+
+    courseService.create(req.user, req.body.selectedInstitute, req.body.programId, 
+      req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
       .then(data => res.json(data))
-  );  
 }
 
-async function update(req, res, next)  {
-  console.log('body', req.body);
-  uploadFile(req.body.courseData.fileData, req.body.courseData.programId).then(contentPath =>
-    courseService.update(req.user, {...req.body.courseData, contentPath}, req.body.selectedInstitute)
-      .then(data => res.json(data))
-  );  
+async function update(req, res)  {
+  
+  if (req.files && req.files.file)
+    uploadFile(req.files.file, req.body.contentPath);
+
+  courseService.update(req.user, req.body.selectedInstitute, req.body.courseId, req.body.programId, 
+    req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
+    .then(data => res.json(data))
 }
 
 async function deleteFile(req, res, next)  {
@@ -89,14 +94,14 @@ async function deleteCourse(req, res, next)  {
       .then(data => res.json(data));
 }
 
-async function uploadFile(req, res)  {
-  const file = req.files.file;
-  //console.log("Request:", req.body, req.files.file)
-  const dir = `./upload/${req.body.programId}/${file.md5}/`;
+async function uploadFile(file, contentPath)  {
+  // console.log('uploadFile', req.files);
+  // const file = req.files.file;
+  const dir = `./upload${contentPath}`;
   var uploadPath = `${dir}tincan.zip`
 
+  // deleteFolderContent(dir);
   fs.mkdirSync(dir, { recursive: true });
-
 
   file.mv(uploadPath, (error) => {
     if (error) {
@@ -104,35 +109,22 @@ async function uploadFile(req, res)  {
       res.writeHead(500, {
         'Content-Type': 'application/json'
       })
-      res.end(JSON.stringify({ status: 'error', message: error }))
-      return;
+      // res.end(JSON.stringify({ status: 'error', message: error }))
+
+      return { status: 'error', message: error };
     }
 
     var zip = new AdmZip(uploadPath);
-    //var uploadPath = `./upload/${programId}/`
-  
-    //deleteFolderContent(uploadPath);
-  
-    zip.extractAllTo(dir, true);
-
-    /*
-    fs.unlink(uploadPath, function (err) {
-      if (err) throw err;
-      // if no error, file has been deleted successfully
-      console.log('File deleted!');
-    }); 
-    */
-    res.writeHead(200, {
-      'Content-Type': 'application/json'
-    })
-    res.end(JSON.stringify({ status: 'success', path: dir }))
+    zip.extractAllTo( dir, true);
+    // res.writeHead(200, {
+    //   'Content-Type': 'application/json'
+    // })
+    // res.end(JSON.stringify({ status: 'success', path: dir }))
+    return { status: 'success' };
   })
-
-
 }
 
 function deleteFolderContent (folderPath) {
-  const fs = require('fs');
   const path = require('path');
 
   fs.readdir(folderPath, (err, files) => {

@@ -1,5 +1,6 @@
 const knex = require('../db');
 const converter = require("helpers/converter");
+const moment = require('moment');
 const Role = require('helpers/role');
 
 module.exports = {
@@ -45,6 +46,7 @@ async function getById(loggedInUser, courseId, selectedInstituteId) {
         'courses.course_id as courseId',
         'courses.institute_id as instituteId',
         'courses.name as name',
+        'courses.image',
         'courses.description as description',
         'courses.period_days as periodDays',
         'courses.starting_date as startingDate',
@@ -56,10 +58,7 @@ async function getById(loggedInUser, courseId, selectedInstituteId) {
     .first();
 }
 
-
 async function addFile(loggedInUser, data) {
-  console.log('addFile', data);
-
   return await knex('announcement_files')
     .insert({
       announcement_id: data.announcementId,
@@ -84,7 +83,7 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     .where('course_id', courseId);
 }
 
-async function create(loggedInUser, data, selectedInstituteId) {
+async function create(loggedInUser, selectedInstituteId, programId, name, description, periodDays, startingDate, logo, contentPath) {
   if (!loggedInUser)
     return;
 
@@ -92,37 +91,34 @@ async function create(loggedInUser, data, selectedInstituteId) {
 
   return knex("courses")
     .insert({
-      institute_id: data.instituteId,
-      program_id: data.programId,
-      name: data.name,
-      description: data.description,
-      content_path: data.contentPath,
-      image: 'test',
-      period_days: data.periodDays,
-      starting_date: data.startingDate,
-      generated: new Date()
+      institute_id: instituteId,
+      program_id: programId,
+      name: name,
+      description: description,
+      content_path: contentPath,
+      image: logo,
+      period_days: periodDays,
+      starting_date: moment(startingDate).toDate(),
+      generated: knex.fn.now()
     });
 }
 
-async function update(loggedInUser, data, selectedInstituteId) {
+async function update(loggedInUser, selectedInstituteId, courseId, programId, name, description, periodDays, startingDate, logo) {
   if (!loggedInUser)
     return;
 
   let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
 
-  console.log('update', data);
-
   return knex("courses")
-    .where('course_id', data.courseId)
+    .where('course_id', courseId)
     .update({
-      program_id: data.programId,
-      name: data.name,
-      description: data.description,
-      content_path: data.contentPath,
-      image: 'test',
-      period_days: data.periodDays,
-      starting_date: data.startingDate,
-      generated: new Date()      
+      program_id: programId,
+      name: name,
+      description: description,
+      image: logo,
+      period_days: periodDays,
+      starting_date: moment(startingDate).toDate(),
+      generated: knex.fn.now()
     });
 }
 
@@ -131,4 +127,3 @@ async function deleteCourse(loggedInUser, id) {
     .where("course_id", id)
     .del();
 }
-
