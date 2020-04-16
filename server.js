@@ -1,6 +1,7 @@
 ﻿require('rootpath')();
 
 const express = require('express');
+const fileupload = require('express-fileupload')
 const cookieParser = require('cookie-parser'); 
 const app = express();
 app.use(cookieParser());
@@ -9,6 +10,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const errorHandler = require('helpers/error-handler');
 
+app.use(fileupload());
+app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({limit: '250mb'}));
 

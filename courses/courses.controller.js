@@ -4,6 +4,7 @@ const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");
 var AdmZip = require('adm-zip');
+var fs = require('fs');
 
 // routes
 router.get('/:id', authorize(), getById);
@@ -88,22 +89,45 @@ async function deleteCourse(req, res, next)  {
       .then(data => res.json(data));
 }
 
-async function uploadFile(fileData, programId)  {
+async function uploadFile(req, res)  {
+  const file = req.files.file;
+  //console.log("Request:", req.body, req.files.file)
+  const dir = `./upload/${req.body.programId}/${file.md5}/`;
+  var uploadPath = `${dir}tincan.zip`
+
+  fs.mkdirSync(dir, { recursive: true });
+
+
+  file.mv(uploadPath, (error) => {
+    if (error) {
+      console.error(error)
+      res.writeHead(500, {
+        'Content-Type': 'application/json'
+      })
+      res.end(JSON.stringify({ status: 'error', message: error }))
+      return;
+    }
+
+    var zip = new AdmZip(uploadPath);
+    //var uploadPath = `./upload/${programId}/`
   
-  var data_url = fileData;
-  var matches = data_url.match(/^data:.+\/(.+);base64,(.*)$/);
-  // var ext = matches[1];
-  var base64_data = matches[2];
-  var buffer = Buffer.from(base64_data, 'base64');
+    //deleteFolderContent(uploadPath);
+  
+    zip.extractAllTo( dir, true);
+    /*
+    fs.unlink(uploadPath, function (err) {
+      if (err) throw err;
+      // if no error, file has been deleted successfully
+      console.log('File deleted!');
+    }); 
+    */
+    res.writeHead(200, {
+      'Content-Type': 'application/json'
+    })
+    res.end(JSON.stringify({ status: 'success', path: dir }))
+  })
 
-  var zip = new AdmZip(buffer);
-  var uploadPath = `./upload/${programId}/`
 
-  deleteFolderContent(uploadPath);
-
-  zip.extractAllTo(/*target path*/ uploadPath, /*overwrite*/true);
-
-  return `/${programId}/`;
 }
 
 function deleteFolderContent (folderPath) {
