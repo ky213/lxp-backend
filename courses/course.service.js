@@ -1,7 +1,8 @@
 const knex = require('../db');
-const converter = require("helpers/converter");
 const moment = require('moment');
 const Role = require('helpers/role');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   getAll,
@@ -9,7 +10,7 @@ module.exports = {
   create,
   update,
   addFile,
-  deleteCourse
+  deleteCourses
 };
 
 async function getAll(loggedInUser, selectedInstituteId, programId) {
@@ -122,8 +123,38 @@ async function update(loggedInUser, selectedInstituteId, courseId, programId, na
     });
 }
 
-async function deleteCourse(loggedInUser, id) {
+async function deleteCourses(loggedInUser, courseIds, selectedInstituteId) {
+  if (!loggedInUser)
+    return;
+
+  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+
+  let contentPaths = await knex('courses').whereIn("course_id", courseIds).select(['content_path as contentPath']);
+
+  contentPaths.forEach(p => deleteFolderContent(p));  
+
   return knex("courses")
-    .where("course_id", id)
+    .whereIn("course_id", courseIds)
     .del();
+}
+
+function deleteFolderContent (folderPath) {
+  const dir = `./upload${folderPath.contentPath}`;
+
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  fs.readdir(dir, (err, files) => {
+
+    if (err) throw err;
+
+    for (const file of files) {
+      fs.unlink(path.join(dir, file), err => {
+        if (err) throw err;
+      });
+    }
+
+    fs.rmdirSync(dir);
+  });  
 }
