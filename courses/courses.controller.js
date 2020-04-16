@@ -113,7 +113,8 @@ async function uploadFile(req, res)  {
   
     //deleteFolderContent(uploadPath);
   
-    zip.extractAllTo( dir, true);
+    zip.extractAllTo(dir, true);
+
     /*
     fs.unlink(uploadPath, function (err) {
       if (err) throw err;

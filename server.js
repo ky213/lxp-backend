@@ -15,8 +15,8 @@ app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({limit: '250mb'}));
 
-//app.use(cors());
-app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:4101', credentials: true}));
+app.use(cors());
+//app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:4101', credentials: true}));
 app.use('/api/static', express.static('upload'));
 // api routes
 // because of hosting and nginx there has to be prefix api in all the routes
@@ -50,3 +50,5 @@ const server = app.listen(port, function () {
     console.log(process.env.NODE_ENV);
     console.log('Server listening on port ' + port);
 });
+
+server.timeout = 600000;
