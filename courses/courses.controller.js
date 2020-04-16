@@ -3,28 +3,35 @@ const router = express.Router();
 const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");7
-const uuid = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 var AdmZip = require('adm-zip');
 var fs = require('fs');
 
 // routes
+router.get('/:id', authorize(), getById);
 router.get('/', authorize(), getAll);
-router.get('/getById', authorize(), getById);
-router.get('/getAll', authorize(), getAll);
-router.get('/getByUser', authorize(), getByUser);
-router.get('/getByUserAll', authorize(), getByUserAll);
+
 router.get('/downloadFile/:id', authorize(), downloadFile);
 
 router.put('/', authorize(), update);
 
+router.delete('/deleteCourses', authorize(), deleteCourse);
+router.get('/getById', authorize(), getById);
+router.get('/getAll', authorize(), getAll);
+router.get('/getByUser', authorize(), getByUser);
+router.get('/getByUserAll', authorize(), getByUserAll);
+
 router.post('/', authorize(), create);
 router.post('/uploadFile', authorize(), uploadFile);
 
-router.delete('/deleteCourses', authorize(), deleteCourses);
+router.put('/', authorize(), update);
+
+router.delete('/:id', authorize(), deleteCourse);
 
 module.exports = router;
 
 async function getAll(req, res, next)  {
+  //console.log('getAll', req.query.instituteId);
   courseService.getAll(req.user, req.query.instituteId, req.query.programId, req.query.page, req.query.take)
       .then(data => res.json(data));
 }
@@ -35,17 +42,20 @@ async function getById(req, res, next)  {
 }
 
 async function getByUser(req, res, next)  {
+  //console.log('getByUser', req.user);
   courseService.getByUser(req.user, false, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function getByUserAll(req, res, next)  {
+  //console.log('getByUser', req.user);
   courseService.getByUser(req.user, true, req.query.instituteId)
       .then(data => res.json(data));
 }
 
 async function create(req, res, next)  {  
-  let contentPath = `/${uuid()}/`;
+  let contentPath = `/${uuidv4()}/`;
+  console.log("Starting date:", req.body.startingDate)
 
   if (req.files && req.files.file)
     uploadFile(req.files.file, contentPath);
@@ -53,6 +63,7 @@ async function create(req, res, next)  {
     courseService.create(req.user, req.body.selectedInstitute, req.body.programId, 
       req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
       .then(data => res.json(data))
+
 }
 
 async function update(req, res)  {
@@ -79,9 +90,9 @@ async function downloadFile(req, res, next)  {
       });
 }
 
-async function deleteCourses(req, res, next)  {
-  console.log('deleteCourse', req.body);
-  courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedInstituteId)
+async function deleteCourse(req, res, next)  {
+  console.log('deleteCourse', req.params.id);
+  courseService.deleteCourse(req.user, req.params.id)
       .then(data => res.json(data));
 }
 

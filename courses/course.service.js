@@ -99,7 +99,7 @@ async function create(loggedInUser, selectedInstituteId, programId, name, descri
       content_path: contentPath,
       image: logo,
       period_days: periodDays,
-      starting_date: moment(startingDate).toDate(),
+      starting_date: startingDate && startingDate || null,
       generated: knex.fn.now()
     });
 }
