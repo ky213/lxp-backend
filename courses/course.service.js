@@ -1,5 +1,6 @@
 const knex = require('../db');
 const converter = require("helpers/converter");
+const moment = require('moment');
 const Role = require('helpers/role');
 
 module.exports = {
@@ -84,7 +85,7 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     .where('course_id', courseId);
 }
 
-async function create(loggedInUser, data, selectedInstituteId) {
+async function create(loggedInUser, selectedInstituteId, programId, name, description, periodDays, startingDate, contentPath) {
   if (!loggedInUser)
     return;
 
@@ -92,37 +93,34 @@ async function create(loggedInUser, data, selectedInstituteId) {
 
   return knex("courses")
     .insert({
-      institute_id: data.instituteId,
-      program_id: data.programId,
-      name: data.name,
-      description: data.description,
-      content_path: data.contentPath,
+      institute_id: instituteId,
+      program_id: programId,
+      name: name,
+      description: description,
+      content_path: contentPath,
       image: 'test',
-      period_days: data.periodDays,
-      starting_date: data.startingDate,
-      generated: new Date()
+      period_days: periodDays,
+      starting_date: moment(startingDate).toDate(),
+      generated: knex.fn.now()
     });
 }
 
-async function update(loggedInUser, data, selectedInstituteId) {
+async function update(loggedInUser, selectedInstituteId, courseId, programId, name, description, periodDays, startingDate) {
   if (!loggedInUser)
     return;
 
   let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
 
-  console.log('update', data);
-
   return knex("courses")
-    .where('course_id', data.courseId)
+    .where('course_id', courseId)
     .update({
-      program_id: data.programId,
-      name: data.name,
-      description: data.description,
-      content_path: data.contentPath,
+      program_id: programId,
+      name: name,
+      description: description,
       image: 'test',
-      period_days: data.periodDays,
-      starting_date: data.startingDate,
-      generated: new Date()      
+      period_days: periodDays,
+      starting_date: moment(startingDate).toDate(),
+      generated: knex.fn.now()
     });
 }
 
@@ -131,4 +129,3 @@ async function deleteCourse(loggedInUser, id) {
     .where("course_id", id)
     .del();
 }
-
