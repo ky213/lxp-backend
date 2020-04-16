@@ -46,6 +46,7 @@ async function getById(loggedInUser, courseId, selectedInstituteId) {
         'courses.course_id as courseId',
         'courses.institute_id as instituteId',
         'courses.name as name',
+        'courses.image',
         'courses.description as description',
         'courses.period_days as periodDays',
         'courses.starting_date as startingDate',
@@ -57,10 +58,7 @@ async function getById(loggedInUser, courseId, selectedInstituteId) {
     .first();
 }
 
-
 async function addFile(loggedInUser, data) {
-  console.log('addFile', data);
-
   return await knex('announcement_files')
     .insert({
       announcement_id: data.announcementId,
@@ -85,7 +83,7 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     .where('course_id', courseId);
 }
 
-async function create(loggedInUser, selectedInstituteId, programId, name, description, periodDays, startingDate, contentPath) {
+async function create(loggedInUser, selectedInstituteId, programId, name, description, periodDays, startingDate, logo, contentPath) {
   if (!loggedInUser)
     return;
 
@@ -98,14 +96,14 @@ async function create(loggedInUser, selectedInstituteId, programId, name, descri
       name: name,
       description: description,
       content_path: contentPath,
-      image: 'test',
+      image: logo,
       period_days: periodDays,
       starting_date: moment(startingDate).toDate(),
       generated: knex.fn.now()
     });
 }
 
-async function update(loggedInUser, selectedInstituteId, courseId, programId, name, description, periodDays, startingDate) {
+async function update(loggedInUser, selectedInstituteId, courseId, programId, name, description, periodDays, startingDate, logo) {
   if (!loggedInUser)
     return;
 
@@ -117,7 +115,7 @@ async function update(loggedInUser, selectedInstituteId, courseId, programId, na
       program_id: programId,
       name: name,
       description: description,
-      image: 'test',
+      image: logo,
       period_days: periodDays,
       starting_date: moment(startingDate).toDate(),
       generated: knex.fn.now()

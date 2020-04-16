@@ -60,7 +60,7 @@ async function create(req, res, next)  {
     uploadFile(req.files.file, contentPath);
 
     courseService.create(req.user, req.body.selectedInstitute, req.body.programId, 
-      req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, contentPath)
+      req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
       .then(data => res.json(data))
 }
 
@@ -70,7 +70,7 @@ async function update(req, res)  {
     uploadFile(req.files.file, req.body.contentPath);
 
   courseService.update(req.user, req.body.selectedInstitute, req.body.courseId, req.body.programId, 
-    req.body.name, req.body.description, req.body.periodDays, req.body.startingDate)
+    req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
     .then(data => res.json(data))
 }
 
