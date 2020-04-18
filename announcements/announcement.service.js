@@ -85,8 +85,8 @@ async function getById(loggedInUser, announcementId, instituteId) {
 
 async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
   
-  if (!loggedInUser || !loggedInUser.employeeId)
-    return;
+  if (!loggedInUser)
+    return;    
 
   let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
   
@@ -101,10 +101,10 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     .andWhere(function() {
       includeRead || 
       this.whereNotExists(function() {
-        this.from('employee_announcement_reads')
-          .where('employee_announcement_reads.employee_id', loggedInUser.employeeId)
+        this.from('user_announcement_reads')
+          .where('user_announcement_reads.user_id', loggedInUser.userId)
           .andWhereRaw(
-            "employee_announcement_reads.announcement_id = announcements.announcement_id"
+            "user_announcement_reads.announcement_id = announcements.announcement_id"
           )    
           .select('*')
       })
@@ -116,27 +116,59 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     .andWhere(function() {
       this.whereNull('announcements.date_to')
       this.orWhere('announcements.date_to', '>=', currentDate)
-    })
-    // provjeravamo da li je announcement za neku Rolu
-    .andWhere(function() {
-      this.whereNotExists(function() {
-        this.from("announcement_roles")
-          .select("*")
-          .whereRaw(
-            'announcement_roles.announcement_id = announcements.announcement_id'
-          )          
+    });    
+
+    if (loggedInUser.role == Role.SuperAdmin) {
+      query.andWhere(function() {
+        this.whereNotExists(function() {
+          this.from("announcement_roles")
+            .select("*")
+            .whereRaw(
+              'announcement_roles.announcement_id = announcements.announcement_id'
+            )          
+        })
       })
-      this.orWhereExists(function() {
-        this.from("employee_roles")
-          .join(
-            "announcement_roles",
-            "announcement_roles.role_id",
-            "employee_roles.role_id"
-          )
-          .where('employee_roles.employee_id', loggedInUser.employeeId)
-          .select("*")
+      .andWhere(function() {
+        this.orWhereNotExists(function() {
+          this.from("announcement_exp_levels")
+            .select("*")
+            .whereRaw(
+              'announcement_exp_levels.announcement_id = announcements.announcement_id'
+            )
+        })
       })
-    })
+      .andWhere(function() {
+        this.whereNotExists(function() {
+          this.from("announcement_programs")
+            .select("*")
+            .whereRaw(
+              "announcement_programs.announcement_id = announcements.announcement_id"
+            )          
+        })
+      })
+    }
+    else {
+      // provjeravamo da li je announcement za neku Rolu
+      query.andWhere(function() {
+        this.whereNotExists(function() {
+          this.from("announcement_roles")
+            .select("*")
+            .whereRaw(
+              'announcement_roles.announcement_id = announcements.announcement_id'
+            )          
+        })
+        this.orWhereExists(function() {
+          this.from("employee_roles")
+            .join(
+              "announcement_roles",
+              "announcement_roles.role_id",
+              "employee_roles.role_id"
+            )
+            .where('employee_roles.employee_id', loggedInUser.employeeId)
+            .select("*")
+        })
+      })
+    }
 
     if (loggedInUser.role == Role.Resident) {
       // provjeravamo da li je announcement za neki Program
@@ -384,7 +416,7 @@ async function update(loggedInUser, data) {
         .insert(queryRoles);
     }
 
-    await knex("employee_announcement_reads")
+    await knex("user_announcement_reads")
         .transacting(t)
         .where('announcement_id', data.announcementId)
         .del();
@@ -426,8 +458,8 @@ async function downloadFile(loggedInUser, id) {
 }
 
 async function markAnnouncementAsRead(loggedInUser, announcementId) {
-  return knex('employee_announcement_reads').insert({
-    employee_id: loggedInUser.employeeId,
+  return knex('user_announcement_reads').insert({
+    user_id: loggedInUser.userId,
     announcement_id: announcementId
   });
 }
@@ -437,7 +469,7 @@ async function deleteAnnouncements(loggedInUser, announcements) {
 
   return knex
   .transaction(async function(t) {
-    await knex("employee_announcement_reads")
+    await knex("user_announcement_reads")
       .transacting(t)
       .whereIn("announcement_id", announcements)
       .del();

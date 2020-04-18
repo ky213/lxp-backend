@@ -48,7 +48,8 @@ async function authenticate({ email, password }) {
             }
 
             if(user.is_super_admin) {
-                const token = jwt.sign({ sub: user.user_id, role: Role.SuperAdmin                    
+                // necu mijenjati sub s user_id pa sam dodao userId
+                const token = jwt.sign({ sub: user.user_id, userId: user.user_id, role: Role.SuperAdmin
                 }, config.secret);
 
                 user.role = 'SuperAdmin';
@@ -90,7 +91,8 @@ async function authenticate({ email, password }) {
                     employee.fullName = `${user.firstName} ${user.lastName}`;
                 }                
 
-                const token = jwt.sign({ sub: user.user_id, employeeId: employee.employeeId, role: employee.role, 
+                // necu mijenjati sub s user_id pa sam dodao userId
+                const token = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, role: employee.role, 
                     institute: employee.instituteId, programId: employee.programId, experienceLevelId: employee.experienceLevelId
                 }, config.secret);
     
