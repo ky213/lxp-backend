@@ -15,7 +15,7 @@ router.get('/downloadFile/:id', authorize(), downloadFile);
 
 router.put('/', authorize(), update);
 
-router.delete('/deleteCourses', authorize(), deleteCourse);
+router.delete('/deleteCourses', authorize(), deleteCourses);
 router.get('/getById', authorize(), getById);
 router.get('/getAll', authorize(), getAll);
 router.get('/getByUser', authorize(), getByUser);
@@ -25,8 +25,6 @@ router.post('/', authorize(), create);
 router.post('/uploadFile', authorize(), uploadFile);
 
 router.put('/', authorize(), update);
-
-router.delete('/:id', authorize(), deleteCourse);
 
 module.exports = router;
 
@@ -90,11 +88,12 @@ async function downloadFile(req, res, next)  {
       });
 }
 
-async function deleteCourse(req, res, next)  {
-  console.log('deleteCourse', req.params.id);
-  courseService.deleteCourse(req.user, req.params.id)
+async function deleteCourses(req, res, next)  {
+  console.log('deleteCourse', req.body);
+  courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedInstituteId)
       .then(data => res.json(data));
 }
+
 
 async function uploadFile(file, contentPath)  {
   // console.log('uploadFile', req.files);
@@ -126,16 +125,3 @@ async function uploadFile(file, contentPath)  {
   })
 }
 
-function deleteFolderContent (folderPath) {
-  const path = require('path');
-
-  fs.readdir(folderPath, (err, files) => {
-    if (err) throw err;
-
-    for (const file of files) {
-      fs.unlink(path.join(folderPath, file), err => {
-        if (err) throw err;
-      });
-    }
-  });
-}
