@@ -10,6 +10,25 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const errorHandler = require('helpers/error-handler');
 
+const getRawBody = require('raw-body');
+app.use(function (req, res, next) {
+    if (req.headers['content-type'] === 'application/octet-stream') {
+        getRawBody(req, {
+            length: req.headers['content-length'],
+            encoding: req.charset
+        }, function (err, string) {
+            if (err)
+                return next(err);
+
+            req.body = string;
+            next();
+         })
+    }
+    else {
+        next();
+    }
+});
+
 app.use(fileupload());
 app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({ extended: false }));

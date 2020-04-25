@@ -4,6 +4,7 @@ const stateService = require('./state.service');
 const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 
+
 // routes
 router.post('/', create); 
 router.put('/', create); 
@@ -13,7 +14,7 @@ module.exports = router;
 
 function getById(req, res, next) {
     stateService.getById(req.query.activityId, req.query.agent, req.query.stateId, req.query.registration)
-        .then((data) => res.json(data))
+        .then((data) => res.status(200).send(data))
         .catch(err => next(err));
 }
 

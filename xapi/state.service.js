@@ -13,18 +13,31 @@ stateId=resume&activityId=http%3A%2F%2F6knKUXs5R3S_course_id&agent=%7B%22objectT
 */
 
 async function getById(activityId, agent, stateId, registration) {
-    return await knex.select([
-        'state'
-    ])
-    .from('activities_state')
-        .where('activities_state.activity_id', activityId)
-        .andWhere('activities_state.agent', agent)
-        .andWhere('activities_state.state_id', stateId)
-        .limit(1)
-        .first();
+    console.log("Get activity state:", activityId, agent, stateId, registration)
+
+    let agentObj = JSON.parse(agent)
+    try {
+        const state =  await knex.select([
+            'state'
+        ])
+        .from('activities_state')
+            .where('activities_state.activity_id', activityId)
+            .whereRaw(`activities_state.agent->>'mbox' = ?`, [agentObj.mbox])
+            .andWhere('activities_state.state_id', stateId)
+            .orderBy('generated', 'desc')
+            .limit(1)
+            .first();
+
+            return state.state;
+    }
+    catch(error){
+        console.log("Error during getting activities state:", error)
+        return null
+    }
 }
 
 async function create(state, activityId, agent, stateId, registration) {
+    console.log("Create activity state:", state)
     return knex.transaction(async function(t) {
 
         await knex('activities_state')
@@ -46,6 +59,7 @@ async function create(state, activityId, agent, stateId, registration) {
 
 
 async function update(state, activityId, agent, stateId, registration) {
+    console.log("Update activity state:", state)
     return knex.transaction(async function(t) {
 
         await knex('activities_state')
