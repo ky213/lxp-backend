@@ -4,70 +4,24 @@ const Role = require('helpers/role');
 const knex = require('../db'); 
 
 module.exports = {
-    getAll,
     getById,
     create,
     update
 };
+/*
+stateId=resume&activityId=http%3A%2F%2F6knKUXs5R3S_course_id&agent=%7B%22objectType%22%3A%22Agent%22%2C%22mbox%22%3A%22mailto%3Anebojsa.pongracic%40gmail.com%22%2C%22name%22%3A%22Neboj%C5%A1a%20Pongra%C4%8Di%C4%87%22%7D&registration=306b969e-e7c0-46cf-aeb8-32be7bbf7a14", {
+*/
 
-async function getAll(user, pageId, recordsPerPage, filter) {
-    //console.log("Get all institutes:", user, pageId, recordsPerPage, filter)
-    let offset = ((pageId || 1) - 1) * recordsPerPage;
-
-    let model = knex.table('institutes');
-
-    if (filter) {
-        model.whereRaw(`LOWER(institutes.name) LIKE ?`, [`%${filter.toLowerCase().trim()}%`]);
-    }
-
-    const totalNumberOfRecords = await model.clone().count();
-    //console.log("Total rows:", totalNumberOfRecords)
-    if (totalNumberOfRecords[0].count <= offset) {
-        offset = 0;
-    }
-
-    const institutes = await model.clone()        
-        .orderBy('institutes.is_active', 'desc')
-        .orderBy('institutes.created_at', 'desc')
-        .offset(offset)
-        .limit(recordsPerPage)
-        .select([
-            'institutes.institute_id as instituteId', 
-            'institutes.name', 
-            'institutes.logo',
-            'institutes.color_code as colorCode',       
-            'institutes.background_color_code as backgroundColorCode',        
-            'institutes.created_at as createdAt',
-            'institutes.created_by as createdBy',
-            'institutes.modified_at as modifiedAt',
-            'institutes.modified_by as modifiedBy',
-            'institutes.is_active as isActive'
-        ]);
-
-    //console.log("Got institutes:", institutes)
-    return { institutes, totalNumberOfRecords: totalNumberOfRecords[0].count };
-}
-
-async function getById(id, user) {
-    return knex.select([
-        'institutes.institute_id as instituteId', 
-        'institutes.name', 
-        'institutes.logo',
-        'institutes.color_code as colorCode',       
-        'institutes.background_color_code as backgroundColorCode', 
-        'institutes.created_at as createdAt',
-        'institutes.created_by as createdBy',
-        'institutes.modified_at as modifiedAt',
-        'institutes.modified_by as modifiedBy',
-        'institutes.is_active as isActive'
+async function getById(activityId, agent, stateId, registration) {
+    return await knex.select([
+        'state'
     ])
-    .from('institutes')
-        .where('institutes.institute_id', id)
+    .from('activities_state')
+        .where('activities_state.activity_id', activityId)
+        .andWhere('activities_state.agent', agent)
+        .andWhere('activities_state.state_id', stateId)
         .limit(1)
-        .first()
-    .then(function(output){
-        return output;
-    });
+        .first();
 }
 
 async function create(state, activityId, agent, stateId, registration) {

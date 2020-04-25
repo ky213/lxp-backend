@@ -7,8 +7,15 @@ const Role = require('helpers/role');
 // routes
 router.post('/', create); 
 router.put('/', create); 
+router.get('/', getById); 
 
 module.exports = router;
+
+function getById(req, res, next) {
+    stateService.getById(req.query.activityId, req.query.agent, req.query.stateId, req.query.registration)
+        .then((data) => res.json(data))
+        .catch(err => next(err));
+}
 
 function create(req, res, next) {
     stateService.create(req.body, req.query.activityId, req.query.agent, req.query.stateId, req.query.registration)
