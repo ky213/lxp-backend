@@ -30,7 +30,7 @@ module.exports = router;
 
 async function getAll(req, res, next)  {
   //console.log('getAll', req.query.instituteId);
-  courseService.getAll(req.user, req.query.instituteId, req.query.programId, req.query.page, req.query.take)
+  courseService.getAll(req.user, req.query.instituteId, req.query.programId, req.query.page, req.query.take, req.query.filter)
       .then(data => res.json(data));
 }
 
@@ -53,7 +53,6 @@ async function getByUserAll(req, res, next)  {
 
 async function create(req, res, next)  {  
   let contentPath = `/${uuidv4()}/`;
-  console.log("Starting date:", req.body.startingDate)
 
   if (req.files && req.files.file)
     uploadFile(req.files.file, contentPath);

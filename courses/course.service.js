@@ -13,15 +13,31 @@ module.exports = {
   deleteCourses
 };
 
-async function getAll(loggedInUser, selectedInstituteId, programId) {
+async function getAll(loggedInUser, selectedInstituteId, programId, pageId, recordsPerPage, filter) {
   if (!loggedInUser) {
     return;
   }
 
-  return await knex('courses')
+  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+
+
+  console.log('=>', selectedInstituteId, programId, pageId, recordsPerPage);
+
+  let model = knex('courses')
     .join('programs', 'programs.program_id', 'courses.program_id')
-    .where('courses.institute_id', loggedInUser.role == Role.SuperAdmin && selectedInstituteId ? selectedInstituteId : loggedInUser.institute)
-    //.andWhere('courses.program_id', programId)
+    .where('courses.institute_id', instituteId);
+
+  if (programId)
+    model.andWhere('courses.program_id', programId);
+    
+  var totalNumberOfRecords = (await model.clone().count().first()).count;
+
+  let offset = (pageId - 1) * recordsPerPage;
+
+  var courses = await model.clone()
+    .orderBy('name', 'asc')
+    .offset(offset)
+    .limit(recordsPerPage)
     .select([
       'courses.course_id as courseId',
       'courses.name',
@@ -32,7 +48,12 @@ async function getAll(loggedInUser, selectedInstituteId, programId) {
       'courses.content_path as contentPath',
       'programs.program_id as programId',
       'programs.name as programName',
-    ])
+    ]);
+
+    return {
+      courses,
+      totalNumberOfRecords
+    }
 }
 
 async function getById(loggedInUser, courseId, selectedInstituteId) {
@@ -99,7 +120,7 @@ async function create(loggedInUser, selectedInstituteId, programId, name, descri
       content_path: contentPath,
       image: logo,
       period_days: periodDays,
-      starting_date: startingDate && startingDate || null,
+      starting_date: startingDate && moment(startingDate).format() || null,
       generated: knex.fn.now()
     });
 }
