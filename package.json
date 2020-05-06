@@ -4,7 +4,7 @@
     "description": "RMS API",
     "license": "MIT",
     "scripts": {
-        "start": "nodemon -L ./server.js"
+        "start": "nodemon -L --ignore './upload/' ./server.js"
     },
     "dependencies": {
         "adm-zip": "^0.4.14",

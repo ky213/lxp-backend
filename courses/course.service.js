@@ -139,7 +139,7 @@ async function update(loggedInUser, selectedInstituteId, courseId, programId, na
       description: description,
       image: logo,
       period_days: periodDays,
-      starting_date: startingDate && startingDate || null,
+      starting_date: startingDate && moment(new Date(startingDate)).format() || null,
       generated: knex.fn.now()
     });
 }
