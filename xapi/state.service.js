@@ -14,21 +14,24 @@ stateId=resume&activityId=http%3A%2F%2F6knKUXs5R3S_course_id&agent=%7B%22objectT
 
 async function getById(activityId, agent, stateId, registration) {
     console.log("Get activity state:", activityId, agent, stateId, registration)
+    
 
     let agentObj = JSON.parse(agent)
     try {
-        const state =  await knex.select([
+        let model =  knex.select([
             'state'
         ])
         .from('activities_state')
             .where('activities_state.activity_id', activityId)
             .whereRaw(`activities_state.agent->>'mbox' = ?`, [agentObj.mbox])
             .andWhere('activities_state.state_id', stateId)
-            .orderBy('generated', 'desc')
-            .limit(1)
-            .first();
+            .andWhere('activities_state.registration', registration);
 
-            return state.state;
+        const state = await model.orderBy('generated', 'desc')
+        .limit(1)
+        .first();
+
+        return state.state;
     }
     catch(error){
         console.log("Error during getting activities state:", error)
@@ -60,8 +63,42 @@ async function create(state, activityId, agent, stateId, registration) {
 
 async function update(state, activityId, agent, stateId, registration) {
     console.log("Update activity state:", state)
-    return knex.transaction(async function(t) {
+    /*
+    await knex('activity_replies')
+        .where('activity_reply_id', replyId)
+        .andWhere('employee_id', user.employeeId)
+        .transacting(t)
+        .update({
+            text: reply.text,
+            modified_at: knex.fn.now(),
+            modified_by: user.employeeId
+        });
 
+        try {
+            await t.commit();
+        }
+        catch(error) {
+            console.log("Error while updating your reply to activity: ", error)
+            await t.rollback();
+        }*/
+    return knex.transaction(async function(t) {
+        let record = {
+            activity_id: activityId,
+            state_id: stateId,
+            agent: agent,
+            state: state,
+            registration: registration
+        };
+
+        const result = await knex.raw(
+            `? ON CONFLICT (activity_id, state_id, agent, registration)
+                    DO UPDATE SET
+                    state = EXCLUDED.state
+                  RETURNING *;`,
+            [knex("activities_state").transacting(t).insert(record)],
+          );
+
+          /*
         await knex('activities_state')
         .transacting(t)
         .insert({
@@ -71,6 +108,7 @@ async function update(state, activityId, agent, stateId, registration) {
             state: state,
             registration: registration
         });
+        */
 
     })
     .catch(err => {

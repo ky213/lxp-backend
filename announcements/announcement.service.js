@@ -88,6 +88,10 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
   if (!loggedInUser)
     return;    
 
+  if(!loggedInUser.userId) {
+    return;
+  }
+
   let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
   
   includeRead = includeRead || false;

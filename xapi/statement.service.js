@@ -9,11 +9,12 @@ module.exports = {
     getAll,
     getById,
     create,
-    update
+    update,
+    getExperiences
 };
 
-async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, page, take) {
-    console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, page, take)
+async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take) {
+    console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take)
     let offset = ((page || 1) - 1) * take;
 
     let model = knex.table('statements');
@@ -23,7 +24,20 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
     }
 
     if (registration) {
-        model.whereRaw(`payload->'context'->>'registration' = ?`, [registration]);
+        model.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}|%`]);
+        model.orWhereRaw(`payload->'context'->>'registration' = ?`, [registration]);
+    }
+
+    if(experiences) {
+        const parsedExperiences = JSON.parse(experiences).map(pe => pe.value);
+        parsedExperiences.map(pe => {
+            model.whereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
+            model.orWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
+        })
+        //parsedExperiences.join(',')
+        //model.whereRaw(`payload->'verb'->>'display'->>'en' in (?)`, [parsedExperiences.join(',')]);
+        //model.orWhereRaw(`payload->'verb'->>'display'->>'en-US' in (?)`, [parsedExperiences.join(',')]);
+       // statement => statement.verb && statement.verb.display && (statement.verb.display.en || statement.verb.display["en-US"]
     }
 
     if (agent) {
@@ -78,6 +92,15 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
         return { statements: statements.map(s => s.payload), more: `page=${(page || 1) + 1}` };
     }
+}
+
+async function getExperiences(user, programId) {
+    //console.log("Get all experiences:", user, programId)
+    if (programId) {
+        model.whereRaw(`payload->'context'->>'registration' like ?`, [`${programId}|%`]);
+    }
+
+    return await knex.table('statements').select(knex.raw(`payload->'verb'->>'display' as experience`)).distinct();
 }
 
 async function getById(id, user) {
