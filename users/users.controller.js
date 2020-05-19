@@ -62,6 +62,7 @@ function getByEmployeeId(req, res, next) {
           }
         : user;
 
+      console.log(' => ', _user);
       return res.json(_user);
     })
     .catch(error => console.log("Error getByEmployeeId:", error));

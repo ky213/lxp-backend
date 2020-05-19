@@ -1,12 +1,7 @@
 const bcrypt = require("bcrypt");
 const knex = require("../db");
 const Role = require("helpers/role");
-
 const { checkIfEmailExists } = require("./user.service");
-const { getProgramIdByProgramName } = require("programs/program.service");
-const {
-  getExpLevelIdByExpLevelName
-} = require("experience_levels/experience_level.service");
 
 let defaultPassword = "admin";
 
@@ -50,7 +45,6 @@ async function add(loggedInUser, userData, instituteId) {
       let _employees = userIds.map(userId => ({
         user_id: userId,
         institute_id: instituteId,
-        exp_level_id: userData.expLevelId,
         is_resident: true
       }));
 
@@ -64,14 +58,7 @@ async function add(loggedInUser, userData, instituteId) {
         .insert({
           employee_id: employeeIds[0],
           role_id: Role.Resident
-        });
-
-      await knex("employee_programs")
-        .transacting(t)
-        .insert({
-          employee_id: employeeIds[0],
-          program_id: userData.programId
-        });
+        });      
 
       return {
         isValid: true
@@ -105,30 +92,6 @@ async function addBulk(loggedInUser, data, instituteId) {
 
   async function InsertResidentAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
-      let program = await getProgramIdByProgramName(instituteId, userData.programName);
-
-      if (!program) {
-        output.push({
-          ...userData,
-          status: "error",
-          error: "Program not found"
-        });
-        return resolve();
-      }
-      
-      let expLevel = await getExpLevelIdByExpLevelName(
-        program.programId,
-        userData.expLevelName
-      );
-      if (!expLevel) {
-        output.push({
-          ...userData,
-          status: "error",
-          error: "Exp. level not found"
-        });
-        return resolve();
-      }
-      
       return t
         .into("users")
         .insert({
@@ -139,52 +102,14 @@ async function addBulk(loggedInUser, data, instituteId) {
           start_date: userData.startDate,
           password: bcrypt.hashSync(defaultPassword, 10)
         })
-        .returning("user_id")
-        .then(userIds => {
-          let _employees = userIds.map(userId => ({
-            user_id: userId,
-            institute_id: instituteId,
-            exp_level_id: expLevel.expLevelId,
-            is_resident: true
-          }));
-          
-          return t
-            .into("employees")
-            .insert(_employees)
-            .returning("employee_id")
-            .then(employeeIds => {
-                let employeeRoles = employeeIds.map(employeeId => ({
-                  employee_id: employeeId,
-                  role_id: Role.Resident
-                }));
-
-                let employeePrograms = employeeIds.map(employeeId => ({
-                  employee_id: employeeId,
-                  program_id: program.programId
-                }));
-                
-                
-                return t.into("employee_roles").insert(employeeRoles).then(() => {
-                  output.push({ ...userData, status: "ok" });
-                  
-                  return t
-                  .into("employee_programs")
-                  .insert(employeePrograms)
-                  .then(() => {
-                    output.push({ ...userData, status: "ok" });
-                    return resolve();
-                  })
-                  .catch(err => {
-                    output.push({ ...userData, status: "error", error: err });
-                    return resolve();
-                  });
-                })
-                .catch(err => {
-                  output.push({ ...userData, status: "error", error: err });
-                  return resolve();
-                });              
-            });
-        });
+        .then(() => {
+          output.push({ ...userData, status: "ok" });
+          return resolve();
+        })
+        .catch(err => {
+          output.push({ ...userData, status: "error", error: err });
+          return resolve();
+        });        
     });
   }
 
@@ -232,7 +157,7 @@ async function update(loggedInUser, user, instituteId) {
       errorDetails: validationOutput.data.filter(t => t.error).map(t => t.error).join(',')
     };
   }
-
+  
   return knex.transaction(async function(t) {
     await knex("users")
       .transacting(t)
@@ -242,20 +167,14 @@ async function update(loggedInUser, user, instituteId) {
         surname: user.surname.trim(),      
         gender: user.gender,
         start_date: user.startDate,  
-        email: user.email.trim()
+        email: user.email.trim(),
       });
+
     await knex("employees")
       .transacting(t)
-      .where("employee_id", user.employeeId)
+      .where("user_id", user.userId)
       .update({
-        exp_level_id: user.expLevelId,
-        is_active: user.isActive
-      });
-    await knex("employee_programs")
-      .transacting(t)
-      .where("employee_id", user.employeeId)
-      .update({
-        program_id: user.programId
+        is_active: user.isActive,
       });
 
     return {
@@ -328,36 +247,6 @@ async function validateBulk(loggedInUser, usersData, instituteId) {
     if (emailExists) {
       addError(user, "Email already exists");
       continue;
-    }
-
-    if (!user.programName && !user.programId) {
-      addError(user, "Program is not defined");
-      continue;
-    }
-
-    if (!user.expLevelName && !user.expLevelId) {
-      addError(user, "Exp. level is not defined");
-      continue;
-    }
-
-    let program = null;
-    if (!user.programId) {
-      program = await getProgramIdByProgramName(instituteId, user.programName.trim());
-      if (!program) {
-        addError(user, "Program not found");
-        continue;
-      }
-    }
-
-    if (!user.expLevelId) {
-      let expLevel = await getExpLevelIdByExpLevelName(
-        program.programId,
-        user.expLevelName.trim()
-      );
-      if (!expLevel) {
-        addError(user, "Exp. level not found");
-        continue;
-      }
     }
 
     output.data.push({ ...user, status: "ok" });
