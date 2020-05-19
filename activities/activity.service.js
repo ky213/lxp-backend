@@ -347,13 +347,13 @@ async function getById(activityId, user, selectedInstituteId) {
             activityDetails.participants = [];
         }
 
-        activityDetails.levels = await knex.select([
-            'experience_levels.name as name', 
-            'activity_levels.exp_level_id as expLevelId',             
+        activityDetails.courses = await knex.select([
+            'courses.name as name', 
+            'activity_courses.course_id as courseId',             
         ])
-        .from('activity_levels')
-        .join('experience_levels', 'experience_levels.exp_level_id', 'activity_levels.exp_level_id')
-        .where('activity_levels.activity_id', activityId);
+        .from('activity_courses')
+        .join('courses', 'courses.course_id', 'activity_courses.course_id')
+        .where('activity_courses.activity_id', activityId);
      
         activityDetails.replies = await getReplies(activityId, user);
     }
@@ -557,23 +557,30 @@ async function create(activity, user) {
             });
         }
 
-        if(activity.priority == 2 && activity.levels && activity.levels.length > 0) {
-            const insertActivityLevels = activity.levels.map(p => {
+        if(activity.priority == 2 && activity.courses && activity.courses.length > 0) {
+
+            let courseUsers = knex('employees')
+            .join('users', 'users.user_id', 'employees.user_id')
+            .where('employees.is_resident', true)
+            .where('users.is_active', true)
+            .whereIn('users.email', function() {
+                this.select(knex.raw("replace(payload->'actor'->>'mbox', 'mailto:', '')")).from('statements');
+                activity.courses.map(p => {
+                    this.whereRaw(`payload->'context'->>'registration' like ?`, [`%|${p.courseId}%`]);
+                });
+            })
+
+            const insertActivityCourses = activity.courses.map(p => {
                 return {
                     activity_id: activityId[0],
-                    exp_level_id: p.expLevelId
+                    course_id: p.courseId
                 }
             });
         
-            await t('activity_levels')
-                .insert(insertActivityLevels);
+            await t('activity_courses')
+                .insert(insertActivityCourses);
 
-            const users = await knex('employees')
-                .join('users', 'users.user_id', 'employees.user_id')
-                .whereIn('employees.exp_level_id', activity.levels.map(l => l.expLevelId))
-                .andWhere('employees.is_resident', true)
-                .andWhere('users.is_active', true)
-                .select(['users.user_id']);
+            const users = await courseUsers.select(['users.user_id']);
             
             users.map(user => {
                 notifications.push(notificationService.create({
