@@ -24,15 +24,14 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
     }
 
     if (registration) {
-        model.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}|%`]);
-        model.orWhereRaw(`payload->'context'->>'registration' = ?`, [registration]);
+        model.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}%`]);
     }
 
     if(experiences) {
         const parsedExperiences = JSON.parse(experiences).map(pe => pe.value);
+
         parsedExperiences.map(pe => {
-            model.whereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
-            model.orWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
+            model.andWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
         })
         //parsedExperiences.join(',')
         //model.whereRaw(`payload->'verb'->>'display'->>'en' in (?)`, [parsedExperiences.join(',')]);
@@ -78,6 +77,14 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
                 'payload', 
             ]);
 
+           console.log(model.clone()          
+           .offset(offset)
+           .limit(take)
+           .select([
+               knex.raw(`payload->>'timestamp'`),
+               'payload', 
+           ]).toSQL().toNative() ) 
+
         return { statements: statements.map(s => s.payload), totalNumberOfRecords: totalNumberOfRecords[0].count };
     }
     else {
@@ -99,6 +106,7 @@ async function getExperiences(user, programId) {
     if (programId) {
         model.whereRaw(`payload->'context'->>'registration' like ?`, [`${programId}|%`]);
     }
+
 
     return await knex.table('statements').select(knex.raw(`payload->'verb'->>'display' as experience`)).distinct();
 }
