@@ -19,6 +19,9 @@ function getAll(req, res, next) {
 }
 
 function getFmRoles(req, res, next) {
-  let fmRoles = roleService.getFmRoles();
-  res.json(fmRoles);
+  roleService.getFmRoles()    
+    .then(data => {
+        return res.json(data);
+    })
+    .catch((error) => console.log('Error getAll:', error));
 }

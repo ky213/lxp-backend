@@ -335,10 +335,10 @@ async function validateBulk(loggedInUser, usersData, instituteId) {
       continue;
     }
 
-    if (!fmRoles.includes(user.roleId)) {
-      addError(user, "Role is not valid");
-      continue;
-    }
+    // if (!fmRoles.includes(user.roleId)) {
+    //   addError(user, "Role is not valid");
+    //   continue;
+    // }
 
     if (user.instituteId) {
       const exists = instituteService.getById(instituteId, loggedInUser);

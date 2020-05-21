@@ -9,9 +9,9 @@ exports.seed = function(knex) {
         {role_id: 'Admin', name: 'Institute Administrator'},
         //{role_id: 'SuperAdmin', name: 'Super Administrator (admin of admins)'},
         {role_id: 'InstituteManager', name: 'Institute Manager'},
-        {role_id: 'ProgramDirector', name: 'Program Director'},
+        {role_id: 'ProgramDirector', name: 'Program Manager'},
         {role_id: 'FacultyMember', name: 'Faculty Member'},
-        {role_id: 'Resident', name: 'Resident'}
+        {role_id: 'Resident', name: 'Learner'}
       ]);
     });
 };
