@@ -10,7 +10,7 @@ If running for the first time, you need to run migrations and optional seeds for
 
 And then, open a new terminal and do:
 ```
-docker exec -it api bash
+docker exec -it lxp-api bash
 cd /srv/app/lxp-server/db
 /srv/app/lxp-server/node_modules/.bin/knex migrate:latest
 /srv/app/lxp-server/node_modules/.bin/knex seed:run
