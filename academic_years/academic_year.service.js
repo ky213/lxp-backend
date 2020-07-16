@@ -11,13 +11,13 @@ module.exports = {
   deleteAcademicYears
 };
 
-async function getByLoggedInUser(loggedInUser, instituteId) {
+async function getByLoggedInUser(loggedInUser, organizationId) {
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')    
-    .where('academic_years.institute_id', instituteId)
+    .where('academic_years.organization_id', organizationId)
     .select([
       'academic_years.academic_year_id as academicYearId',
       'academic_years.name as academicYearName',
@@ -28,12 +28,12 @@ async function getByLoggedInUser(loggedInUser, instituteId) {
     .orderBy('academic_years.start_date', 'desc');
 }
 
-async function getById(loggedInUser, academicYearId, instituteId) {
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function getById(loggedInUser, academicYearId, organizationId) {
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')
-    .where('academic_years.institute_id', instituteId)
+    .where('academic_years.organization_id', organizationId)
     .andWhere('academic_year_id', academicYearId)
     .select([
       'academic_years.academic_year_id as academicYearId',
@@ -46,12 +46,12 @@ async function getById(loggedInUser, academicYearId, instituteId) {
     .first();
 }
 
-async function getByProgramId(loggedInUser, programId, instituteId) {
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function getByProgramId(loggedInUser, programId, organizationId) {
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')
-    .where('academic_years.institute_id', instituteId)
+    .where('academic_years.organization_id', organizationId)
     .andWhere('academic_years.program_id', programId)
     .select([
       'academic_years.academic_year_id as academicYearId',
@@ -63,12 +63,12 @@ async function getByProgramId(loggedInUser, programId, instituteId) {
     ]);
 }
 
-async function create(loggedInUser, data, instituteId) {
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function create(loggedInUser, data, organizationId) {
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
   
   data.programs.forEach(p => {
     insertAcademicYear({
-      institute_id: instituteId,
+      organization_id: organizationId,
       name: data.name,
       start_date: data.startDate,
       end_date: data.endDate, 
@@ -81,8 +81,8 @@ async function create(loggedInUser, data, instituteId) {
   }
 }
 
-async function update(loggedInUser, data, instituteId) {
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function update(loggedInUser, data, organizationId) {
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let ay = {
     name: data.name,
@@ -91,7 +91,7 @@ async function update(loggedInUser, data, instituteId) {
   };
 
   await knex.table('academic_years')
-    .where('institute_id', instituteId)
+    .where('organization_id', organizationId)
     .andWhere('academic_year_id', data.academicYearId)
     .update(ay);
 
@@ -106,12 +106,12 @@ async function insertAcademicYear(academicYear) {
     .insert(academicYear);
 }
 
-async function deleteAcademicYear(loggedInUser, instituteId, academicYearId) {
-  return deleteAcademicYears(loggedInUser, instituteId, [academicYearId]);
+async function deleteAcademicYear(loggedInUser, organizationId, academicYearId) {
+  return deleteAcademicYears(loggedInUser, organizationId, [academicYearId]);
 }
 
-async function deleteAcademicYears(loggedInUser, instituteId, academicYears) {
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function deleteAcademicYears(loggedInUser, organizationId, academicYears) {
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   return knex.transaction(async function(t) {
     await knex.table('blocks')
@@ -121,7 +121,7 @@ async function deleteAcademicYears(loggedInUser, instituteId, academicYears) {
 
     await knex.table('academic_years')
       .transacting(t)
-      .where('institute_id', instituteId)
+      .where('organization_id', organizationId)
       .whereIn('academic_year_id', academicYears)
       .del();
 

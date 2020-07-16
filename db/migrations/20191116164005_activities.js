@@ -3,7 +3,7 @@ exports.up = function(knex) {
     table
       .uuid('activity_id').defaultTo(knex.raw('uuid_generate_v4()'))  
       .primary();
-    table.uuid('institute_id').notNullable();
+    table.uuid('organization_id').notNullable();
     table.uuid('program_id');
     table.uuid('exp_level_id');
     table.string('name', 150).notNullable();
@@ -24,7 +24,7 @@ exports.up = function(knex) {
     table.string('modified_by').notNullable();
     
     table.foreign('priority').references('priority_id').inTable('activity_priorities');
-    table.foreign('institute_id').references('institute_id').inTable('institutes');
+    table.foreign('organization_id').references('organization_id').inTable('organizations');
     table.foreign('program_id').references('program_id').inTable('programs');
     table.foreign('exp_level_id').references('exp_level_id').inTable('experience_levels');    
   });

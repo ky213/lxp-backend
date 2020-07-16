@@ -5,7 +5,7 @@ exports.up = function(knex) {
           .uuid('program_id').defaultTo(knex.raw('uuid_generate_v4()')) 
           .primary();
         table.string('name', 80).notNullable();
-        table.uuid('institute_id').notNullable();
+        table.uuid('organization_id').notNullable();
         table.boolean('is_active').defaultTo(true);
         table.string('description', 300);
         table.string('duty_time_from');
@@ -24,10 +24,10 @@ exports.up = function(knex) {
         table.timestamp('modified_at').defaultTo(knex.fn.now());
         table.string('modified_by').notNullable();
 
-        table.foreign('institute_id').references('institute_id').inTable('institutes');
+        table.foreign('organization_id').references('organization_id').inTable('organizations');
         table.foreign('block_type_id').references('block_type_id').inTable('program_block_types');
 
-        table.unique(['name', 'institute_id']);
+        table.unique(['name', 'organization_id']);
     });
 };
 

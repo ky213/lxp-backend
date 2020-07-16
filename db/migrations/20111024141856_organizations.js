@@ -1,8 +1,8 @@
 
 exports.up = function(knex) {
-    return knex.schema.createTable('institutes', table => {
+    return knex.schema.createTable('organizations', table => {
         table
-          .uuid('institute_id').defaultTo(knex.raw('uuid_generate_v4()')) 
+          .uuid('organization_id').defaultTo(knex.raw('uuid_generate_v4()')) 
           .primary();
         table.string('name', 80).notNullable().unique();
         table.boolean('is_active').notNullable().defaultTo(true);
@@ -17,5 +17,5 @@ exports.up = function(knex) {
 };
 
 exports.down = function(knex) {
-    return knex.schema.dropTable('institutes');
+    return knex.schema.dropTable('organizations');
 }

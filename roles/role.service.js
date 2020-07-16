@@ -13,7 +13,7 @@ async function getAll() {
 }
 
 async function getFmRoles() {
-  const fmRoles = [Role.Admin, Role.InstituteManager, Role.ProgramDirector, 
+  const fmRoles = [Role.Admin, Role.OrganizationManager, Role.ProgramDirector, 
     Role.FacultyMember];    
   return await knex('roles').whereIn('role_id', fmRoles).select('role_id as roleId', 'name');
 }

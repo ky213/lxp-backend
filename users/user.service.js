@@ -63,24 +63,24 @@ async function authenticate({ email, password }) {
             {
                 const [employee] = await knex('users')
                     .join('employees', 'employees.user_id', 'users.user_id')
-                    .join('institutes', 'institutes.institute_id', 'employees.institute_id')
+                    .join('organizations', 'organizations.organization_id', 'employees.organization_id')
                     .leftJoin('employee_roles', 'employee_roles.employee_id', 'employees.employee_id')
                     .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')                    
                     .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
                     .leftJoin('program_directors', 'program_directors.employee_id', 'employees.employee_id')
                 .where('employees.user_id', user.userId)
-                    .andWhere('institutes.is_active', true)
+                    .andWhere('organizations.is_active', true)
                 .limit(1)
                 .select(['users.user_id',
                     'users.user_id as userId', 'employees.employee_id as employeeId', 'email', 'users.name', 
                     'users.name as firstName', 'surname as lastName', 
                     'is_super_admin', 'password', 
                     'users.profile_photo as profilePhoto',
-                    'employees.institute_id as instituteId', 'institutes.name as instituteName', 'roles.role_id as role', 
-                    'roles.name as roleDescription', 'institutes.color_code as instituteForegroundColor',
-                    'institutes.background_color_code as instituteBackgroundColor', 'employee_programs.program_id as programId',
+                    'employees.organization_id as organizationId', 'organizations.name as organizationName', 'roles.role_id as role', 
+                    'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
+                    'organizations.background_color_code as organizationBackgroundColor', 'employee_programs.program_id as programId',
                     'program_directors.program_id as directorProgramId', 'employees.exp_level_id as experienceLevelId',
-                    'institutes.logo as instituteLogo']
+                    'organizations.logo as organizationLogo']
                 );
 
                 if(!employee.programId) {
@@ -93,7 +93,7 @@ async function authenticate({ email, password }) {
 
                 // necu mijenjati sub s user_id pa sam dodao userId
                 const token = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, role: employee.role, 
-                    institute: employee.instituteId, programId: employee.programId, experienceLevelId: employee.experienceLevelId
+                    organization: employee.organizationId, programId: employee.programId, experienceLevelId: employee.experienceLevelId
                 }, config.secret);
     
                 const { password, is_super_admin, directorProgramId, ...userWithoutPassword } = employee;
@@ -105,16 +105,16 @@ async function authenticate({ email, password }) {
 }
 
 // user administration screens
-async function getAll(user, pageId, recordsPerPage, filterName, isResident, includeInactive, instituteId, filterProgramId) {
+async function getAll(user, pageId, recordsPerPage, filterName, isResident, includeInactive, organizationId, filterProgramId) {
     let offset = (pageId - 1) * recordsPerPage;
 
-    instituteId = (user.role == Role.SuperAdmin && instituteId) ? instituteId : user.institute;
+    organizationId = (user.role == Role.SuperAdmin && organizationId) ? organizationId : user.organization;
 
-    console.log('getAll', user, instituteId);
+    console.log('getAll', user, organizationId);
 
     var model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
-        .innerJoin('institutes', 'institutes.institute_id', 'employees.institute_id')
+        .innerJoin('organizations', 'organizations.organization_id', 'employees.organization_id')
         .leftJoin('employee_roles', 'employee_roles.employee_id', 'employees.employee_id')
         .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')
         .leftJoin('experience_levels', 'experience_levels.exp_level_id', 'employees.exp_level_id')
@@ -128,7 +128,7 @@ async function getAll(user, pageId, recordsPerPage, filterName, isResident, incl
         model.andWhere('program_directors.employee_id', user.employeeId);
     }*/
 
-    model.where('employees.institute_id', instituteId);
+    model.where('employees.organization_id', organizationId);
     model.andWhere('users.is_super_admin', 0);
 
     if (user.role != Role.SuperAdmin)
@@ -178,8 +178,8 @@ async function getAll(user, pageId, recordsPerPage, filterName, isResident, incl
             'employees.employee_id as employeeId',
             'employees.is_active as isActive',
             'employees.exp_level_id as expLevelId',
-            'employees.institute_id as instituteId',
-            'institutes.name as instituteName',
+            'employees.organization_id as organizationId',
+            'organizations.name as organizationName',
             'roles.role_id as role',
             'roles.name as roleName',
             'experience_levels.name as expLevelName',
@@ -193,12 +193,12 @@ async function getAll(user, pageId, recordsPerPage, filterName, isResident, incl
     }
 }
 
-async function getAllUsers(loggedInUser, instituteId, includeInactive) {
-    instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+async function getAllUsers(loggedInUser, organizationId, includeInactive) {
+    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
     let model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
-        .where('employees.institute_id', instituteId)        
+        .where('employees.organization_id', organizationId)        
         // .andWhere('employees.employee_id', "<>", loggedInUser.employeeId)
         .andWhere('users.is_super_admin', 0);
     
@@ -229,7 +229,7 @@ async function getByEmployeeId(user, employeeId) {
         .where('employees.employee_id', employeeId);
 
     if(user.role != Role.SuperAdmin) {
-        model.andWhere('employees.institute_id', user.institute);
+        model.andWhere('employees.organization_id', user.organization);
     }
 
     return await model.select([
@@ -247,7 +247,7 @@ async function getByEmployeeId(user, employeeId) {
         'employees.exp_level_id as expLevelId',
         'employee_programs.program_id as programId',
         'experience_levels.name as expLevelName',
-        'employees.institute_id as instituteId',
+        'employees.organization_id as organizationId',
         'employee_roles.role_id as roleId',
         'roles.name as roleName'
     ])
@@ -319,13 +319,13 @@ async function changePassword({oldPassword, newPassword}, user) {
     return { isValid: false, errorDetails: "User not found" };
   }
 
-  async function deleteEmployees(loggedInUser, instituteId, employees) {
+  async function deleteEmployees(loggedInUser, organizationId, employees) {
     console.log("Delete employees service: ", employees); 
-    instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
     let employeeIds = await knex('employees')
         .whereIn('employee_id', employees)
-        .andWhere('institute_id', instituteId)
+        .andWhere('organization_id', organizationId)
         .select('employee_id')
         .map(t => t.employee_id);
 

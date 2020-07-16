@@ -15,10 +15,10 @@ module.exports = {
   deleteAnnouncements
 };
 
-async function getAll(loggedInUser, selectedInstituteId) {
+async function getAll(loggedInUser, selectedOrganizationId) {
   return knex('announcements')
     .leftJoin('announcement_files', 'announcement_files.announcement_id', 'announcements.announcement_id')
-    .where('announcements.institute_id', loggedInUser.role == Role.SuperAdmin && selectedInstituteId ? selectedInstituteId : loggedInUser.institute)
+    .where('announcements.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
     .groupBy('announcements.announcement_id')
     .select([
       'announcements.announcement_id as announcementId',
@@ -31,17 +31,17 @@ async function getAll(loggedInUser, selectedInstituteId) {
     .count('announcement_files.* as fileNum');
 }
 
-async function getById(loggedInUser, announcementId, instituteId) {
+async function getById(loggedInUser, announcementId, organizationId) {
 
-  // console.log('announcements.getById', loggedInUser, announcementId, instituteId);
+  // console.log('announcements.getById', loggedInUser, announcementId, organizationId);
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   if (!announcementId)
     return null;
 
   let data = await knex('announcements')
-    .where('institute_id', instituteId)
+    .where('organization_id', organizationId)
     .andWhere('announcement_id', announcementId)   
     .first();
 
@@ -75,7 +75,7 @@ async function getById(loggedInUser, announcementId, instituteId) {
     dateFrom: data.date_from,
     dateTo: data.date_to,
     isActive: data.is_active,
-    institute_id: instituteId,
+    organization_id: organizationId,
     programs,
     expLevels,
     roles,
@@ -83,7 +83,7 @@ async function getById(loggedInUser, announcementId, instituteId) {
   }
 }
 
-async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
+async function getByUser(loggedInUser, includeRead, selectedorganizationId) {
   
   if (!loggedInUser)
     return;    
@@ -92,7 +92,7 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
     return;
   }
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedorganizationId) ? selectedorganizationId : loggedInUser.organization;
   
   includeRead = includeRead || false;
 
@@ -100,7 +100,7 @@ async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
 
   let query = knex('announcements')
     .leftJoin('announcement_files', 'announcement_files.announcement_id', 'announcements.announcement_id')
-    .where('announcements.institute_id', instituteId)
+    .where('announcements.organization_id', organizationId)
     .andWhere('announcements.is_active', true)
     .andWhere(function() {
       includeRead || 
@@ -282,7 +282,7 @@ async function create(loggedInUser, data) {
         date_from: data.dateFrom,
         date_to: data.dateTo,
         is_active: data.isActive,
-        institute_id: data.instituteId
+        organization_id: data.organizationId
       })
       .returning("announcement_id");
     

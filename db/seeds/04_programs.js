@@ -1,9 +1,9 @@
 
 exports.seed = async function(knex) {
     return await knex.transaction(async function(t) {
-        const institute = await knex('institutes')
-        .where('name', 'Primary institute')
-        .select('institute_id')
+        const organization = await knex('organizations')
+        .where('name', 'Primary organization')
+        .select('organization_id')
         .first();
 
         const blockType = await knex('program_block_types')
@@ -16,7 +16,7 @@ exports.seed = async function(knex) {
         .insert([{
             name: 'Internal Medicine',
             block_type_id: blockType.block_type_id,
-            institute_id: institute.institute_id,
+            organization_id: organization.organization_id,
             created_by: 'sys',
             modified_by: 'sys'
         }]).returning('program_id');

@@ -2,13 +2,13 @@ const bcrypt = require('bcrypt');
 
 exports.seed = function(knex) {
   // Deletes ALL existing entries
-  return knex('institutes').del()
+  return knex('organizations').del()
     .then(() => {
       // Inserts seed entries
-      return knex('institutes').insert([
-        {name: 'Primary institute', background_color_code: '#1EB7FF', color_code: '#FFFFFF', created_by: 'sys', modified_by: 'sys'}
-      ]).returning('institute_id')
-      .then((instituteIds) => {
+      return knex('organizations').insert([
+        {name: 'Primary organization', background_color_code: '#1EB7FF', color_code: '#FFFFFF', created_by: 'sys', modified_by: 'sys'}
+      ]).returning('organization_id')
+      .then((organizationIds) => {
         return knex('users').del()
         .then(() => {
           return knex('users').insert([
@@ -18,9 +18,9 @@ exports.seed = function(knex) {
           ]).returning('user_id')
           .then((userIds) => {
             let employeeList = [];
-            instituteIds.forEach((instituteId) => {
+            organizationIds.forEach((organizationId) => {
               userIds.forEach((userId) => {
-                employeeList.push({user_id: userId, is_resident: false, institute_id: instituteId, profile_photo: null});
+                employeeList.push({user_id: userId, is_resident: false, organization_id: organizationId, profile_photo: null});
               });
             });
 

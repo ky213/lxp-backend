@@ -9,9 +9,9 @@ exports.up = function(knex) {
     table.date('date_from');
     table.date('date_to');
     table.boolean('is_active').notNullable().defaultTo(true);
-    table.uuid('institute_id').notNullable();
+    table.uuid('organization_id').notNullable();
     
-    table.foreign('institute_id').references('institute_id').inTable('institutes');
+    table.foreign('organization_id').references('organization_id').inTable('organizations');
   });
 };
 

@@ -1,7 +1,7 @@
 module.exports = {
     Admin: 'Admin',
     SuperAdmin: 'SuperAdmin',
-    InstituteManager: 'InstituteManager',
+    OrganizationManager: 'OrganizationManager',
     ProgramDirector: 'ProgramDirector',
     FacultyMember: 'FacultyMember',
     Resident: 'Resident',
@@ -11,7 +11,7 @@ module.exports = {
 
 function getFmRoles()
 {
-    return [this.Admin, this.InstituteManager, this.ProgramDirector, 
+    return [this.Admin, this.OrganizationManager, this.ProgramDirector, 
         this.FacultyMember];
 }
 

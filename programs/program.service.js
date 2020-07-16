@@ -16,7 +16,7 @@ module.exports = {
     deleteAllInactive
 };
 
-async function getAll(user, instituteId, pageId, recordsPerPage, filter) {
+async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     let offset = ((pageId || 1) - 1) * recordsPerPage;
 
     let model = knex.table('programs');
@@ -28,11 +28,11 @@ async function getAll(user, instituteId, pageId, recordsPerPage, filter) {
     }    
 
     if (user.role != Role.SuperAdmin) {
-        model.where('programs.institute_id', user.institute);
+        model.where('programs.organization_id', user.organization);
     }
     else {
-        if(instituteId) {
-            model.where('programs.institute_id', instituteId);
+        if(organizationId) {
+            model.where('programs.organization_id', organizationId);
         }
     }
 
@@ -56,7 +56,7 @@ async function getAll(user, instituteId, pageId, recordsPerPage, filter) {
     .select([
         'programs.program_id as programId',
         'programs.name',
-        'programs.institute_id as instituteId',
+        'programs.organization_id as organizationId',
         'programs.description',
         'programs.duty_time_from as dutyTimeFrom',
         'programs.duty_time_to as dutyTimeTo',
@@ -102,11 +102,11 @@ async function getAll(user, instituteId, pageId, recordsPerPage, filter) {
     };  
 }
 
-async function getById(id, user, selectedInstituteId) {
+async function getById(id, user, selectedorganizationId) {
     let select = knex.select([
         'programs.program_id as programId',
         'programs.name',
-        'programs.institute_id as instituteId',
+        'programs.organization_id as organizationId',
         'programs.description',
         'programs.duty_time_from as dutyTimeFrom',
         'programs.duty_time_to as dutyTimeTo',
@@ -122,11 +122,11 @@ async function getById(id, user, selectedInstituteId) {
     ])
     .from('programs');
 
-    if (user.role == Role.SuperAdmin && selectedInstituteId) {
-        select.where('programs.institute_id', selectedInstituteId);
+    if (user.role == Role.SuperAdmin && selectedorganizationId) {
+        select.where('programs.organization_id', selectedorganizationId);
     }
     else {
-        select.where('programs.institute_id', user.institute);
+        select.where('programs.organization_id', user.organization);
     }
 
     let program = await select
@@ -181,7 +181,7 @@ async function create(program, user) {
         await knex('programs')
             .insert({
                 name: program.name,
-                institute_id: program.instituteId,
+                organization_id: program.organizationId,
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub,
                 block_type_id: program.blockTypeId || blockType.block_type_id
@@ -246,10 +246,10 @@ async function getBlockTypes() {
     });
 }
 
-async function getByCurrentUser(user, instituteId) {
+async function getByCurrentUser(user, organizationId) {
     
     let model = knex.table('programs')
-        .where('programs.institute_id', instituteId)
+        .where('programs.organization_id', organizationId)
         .andWhere('programs.is_active', true);
 
     if(user.role == Role.ProgramDirector || user.role == Role.Resident) {
@@ -266,7 +266,7 @@ async function getByCurrentUser(user, instituteId) {
     const programs = await model.select([
         'programs.program_id as programId',
         'programs.name',
-        'programs.institute_id as instituteId',
+        'programs.organization_id as organizationId',
         'programs.description', 
         'programs.duty_time_from as dutyTimeFrom',
         'programs.duty_time_to as dutyTimeTo',
@@ -301,11 +301,11 @@ async function getByCurrentUser(user, instituteId) {
     return programs;
 }
 
-async function getProgramIdByProgramName(instituteId, programName)
+async function getProgramIdByProgramName(organizationId, programName)
 {
     return await knex("programs")
         .whereRaw('lower(name) = ?', programName.toLowerCase())
-        .andWhere("institute_id", instituteId)
+        .andWhere("organization_id", organizationId)
         .select("program_id as programId")
         .first(); 
 }

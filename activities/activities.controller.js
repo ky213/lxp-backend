@@ -27,19 +27,19 @@ router.delete('/reply/:id', authorize(), deleteReply);
 module.exports = router;
 
 function getAll(req, res, next) {
-    activityService.getAll(req.user, req.query.from, req.query.to, req.query.selectedInstituteId)
+    activityService.getAll(req.user, req.query.from, req.query.to, req.query.selectedOrganizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
 }
 
 function getActivityTypes(req, res, next) {
-    activityService.getActivityTypes(req.user, req.query.selectedInstituteId)
+    activityService.getActivityTypes(req.user, req.query.selectedOrganizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
 }
 
 function getById(req, res, next) {
-    activityService.getById(req.params.id, req.user, req.query.selectedInstituteId)
+    activityService.getById(req.params.id, req.user, req.query.selectedOrganizationId)
         .then(event => event ? res.json(event) : res.status(404).json({message: "Activity not found"}))
         .catch(err => next(err));
 }
@@ -57,7 +57,7 @@ function update(req, res, next) {
 }
 
 function updateStatus(req, res, next) {
-    activityService.updateStatus(req.params.id, req.body, req.user, req.query.filterInstituteId)
+    activityService.updateStatus(req.params.id, req.body, req.user, req.query.filterOrganizationId)
         .then(() => res.json(true))
         .catch(err => next(err));
 }

@@ -113,19 +113,19 @@ async function getExperiences(user, programId) {
 
 async function getById(id, user) {
     return knex.select([
-        'institutes.institute_id as instituteId', 
-        'institutes.name', 
-        'institutes.logo',
-        'institutes.color_code as colorCode',       
-        'institutes.background_color_code as backgroundColorCode', 
-        'institutes.created_at as createdAt',
-        'institutes.created_by as createdBy',
-        'institutes.modified_at as modifiedAt',
-        'institutes.modified_by as modifiedBy',
-        'institutes.is_active as isActive'
+        'organizations.organization_id as organizationId', 
+        'organizations.name', 
+        'organizations.logo',
+        'organizations.color_code as colorCode',       
+        'organizations.background_color_code as backgroundColorCode', 
+        'organizations.created_at as createdAt',
+        'organizations.created_by as createdBy',
+        'organizations.modified_at as modifiedAt',
+        'organizations.modified_by as modifiedBy',
+        'organizations.is_active as isActive'
     ])
-    .from('institutes')
-        .where('institutes.institute_id', id)
+    .from('organizations')
+        .where('organizations.organization_id', id)
         .limit(1)
         .first()
     .then(function(output){

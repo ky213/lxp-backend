@@ -12,15 +12,15 @@ module.exports = {
   validateBulk
 };
 
-async function add(loggedInUser, userData, instituteId) {
+async function add(loggedInUser, userData, organizationId) {
   userData = {
     ...userData, 
     email: userData.email && userData.email.toLowerCase() || userData.email    
   };
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
-  let validationOutput = await validateBulk(loggedInUser, [userData], instituteId);
+  let validationOutput = await validateBulk(loggedInUser, [userData], organizationId);
   if (validationOutput.hasErrors) {
     return {
       isValid: false,
@@ -44,7 +44,7 @@ async function add(loggedInUser, userData, instituteId) {
 
       let _employees = userIds.map(userId => ({
         user_id: userId,
-        institute_id: instituteId,
+        organization_id: organizationId,
         is_resident: true
       }));
 
@@ -67,18 +67,18 @@ async function add(loggedInUser, userData, instituteId) {
     .catch(err => console.log("err", err));
 }
 
-async function addBulk(loggedInUser, data, instituteId) {
+async function addBulk(loggedInUser, data, organizationId) {
 
   data = data.map(d => ({
     ...d,
     email: d.email && d.email.toLowerCase() || d.email    
   }));
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let inserts = [];
   let output = [];
-  let validationOutput = await validateBulk(loggedInUser, data, instituteId);
+  let validationOutput = await validateBulk(loggedInUser, data, organizationId);
 
   if (validationOutput.hasErrors) {
     return {
@@ -142,15 +142,15 @@ async function addBulk(loggedInUser, data, instituteId) {
     });
 }
 
-async function update(loggedInUser, user, instituteId) {
+async function update(loggedInUser, user, organizationId) {
   user = {
     ...user,
     email: user.email && user.email.toLowerCase() || user.email    
   };
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
   
-  let validationOutput = await validateBulk(loggedInUser, [user], instituteId);
+  let validationOutput = await validateBulk(loggedInUser, [user], organizationId);
   if (validationOutput.hasErrors) {
     return {
       isValid: false,
@@ -183,13 +183,13 @@ async function update(loggedInUser, user, instituteId) {
   });  
 }
 
-async function validateBulk(loggedInUser, usersData, instituteId) {
+async function validateBulk(loggedInUser, usersData, organizationId) {
   usersData = usersData.map(d => ({ 
     ...d,
     email: d.email && d.email.toLowerCase().trim() || d.email    
   }));
 
-  instituteId = (loggedInUser.role == Role.SuperAdmin && instituteId) ? instituteId : loggedInUser.institute;
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let output = {
     hasErrors: false,

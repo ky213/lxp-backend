@@ -3,7 +3,7 @@ exports.up = function(knex) {
       table
         .uuid('course_id').defaultTo(knex.raw('uuid_generate_v4()'))  
         .primary();
-      table.uuid('institute_id').notNullable();
+      table.uuid('organization_id').notNullable();
       table.uuid('program_id').notNullable();
       table.string('name', 150).notNullable();
       table.string('description', 500);

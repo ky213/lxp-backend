@@ -28,10 +28,10 @@ module.exports = {
 
 
 function userHasAdminRole(user) {
-    return user.role == Role.SuperAdmin || user.role == Role.InstituteManager || user.role == Role.Admin;
+    return user.role == Role.SuperAdmin || user.role == Role.OrganizationManager || user.role == Role.Admin;
 }
 
-async function getActivityTypes(user, selectedInstituteId) {
+async function getActivityTypes(user, selectedOrganizationId) {
     //console.log("Entered get activities")
 
     let model = knex.select([
@@ -40,14 +40,14 @@ async function getActivityTypes(user, selectedInstituteId) {
         ])
         .from('activity_types')
 
-    model.andWhere('activity_types.institute_id', user.role == Role.SuperAdmin && selectedInstituteId || user.institute);
+    model.andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
     return await model.orderBy('activity_type_id', 'asc');
 }
 
 
 
-async function getRepeatingActivities(user, programIds, from, to, selectedInstituteId) {
+async function getRepeatingActivities(user, programIds, from, to, selectedOrganizationId) {
     let repeatingActivitiesModel = knex.select([
         'activities_repetitions.activity_id as activityId',
         'activities.program_id as programId', 
@@ -91,7 +91,7 @@ async function getRepeatingActivities(user, programIds, from, to, selectedInstit
         });
     }
 
-    repeatingActivitiesModel.andWhere('activities.institute_id', user.role == Role.SuperAdmin && selectedInstituteId || user.institute);
+    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.Organization);
 
     //console.log("Get repeating activities query: ", repeatingActivitiesModel.toSQL().toNative())
     const repeatingActivities = await repeatingActivitiesModel;
@@ -149,10 +149,10 @@ async function getRepeatingActivities(user, programIds, from, to, selectedInstit
 }
 
 
-async function getAll(user, from, to, selectedInstituteId) {
+async function getAll(user, from, to, selectedOrganizationId) {
     //console.log("Entered get activities:", user, programId, from, to)
 
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedInstituteId : user.institute);
+    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
     console.log("Entered get activities:", userPrograms, programIds)
 
@@ -246,15 +246,15 @@ async function getAll(user, from, to, selectedInstituteId) {
 
    
 
-    model.andWhere('activities.institute_id', user.role == Role.SuperAdmin && selectedInstituteId || user.institute);
+    model.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
     logModel.whereIn('log_activities.program_id', function() {
-        this.select('program_id').from('programs').where('institute_id', user.role == Role.SuperAdmin && selectedInstituteId || user.institute);
+        this.select('program_id').from('programs').where('organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
     });
 
 
     let repeatingActivities = [];
     if(from && to) {
-        repeatingActivities = await getRepeatingActivities(user, programIds, from, to, selectedInstituteId);
+        repeatingActivities = await getRepeatingActivities(user, programIds, from, to, selectedOrganizationId);
     }
 
     console.log("Got repeating activities:", repeatingActivities)
@@ -264,7 +264,7 @@ async function getAll(user, from, to, selectedInstituteId) {
     return activities.concat(repeatingActivities);
 }
 
-async function getById(activityId, user, selectedInstituteId) {
+async function getById(activityId, user, selectedOrganizationId) {
     let activityDetailsModel = knex.select([
         'activities.activity_id as activityId', 
         'activities.program_id as programId', 
@@ -298,11 +298,11 @@ async function getById(activityId, user, selectedInstituteId) {
     .limit(1)
     .first();
 
-    if(user.role == Role.SuperAdmin && selectedInstituteId) {
-        activityDetailsModel.andWhere('activities.institute_id', selectedInstituteId);
+    if(user.role == Role.SuperAdmin && selectedOrganizationId) {
+        activityDetailsModel.andWhere('activities.organization_id', selectedOrganizationId);
     }
     else {
-        activityDetailsModel.andWhere('activities.institute_id', user.institute);
+        activityDetailsModel.andWhere('activities.organization_id', user.organization);
     }
 
     activityDetails = await activityDetailsModel;
@@ -363,7 +363,7 @@ async function getById(activityId, user, selectedInstituteId) {
 
 async function getExistingActivities(activity, user) {
     console.log("Activity start/end", activity )
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.instituteId : user.institute);
+    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     let existingActivitiesModel =  knex.select([
@@ -392,11 +392,11 @@ async function getExistingActivities(activity, user) {
         existingActivitiesModel.andWhere('activities.activity_id', '<>', activity.activityId);
     }
 
-    if(user.role == Role.SuperAdmin && activity.instituteId) {
-        existingActivitiesModel.andWhere('activities.institute_id', activity.instituteId);
+    if(user.role == Role.SuperAdmin && activity.organizationId) {
+        existingActivitiesModel.andWhere('activities.organization_id', activity.organizationId);
     }
     else {
-        existingActivitiesModel.andWhere('activities.institute_id', user.institute);
+        existingActivitiesModel.andWhere('activities.organization_id', user.organization);
     }
 
     const existingActivities = await existingActivitiesModel;
@@ -404,7 +404,7 @@ async function getExistingActivities(activity, user) {
     let repeatingActivities = [];
     try {
         repeatingActivities = await getRepeatingActivities(user, programIds, 
-            moment(activity.start).format('DDMMYYYY'), moment(activity.end).format('DDMMYYYY'), activity.instituteId);
+            moment(activity.start).format('DDMMYYYY'), moment(activity.end).format('DDMMYYYY'), activity.organizationId);
     }
     catch(exc) {
         console.log("Error while getting repeating activities: ", exc);
@@ -427,7 +427,7 @@ async function calculateStatus(activity, existingActivities, user) {
 
 async function checkConflicts(activity, user) {
     console.log("Activity conflict start/end", activity )
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedInstituteId : user.institute);
+    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     let existingActivities = [];
@@ -462,11 +462,11 @@ async function checkConflicts(activity, user) {
             existingActivitiesModel.andWhere('activities.activity_id', '<>', activity.activityId);
         }
 
-        if(user.role == Role.SuperAdmin && activity.instituteId) {
-            existingActivitiesModel.andWhere('activities.institute_id', activity.instituteId);
+        if(user.role == Role.SuperAdmin && activity.organizationId) {
+            existingActivitiesModel.andWhere('activities.organization_id', activity.organizationId);
         }
         else {
-            existingActivitiesModel.andWhere('activities.institute_id', user.institute);
+            existingActivitiesModel.andWhere('activities.organization_id', user.organization);
         }
 
         existingActivities = await existingActivitiesModel;
@@ -522,7 +522,7 @@ async function create(activity, user) {
                 assigned_by: user.employeeId || user.sub,
                 status: activity.activityTypeId == 11 ? 1 : status,
                 repeat: activity.repeat || false,
-                institute_id: activity.instituteId || user.institute,
+                organization_id: activity.organizationId || user.organization,
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub
             }).returning('activity_id');
@@ -1019,7 +1019,7 @@ async function getReplies(activityId, user) {
             .andWhere('activity_replies.employee_id', user.employeeId)
             .orWhereIn('activity_replies.employee_id', function() {
                 this.select('employee_id').from('employees')
-                    .where('institute_id', user.institute)
+                    .where('organization_id', user.organization)
                     .andWhere('is_active', true)
                     .andWhere('is_resident', false)
             })

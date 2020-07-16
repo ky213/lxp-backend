@@ -13,7 +13,7 @@ module.exports = {
 };
 
 
-async function getAll(user, page, take, filter, selectedInstituteId) {
+async function getAll(user, page, take, filter, selectedOrganizationId) {
     let offset = ((page || 1) - 1) * (take || 15);
 
     let model = knex.table('notifications')
@@ -53,7 +53,7 @@ async function getAll(user, page, take, filter, selectedInstituteId) {
     }
 }
 
-async function getAllUnread(user, limit, selectedInstituteId) {
+async function getAllUnread(user, limit, selectedOrganizationId) {
     let model = knex.select([
         'notifications.notification_id as notificationId', 
         'notifications.user_id as userId', 
@@ -75,12 +75,12 @@ async function getAllUnread(user, limit, selectedInstituteId) {
         model.limit(limit);
     }
 
-    let totalUnreadCount = await getUnreadCount(user, selectedInstituteId);
+    let totalUnreadCount = await getUnreadCount(user, selectedOrganizationId);
 
     return  {unreadNotifications: await model || [], totalUnreadCount: totalUnreadCount && totalUnreadCount.length > 0 && totalUnreadCount[0].count || 0 };
 }
 
-async function getUnreadCount(user, selectedInstituteId) {
+async function getUnreadCount(user, selectedOrganizationId) {
     return await knex.select()
     .from('notifications')
     .join('users', 'users.user_id', 'notifications.user_id')
@@ -88,7 +88,7 @@ async function getUnreadCount(user, selectedInstituteId) {
     .andWhere('notifications.is_read', false).count();
 }
 
-async function getById(notificationId, user, selectedInstituteId) {
+async function getById(notificationId, user, selectedOrganizationId) {
     return await knex.select([
         'notifications.notification_id as notificationId', 
         'notifications.user_id as userId', 

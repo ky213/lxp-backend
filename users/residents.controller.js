@@ -10,11 +10,11 @@ const converter = require("helpers/converter");
 router.get("/filterActive", authorize(), getAllActive);
 router.get("/filter", authorize([]), getAll);
     
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), addBulk);
+router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), add);
+router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), addBulk);
 router.post("/validateBulk", authorize(), validateBulk);
 
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), update);
+router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), update);
 
 module.exports = router;
 
@@ -27,7 +27,7 @@ function getAllActive(req, res, next) {
     req.query.filterName,
     isResident,
     false,
-    req.query.filterInstituteId,
+    req.query.filterOrganizationId,
     req.query.filterProgramId
   )
   .then(data => {
@@ -53,7 +53,7 @@ function getAll(req, res, next)
     req.query.filterName,
     isResident,
     true,
-    req.query.filterInstituteId,
+    req.query.filterOrganizationId,
     req.query.filterProgramId
   )
   .then(data => {
@@ -70,7 +70,7 @@ function getAll(req, res, next)
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterInstituteId, filterProgramId)
+function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterOrganizationId, filterProgramId)
 {
   return userService
     .getAll(
@@ -80,28 +80,28 @@ function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isRes
       filterName,
       isResident,
       includeInactive,
-      filterInstituteId,
+      filterOrganizationId,
       filterProgramId
     );
 }
 
 function add(req, res, next) {
   residentService
-    .add(req.user, req.body.user, req.body.instituteId)
+    .add(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
 
 function addBulk(req, res, next) {
   residentService
-    .addBulk(req.user, req.body.users, req.body.instituteId)
+    .addBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
 }
 
 function update(req, res, next) {
   residentService
-    .update(req.user, req.body.user, req.body.instituteId)
+    .update(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => {
       console.log("errror", err);
@@ -111,7 +111,7 @@ function update(req, res, next) {
 function validateBulk(req, res, next) {
   console.log('validateBulk', req.body);
   residentService
-    .validateBulk(req.user, req.body.users, req.body.instituteId)
+    .validateBulk(req.user, req.body.users, req.body.organizationId)
     .then(data => {
       res.json(data);
     })

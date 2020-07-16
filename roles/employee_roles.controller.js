@@ -6,14 +6,14 @@ const Role = require('helpers/role');
 const converter = require('helpers/converter')
 
 // routes
-router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager]), getAll);
+router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), getAll);
 router.get('/', createEmployeeRole);
 
 module.exports = router;
 
 async function getAll(req, res, next)
 {
-  employeeRoleService.getAll(req.user, req.query.roleId, req.query.instituteId)
+  employeeRoleService.getAll(req.user, req.query.roleId, req.query.organizationId)
         .then(data => {          
           let employee_roles = data.employee_roles.map(d => ({...d, profilePhoto: converter.ConvertImageBufferToBase64(d.profilePhoto)}));
           return (employee_roles ? res.json({employee_roles}) : res.status(404).json({message: "Not found"}))})

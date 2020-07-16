@@ -2,12 +2,12 @@ const bcrypt = require("bcrypt");
    
 
 exports.seed = async function(knex) {
-  let institute = await knex('institutes')
-    .where('name', 'Primary institute')
-    .select('institute_id')
+  let organization = await knex('organizations')
+    .where('name', 'Primary organization')
+    .select('organization_id')
     .first();
 
-    console.log('institute', institute);
+    console.log('organization', organization);
   // Deletes ALL existing entries
   return knex.transaction(function(t) {
     return knex("users")
@@ -27,7 +27,7 @@ exports.seed = async function(knex) {
       userIds.forEach(userId => {
         employeeList.push({
           user_id: userId,
-          institute_id: institute.institute_id,
+          organization_id: organization.organization_id,
           profile_photo: null,
           is_resident: false
         });

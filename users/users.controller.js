@@ -42,7 +42,7 @@ function authenticate(req, res, next) {
 
 function getAllActiveUsers(req, res, next) {
   userService
-    .getAllUsers(req.user, req.query.instituteId, false)
+    .getAllUsers(req.user, req.query.organizationId, false)
     .then(data => {
       return res.json(data);
     })
@@ -110,7 +110,7 @@ function changePassword(req, res, next) {
 async function deleteEmployees(req, res, next) {
   console.log("deleteEmployees", req.body);
   userService
-    .deleteEmployees(req.user, req.body.instituteId, req.body.employees)
+    .deleteEmployees(req.user, req.body.organizationId, req.body.employees)
     .then(() => res.json(true))
     .catch(err => next(err));
 }

@@ -7,14 +7,14 @@ const Role = require("helpers/role");
 const converter = require("helpers/converter");
 
 // routes
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager]), addBulk);
+router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), add);
+router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), addBulk);
 router.post("/validateBulk", authorize(), validateBulk);
 
 router.get("/filter", authorize(), getAll); // admin only
 router.get("/filterActive", authorize(), getAllActive);
 
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager]), update);
+router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), update);
 
 module.exports = router;
 
@@ -28,7 +28,7 @@ function getAllActive(req, res, next) {
     req.query.filterName,
     isResident,
     false,
-    req.query.filterInstituteId
+    req.query.filterOrganizationId
   )
   .then(data => {
     let users = data.users.map(user => ({
@@ -52,7 +52,7 @@ function getAll(req, res, next) {
     req.query.filterName,
     isResident,
     true,
-    req.query.filterInstituteId
+    req.query.filterOrganizationId
   )
   .then(data => {
     let users = data.users.map(user => ({
@@ -68,7 +68,7 @@ function getAll(req, res, next) {
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterInstituteId)
+function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterOrganizationId)
 {
   return userService
     .getAll(
@@ -78,27 +78,27 @@ function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isResident, 
       filterName,
       isResident,
       includeInactive,
-      filterInstituteId
+      filterOrganizationId
     );
 }
 
 function add(req, res, next) {
   fmService
-    .add(req.user, req.body.user, req.body.instituteId)
+    .add(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
 
 function addBulk(req, res, next) {
     fmService
-    .addBulk(req.user, req.body.users, req.body.instituteId)
+    .addBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
 }
 
 function update(req, res, next) {
   fmService
-    .update(req.user, req.body.user, req.body.instituteId)
+    .update(req.user, req.body.user, req.body.organizationId)
     .then((data) => {
         console.log('FM update data', data);
         res.json(data);
@@ -108,7 +108,7 @@ function update(req, res, next) {
 
 function validateBulk(req, res, next) {
   fmService
-    .validateBulk(req.user, req.body.users, req.body.instituteId)
+    .validateBulk(req.user, req.body.users, req.body.organizationId)
     .then(data => {
       res.json(data);
     })

@@ -3,12 +3,12 @@ exports.up = function(knex) {
     table
     .integer('activity_type_id')
     .notNullable();    
-    table.uuid('institute_id');      
+    table.uuid('organization_id');      
     table.string('name', 50).notNullable();
 
-    table.primary(['activity_type_id', 'institute_id']);
+    table.primary(['activity_type_id', 'organization_id']);
 
-    table.foreign('institute_id').references('institute_id').inTable('institutes');    
+    table.foreign('organization_id').references('organization_id').inTable('organizations');    
   });
 };
 

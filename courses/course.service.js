@@ -13,19 +13,19 @@ module.exports = {
   deleteCourses
 };
 
-async function getAll(loggedInUser, selectedInstituteId, programId, pageId, recordsPerPage, filter) {
+async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
   if (!loggedInUser) {
     return;
   }
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
 
-  console.log('=>', selectedInstituteId, programId, pageId, recordsPerPage);
+  console.log('=>', selectedOrganizationId, programId, pageId, recordsPerPage);
 
   let model = knex('courses')
     .join('programs', 'programs.program_id', 'courses.program_id')
-    .where('courses.institute_id', instituteId);
+    .where('courses.organization_id', organizationId);
 
   if (programId)
     model.andWhere('courses.program_id', programId);
@@ -56,17 +56,17 @@ async function getAll(loggedInUser, selectedInstituteId, programId, pageId, reco
     }
 }
 
-async function getById(loggedInUser, courseId, selectedInstituteId) {
+async function getById(loggedInUser, courseId, selectedOrganizationId) {
   if (!loggedInUser)
     return;
   
   return knex('courses')
     .join('programs', 'programs.program_id', 'courses.program_id')
-    .where('courses.institute_id', loggedInUser.role == Role.SuperAdmin && selectedInstituteId ? selectedInstituteId : loggedInUser.institute)
+    .where('courses.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
     .andWhere('courses.course_id', courseId)
     .select([
         'courses.course_id as courseId',
-        'courses.institute_id as instituteId',
+        'courses.organization_id as organizationId',
         'courses.name as name',
         'courses.image',
         'courses.description as description',
@@ -94,26 +94,26 @@ async function addFile(loggedInUser, data) {
 };
 
 
-async function getByUser(loggedInUser, includeRead, selectedInstituteId) {
+async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
   
   if (!loggedInUser || !loggedInUser.employeeId)
     return;
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
   
   return knex('courses')
     .where('course_id', courseId);
 }
 
-async function create(loggedInUser, selectedInstituteId, programId, name, description, periodDays, startingDate, logo, contentPath) {
+async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath) {
   if (!loggedInUser)
     return;
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
   return knex("courses")
     .insert({
-      institute_id: instituteId,
+      organization_id: organizationId,
       program_id: programId,
       name: name,
       description: description,
@@ -125,11 +125,11 @@ async function create(loggedInUser, selectedInstituteId, programId, name, descri
     });
 }
 
-async function update(loggedInUser, selectedInstituteId, courseId, programId, name, description, periodDays, startingDate, logo) {
+async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo) {
   if (!loggedInUser)
     return;
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
   return knex("courses")
     .where('course_id', courseId)
@@ -144,11 +144,11 @@ async function update(loggedInUser, selectedInstituteId, courseId, programId, na
     });
 }
 
-async function deleteCourses(loggedInUser, courseIds, selectedInstituteId) {
+async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
   if (!loggedInUser)
     return;
 
-  let instituteId = (loggedInUser.role == Role.SuperAdmin && selectedInstituteId) ? selectedInstituteId : loggedInUser.institute;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
   let contentPaths = await knex('courses').whereIn("course_id", courseIds).select(['content_path as contentPath']);
 

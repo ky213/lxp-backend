@@ -2,14 +2,14 @@ const bcrypt = require("bcrypt");
    
 
 exports.seed = async function(knex) {
-  let institute = await knex('institutes')
-    .where('name', 'Primary institute')
-    .select('institute_id')
+  let organization = await knex('organizations')
+    .where('name', 'Primary organization')
+    .select('organization_id')
     .first();
 
   const program = await knex('programs')
     .where('name', 'Internal Medicine')
-    .andWhere('institute_id', institute.institute_id)
+    .andWhere('organization_id', organization.organization_id)
     .select('program_id')
     .first();
     
@@ -25,28 +25,28 @@ exports.seed = async function(knex) {
     .transacting(t)
     .insert([
       {
-        email: "resident1@primaryinstitute.com",
+        email: "resident1@primaryorganization.com",
         name: "Jon",
         surname: "Snow",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident2@primaryinstitute.com",
+        email: "resident2@primaryorganization.com",
         name: "Aria",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident3@primaryinstitute.com",
+        email: "resident3@primaryorganization.com",
         name: "Eddard",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident4@primaryinstitute.com",
+        email: "resident4@primaryorganization.com",
         name: "Sansa",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
@@ -60,7 +60,7 @@ exports.seed = async function(knex) {
     users.forEach(userId => {
         employeeList.push({
             user_id: userId,
-            institute_id: institute.institute_id,
+            organization_id: organization.organization_id,
             profile_photo: null,
             exp_level_id: firstLevel.exp_level_id
         });

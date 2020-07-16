@@ -1,7 +1,7 @@
 {
-    "name": "rms-module-api",
+    "name": "lxp-module-api",
     "version": "1.0.0",
-    "description": "RMS API",
+    "description": "LXP API",
     "license": "MIT",
     "scripts": {
         "start": "nodemon -L --ignore './upload/' ./server.js"

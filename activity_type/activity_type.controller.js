@@ -5,17 +5,17 @@ const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), create); 
-router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), update);
+router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), create); 
+router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), update);
 router.get('/', authorize(), getAll); 
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.InstituteManager, Role.ProgramDirector]), getById); 
+router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), getById); 
 
 module.exports = router;
 
 function getAll(req, res, next) {       
     activityTypeService.getAll(
         req.user,
-        req.query.instituteId,
+        req.query.organizationId,
         req.query.pageId,
         req.query.recordsPerPage,
         req.query.filter
@@ -25,13 +25,13 @@ function getAll(req, res, next) {
 }
 
 function getById(req, res, next) {     
-    activityTypeService.getById(req.params.id, req.user, req.query.selectedInstituteId)
+    activityTypeService.getById(req.params.id, req.user, req.query.selectedOrganizationId)
         .then(activityType => activityType ? res.json(activityType) : res.status(404).json({message: "Not found"}))
         .catch(err => next(err));
 }
 
 function getByCurrentUser(req, res, next) {
-    activityTypeService.getByCurrentUser(req.user, req.query.instituteId)
+    activityTypeService.getByCurrentUser(req.user, req.query.organizationId)
         .then(activityType => activityType ? res.json(activityType) : res.status(404).json({message: "Not found"}))
         .catch(err => next(err));
 }

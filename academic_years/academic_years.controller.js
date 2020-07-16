@@ -20,7 +20,7 @@ module.exports = router;
 
 function getByLoggedInUser(req, res, next) {
   academicYearService
-    .getByLoggedInUser(req.user, req.query.filterInstituteId)
+    .getByLoggedInUser(req.user, req.query.filterOrganizationId)
     .then(data =>
       data ? res.json(data) : res.status(404).json({ message: "Not found" })
     )
@@ -29,7 +29,7 @@ function getByLoggedInUser(req, res, next) {
 
 function getById(req, res, next) {
   academicYearService
-    .getById(req.user, req.query.academicYearId, req.query.instituteId)
+    .getById(req.user, req.query.academicYearId, req.query.organizationId)
     .then(data =>
       data ? res.json(data) : res.status(404).json({ message: "Not found" })
     )
@@ -37,9 +37,9 @@ function getById(req, res, next) {
 }
 
 function getByProgramId(req, res, next) {
-  console.log('getByProgramId =>', req.query.programId, req.query.instituteId);
+  console.log('getByProgramId =>', req.query.programId, req.query.organizationId);
   academicYearService
-    .getByProgramId(req.user, req.query.programId, req.query.instituteId)
+    .getByProgramId(req.user, req.query.programId, req.query.organizationId)
     .then(data =>
       data ? res.json(data) : res.status(404).json({ message: "Not found" })
     )
@@ -49,18 +49,18 @@ getByProgramId
 
 async function create(req, res, next) {
   console.log("create", req.body);
-  academicYearService.create(req.user, req.body.academicYear, req.body.instituteId).then(data => res.json(data));
+  academicYearService.create(req.user, req.body.academicYear, req.body.organizationId).then(data => res.json(data));
 }
 
 async function update(req, res, next) {
   console.log("update ay", req.body);
-  academicYearService.update(req.user, req.body.academicYear, req.body.instituteId).then(data => res.json(data));
+  academicYearService.update(req.user, req.body.academicYear, req.body.organizationId).then(data => res.json(data));
 }
 
 async function deleteAcademicYear(req, res, next) {
   console.log('deleteAcademicYear', req.query);
   academicYearService
-    .deleteAcademicYear(req.user, req.query.instituteId, req.query.academicYearId)
+    .deleteAcademicYear(req.user, req.query.organizationId, req.query.academicYearId)
     .then(data => res.json(data))
     .catch(err => console.log('err', err));
 }
@@ -68,7 +68,7 @@ async function deleteAcademicYear(req, res, next) {
 async function deleteAcademicYears(req, res, next) {
   console.log('deleteAcademicYears', req.query);
   academicYearService
-    .deleteAcademicYears(req.user, req.body.instituteId, req.body.academicYears)
+    .deleteAcademicYears(req.user, req.body.organizationId, req.body.academicYears)
     .then(data => res.json(data))
     .catch(err => console.log('err', err));
 }

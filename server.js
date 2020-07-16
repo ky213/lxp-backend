@@ -45,7 +45,7 @@ app.use('/api/fm', require('./users/fm.controller'));
 app.use('/api/superadmins', require('./users/super_admins.controller'));
 app.use('/api/roles', require('./roles/roles.controller'));
 app.use('/api/user_roles', require('./roles/employee_roles.controller'));
-app.use('/api/institutes', require('./institutes/institutes.controller'));
+app.use('/api/organizations', require('./organizations/organizations.controller'));
 app.use('/api/programs', require('./programs/programs.controller'));
 app.use('/api/academic_years', require('./academic_years/academic_years.controller'));
 app.use('/api/calendar', require('./calendar/calendar.controller'));

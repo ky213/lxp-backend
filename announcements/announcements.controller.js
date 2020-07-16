@@ -23,26 +23,26 @@ router.delete('/deleteAnnouncements', authorize(), deleteAnnouncements);
 module.exports = router;
 
 async function getAll(req, res, next)  {
-  //console.log('getAll', req.query.instituteId);
-  announcementService.getAll(req.user, req.query.instituteId)
+  //console.log('getAll', req.query.organizationId);
+  announcementService.getAll(req.user, req.query.organizationId)
       .then(data => res.json(data));
 }
 
 async function getById(req, res, next)  {
-  //console.log('announcementService.getById', req.query.announcementId, req.query.instituteId);
-  announcementService.getById(req.user, req.query.announcementId, req.query.instituteId)
+  //console.log('announcementService.getById', req.query.announcementId, req.query.organizationId);
+  announcementService.getById(req.user, req.query.announcementId, req.query.organizationId)
       .then(data => res.json(data));
 }
 
 async function getByUser(req, res, next)  {
   //console.log('getByUser', req.user);
-  announcementService.getByUser(req.user, false, req.query.instituteId)
+  announcementService.getByUser(req.user, false, req.query.organizationId)
       .then(data => res.json(data));
 }
 
 async function getByUserAll(req, res, next)  {
   //console.log('getByUser', req.user);
-  announcementService.getByUser(req.user, true, req.query.instituteId)
+  announcementService.getByUser(req.user, true, req.query.organizationId)
       .then(data => res.json(data));
 }
 

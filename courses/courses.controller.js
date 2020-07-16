@@ -29,25 +29,25 @@ router.put('/', authorize(), update);
 module.exports = router;
 
 async function getAll(req, res, next)  {
-  //console.log('getAll', req.query.instituteId);
-  courseService.getAll(req.user, req.query.instituteId, req.query.programId, req.query.page, req.query.take, req.query.filter)
+  //console.log('getAll', req.query.Id);
+  courseService.getAll(req.user, req.query.organizationId, req.query.programId, req.query.page, req.query.take, req.query.filter)
       .then(data => res.json(data));
 }
 
 async function getById(req, res, next)  {
-  courseService.getById(req.user, req.query.courseId, req.query.instituteId)
+  courseService.getById(req.user, req.query.courseId, req.query.organizationId)
       .then(data => res.json(data));
 }
 
 async function getByUser(req, res, next)  {
   //console.log('getByUser', req.user);
-  courseService.getByUser(req.user, false, req.query.instituteId)
+  courseService.getByUser(req.user, false, req.query.organizationId)
       .then(data => res.json(data));
 }
 
 async function getByUserAll(req, res, next)  {
   //console.log('getByUser', req.user);
-  courseService.getByUser(req.user, true, req.query.instituteId)
+  courseService.getByUser(req.user, true, req.query.organizationId)
       .then(data => res.json(data));
 }
 
@@ -57,7 +57,7 @@ async function create(req, res, next)  {
   if (req.files && req.files.file)
     uploadFile(req.files.file, contentPath);
 
-    courseService.create(req.user, req.body.selectedInstitute, req.body.programId, 
+    courseService.create(req.user, req.body.selectedOrganization, req.body.programId, 
       req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
       .then(data => res.json(data))
 
@@ -68,7 +68,7 @@ async function update(req, res)  {
   if (req.files && req.files.file)
     uploadFile(req.files.file, req.body.contentPath);
 
-  courseService.update(req.user, req.body.selectedInstitute, req.body.courseId, req.body.programId, 
+  courseService.update(req.user, req.body.selectedOrganization, req.body.courseId, req.body.programId, 
     req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
     .then(data => res.json(data))
 }
@@ -89,7 +89,7 @@ async function downloadFile(req, res, next)  {
 
 async function deleteCourses(req, res, next)  {
   console.log('deleteCourse', req.body);
-  courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedInstituteId)
+  courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedOrganizationId)
       .then(data => res.json(data));
 }
 
