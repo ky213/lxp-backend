@@ -25,28 +25,28 @@ exports.seed = async function(knex) {
     .transacting(t)
     .insert([
       {
-        email: "resident1@primaryorganization.com",
+        email: "learner1@primaryorganization.com",
         name: "Jon",
         surname: "Snow",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident2@primaryorganization.com",
+        email: "learner2@primaryorganization.com",
         name: "Aria",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident3@primaryorganization.com",
+        email: "learner3@primaryorganization.com",
         name: "Eddard",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
         is_super_admin: 0
       },
       {
-        email: "resident4@primaryorganization.com",
+        email: "learner4@primaryorganization.com",
         name: "Sansa",
         surname: "Stark",
         password: bcrypt.hashSync("test", 10),
@@ -75,7 +75,7 @@ exports.seed = async function(knex) {
     employees.forEach(employeeId => {
         employeeRoles.push({
             employee_id: employeeId,
-            role_id: 'Resident'
+            role_id: 'Learner'
         });
     });
 
@@ -99,7 +99,7 @@ exports.seed = async function(knex) {
         await t.commit();
     }
     catch(error) {
-        console.log("Error while creating residents: ", error)
+        console.log("Error while creating learners: ", error)
         await t.rollback();
     }
 

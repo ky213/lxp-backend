@@ -20,7 +20,7 @@ exports.seed = function(knex) {
             let employeeList = [];
             organizationIds.forEach((organizationId) => {
               userIds.forEach((userId) => {
-                employeeList.push({user_id: userId, is_resident: false, organization_id: organizationId, profile_photo: null});
+                employeeList.push({user_id: userId, is_learner: false, organization_id: organizationId, profile_photo: null});
               });
             });
 

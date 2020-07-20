@@ -6,7 +6,7 @@ exports.up = function(knex) {
       .primary();
     table.uuid('user_id').notNullable();
     table.uuid('organization_id').notNullable();
-    table.boolean('is_resident').notNull().defaultTo(true);
+    table.boolean('is_learner').notNull().defaultTo(true);
     table.binary('profile_photo');
     table.boolean('is_active').notNullable().defaultTo(true);
     table.uuid('exp_level_id');    

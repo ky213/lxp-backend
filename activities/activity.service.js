@@ -541,7 +541,7 @@ async function create(activity, user) {
                 .join('employees', 'employees.employee_id', 'employee_programs.employee_id')
                 .join('users', 'users.user_id', 'employees.user_id')
                 .where('program_id', activity.programId)
-                .andWhere('employees.is_resident', true)
+                .andWhere('employees.is_learner', true)
                 .andWhere('users.is_active', true)
                 .select(['users.user_id']);
             
@@ -561,7 +561,7 @@ async function create(activity, user) {
 
             let courseUsers = knex('employees')
             .join('users', 'users.user_id', 'employees.user_id')
-            .where('employees.is_resident', true)
+            .where('employees.is_learner', true)
             .where('users.is_active', true)
             .whereIn('users.email', function() {
                 this.select(knex.raw("replace(payload->'actor'->>'mbox', 'mailto:', '')")).from('statements');
@@ -691,7 +691,7 @@ async function update(activity, user) {
                 .join('employees', 'employees.employee_id', 'employee_programs.employee_id')
                 .join('users', 'users.user_id', 'employees.user_id')
                 .where('program_id', activity.programId)
-                .andWhere('employees.is_resident', true)
+                .andWhere('employees.is_learner', true)
                 .andWhere('users.is_active', true)
                 .select(['users.user_id']);
             
@@ -727,7 +727,7 @@ async function update(activity, user) {
             const users = await knex('employees')
                 .join('users', 'users.user_id', 'employees.user_id')
                 .whereIn('employees.exp_level_id', activity.levels.map(l => l.expLevelId))
-                .andWhere('employees.is_resident', true)
+                .andWhere('employees.is_learner', true)
                 .andWhere('users.is_active', true)
                 .select(['users.user_id']);
             
@@ -1014,14 +1014,14 @@ async function getReplies(activityId, user) {
     .where('activity_replies.active', true);
     
     /*
-    if(user.role == Role.Resident) {
+    if(user.role == Role.Learner) {
         replyModel
             .andWhere('activity_replies.employee_id', user.employeeId)
             .orWhereIn('activity_replies.employee_id', function() {
                 this.select('employee_id').from('employees')
                     .where('organization_id', user.organization)
                     .andWhere('is_active', true)
-                    .andWhere('is_resident', false)
+                    .andWhere('is_learner', false)
             })
     }
     */
@@ -1034,7 +1034,7 @@ async function getReplies(activityId, user) {
                 activityReplyId: r.activityReplyId,
                 employeeId: r.employeeId,
                 avatar: converter.ConvertImageBufferToBase64(r.profilePhoto),
-                resident: `${r.firstName} ${r.lastName}`,
+                learner: `${r.firstName} ${r.lastName}`,
                 text: r.text,
                 modifiedAt: r.modifiedAt
             }

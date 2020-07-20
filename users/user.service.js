@@ -105,7 +105,7 @@ async function authenticate({ email, password }) {
 }
 
 // user administration screens
-async function getAll(user, pageId, recordsPerPage, filterName, isResident, includeInactive, organizationId, filterProgramId) {
+async function getAll(user, pageId, recordsPerPage, filterName, isLearner, includeInactive, organizationId, filterProgramId) {
     let offset = (pageId - 1) * recordsPerPage;
 
     organizationId = (user.role == Role.SuperAdmin && organizationId) ? organizationId : user.organization;
@@ -138,9 +138,9 @@ async function getAll(user, pageId, recordsPerPage, filterName, isResident, incl
         model.andWhere('employees.is_active', true);
     }        
 
-    if (isResident != null) {
-        model.andWhere('employees.is_resident', isResident);
-        if(isResident && filterProgramId) {
+    if (isLearner != null) {
+        model.andWhere('employees.is_learner', isLearner);
+        if(isLearner && filterProgramId) {
             model.whereIn('employees.employee_id', function() {
                 this.select('employee_id').from('employee_programs').where('program_id', filterProgramId);
             });

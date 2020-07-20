@@ -7,7 +7,7 @@ exports.seed = async function(knex) {
         return knex('activity_priorities').insert([
           {priority_id: 1, name: 'Program'},
           {priority_id: 2, name: 'Level'},
-          {priority_id: 3, name: 'Resident'},
+          {priority_id: 3, name: 'Learner'},
         ]);
     });
 };

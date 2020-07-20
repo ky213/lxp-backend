@@ -1,7 +1,7 @@
 ﻿const express = require("express");
 const router = express.Router();
 const userService = require("./user.service");
-const residentService = require("./resident.service");
+const learnerService = require("./learner.service");
 const authorize = require("helpers/authorize");
 const Role = require("helpers/role");
 const converter = require("helpers/converter");
@@ -18,14 +18,14 @@ router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationM
 
 module.exports = router;
 
-const isResident = true;
+const isLearner = true;
 
 function getAllActive(req, res, next) {
-  return getAllResidents(req.user,
+  return getAllLearners(req.user,
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
-    isResident,
+    isLearner,
     false,
     req.query.filterOrganizationId,
     req.query.filterProgramId
@@ -47,11 +47,11 @@ function getAllActive(req, res, next) {
 function getAll(req, res, next)
 {
   console.log('get All', req.user);
-  return getAllResidents(req.user,
+  return getAllLearners(req.user,
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
-    isResident,
+    isLearner,
     true,
     req.query.filterOrganizationId,
     req.query.filterProgramId
@@ -70,7 +70,7 @@ function getAll(req, res, next)
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterOrganizationId, filterProgramId)
+function getAllLearners(loggedInUser, pageId, recordsPerPage, filterName, isLearner, includeInactive, filterOrganizationId, filterProgramId)
 {
   return userService
     .getAll(
@@ -78,7 +78,7 @@ function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isRes
       pageId,
       recordsPerPage,
       filterName,
-      isResident,
+      isLearner,
       includeInactive,
       filterOrganizationId,
       filterProgramId
@@ -86,21 +86,21 @@ function getAllResidents(loggedInUser, pageId, recordsPerPage, filterName, isRes
 }
 
 function add(req, res, next) {
-  residentService
+  learnerService
     .add(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
 
 function addBulk(req, res, next) {
-  residentService
+  learnerService
     .addBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
 }
 
 function update(req, res, next) {
-  residentService
+  learnerService
     .update(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => {
@@ -110,7 +110,7 @@ function update(req, res, next) {
 
 function validateBulk(req, res, next) {
   console.log('validateBulk', req.body);
-  residentService
+  learnerService
     .validateBulk(req.user, req.body.users, req.body.organizationId)
     .then(data => {
       res.json(data);

@@ -29,7 +29,7 @@ exports.seed = async function(knex) {
           user_id: userId,
           organization_id: organization.organization_id,
           profile_photo: null,
-          is_resident: false
+          is_learner: false
         });
       });
 

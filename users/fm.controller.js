@@ -18,7 +18,7 @@ router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationM
 
 module.exports = router;
 
-const isResident = false;
+const isLearner = false;
 
 function getAllActive(req, res, next) {
   return getAllFm(
@@ -26,7 +26,7 @@ function getAllActive(req, res, next) {
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
-    isResident,
+    isLearner,
     false,
     req.query.filterOrganizationId
   )
@@ -50,7 +50,7 @@ function getAll(req, res, next) {
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
-    isResident,
+    isLearner,
     true,
     req.query.filterOrganizationId
   )
@@ -68,7 +68,7 @@ function getAll(req, res, next) {
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isResident, includeInactive, filterOrganizationId)
+function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isLearner, includeInactive, filterOrganizationId)
 {
   return userService
     .getAll(
@@ -76,7 +76,7 @@ function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isResident, 
       pageId,
       recordsPerPage,
       filterName,
-      isResident,
+      isLearner,
       includeInactive,
       filterOrganizationId
     );

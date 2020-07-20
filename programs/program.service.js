@@ -68,7 +68,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         'programs.block_type_id as blockTypeId',
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
-        'programs.senior_residents_start_level as seniorResidentsStartLevel',
+        'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.is_active as isActive'
     ]);
 
@@ -118,7 +118,7 @@ async function getById(id, user, selectedorganizationId) {
         'programs.block_type_id as blockTypeId',
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
-        'programs.senior_residents_start_level as seniorResidentsStartLevel',
+        'programs.senior_learners_start_level as seniorLearnersStartLevel',
     ])
     .from('programs');
 
@@ -135,16 +135,16 @@ async function getById(id, user, selectedorganizationId) {
         .first();
 
     if(program) {
-        program.totalResidents = 0;
+        program.totalLearners = 0;
             
         try {
-            const totalResidentsCount = await knex('employee_programs').where('program_id', id).count();
-            if(totalResidentsCount && totalResidentsCount.length > 0) {
-                program.totalResidents = totalResidentsCount[0].count;
+            const totalLearnersCount = await knex('employee_programs').where('program_id', id).count();
+            if(totalLearnersCount && totalLearnersCount.length > 0) {
+                program.totalLearners = totalLearnersCount[0].count;
             }
         }
         catch(error) {
-            console.log("Error while getting total count of residents for program:", error)
+            console.log("Error while getting total count of learners for program:", error)
         }
 
         const directors = await knex.table('program_directors')
@@ -216,7 +216,7 @@ async function update(program, user) {
             block_type_id: program.blockTypeId,
             min_experience_level: program.minExperienceLevel,
             max_experience_level: program.maxExperienceLevel,
-            senior_residents_start_level: program.seniorResidentsStartLevel
+            senior_learners_start_level: program.seniorLearnersStartLevel
         });
 
     if (program.programDirectors) {
@@ -252,7 +252,7 @@ async function getByCurrentUser(user, organizationId) {
         .where('programs.organization_id', organizationId)
         .andWhere('programs.is_active', true);
 
-    if(user.role == Role.ProgramDirector || user.role == Role.Resident) {
+    if(user.role == Role.ProgramDirector || user.role == Role.Learner) {
         model.whereIn('programs.program_id', function() {
             if(user.role == Role.ProgramDirector) {
                 this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
@@ -278,21 +278,21 @@ async function getByCurrentUser(user, organizationId) {
         'programs.block_type_id as blockTypeId',
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
-        'programs.senior_residents_start_level as seniorResidentsStartLevel'
+        'programs.senior_learners_start_level as seniorLearnersStartLevel'
     ]);   
 
     for(let i = 0; i < programs.length; i++) {
         let program = programs[i];
-        program.totalResidents = 0;
+        program.totalLearners = 0;
             
         try {
-            const totalResidentsCount = await knex('employee_programs').where('program_id', program.programId).count();
-            if(totalResidentsCount && totalResidentsCount.length > 0) {
-                program.totalResidents = (+totalResidentsCount[0].count);
+            const totalLearnersCount = await knex('employee_programs').where('program_id', program.programId).count();
+            if(totalLearnersCount && totalLearnersCount.length > 0) {
+                program.totalLearners = (+totalLearnersCount[0].count);
             }
         }
         catch(error) {
-            console.log("Error while getting total count of residents for program:", error)
+            console.log("Error while getting total count of learners for program:", error)
         }
 
         programs[i] = program;

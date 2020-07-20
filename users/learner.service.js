@@ -45,7 +45,7 @@ async function add(loggedInUser, userData, organizationId) {
       let _employees = userIds.map(userId => ({
         user_id: userId,
         organization_id: organizationId,
-        is_resident: true
+        is_learner: true
       }));
 
       let employeeIds = await knex("employees")
@@ -57,7 +57,7 @@ async function add(loggedInUser, userData, organizationId) {
         .transacting(t)
         .insert({
           employee_id: employeeIds[0],
-          role_id: Role.Resident
+          role_id: Role.Learner
         });      
 
       return {
@@ -90,7 +90,7 @@ async function addBulk(loggedInUser, data, organizationId) {
     };
   }
 
-  async function InsertResidentAsync(t, userData) {
+  async function InsertLearnerAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
       return t
         .into("users")
@@ -116,7 +116,7 @@ async function addBulk(loggedInUser, data, organizationId) {
   MapToArray = t => {
     data.forEach(user => {
       inserts.push(
-        InsertResidentAsync(t, user)
+        InsertLearnerAsync(t, user)
       );
     });
   };

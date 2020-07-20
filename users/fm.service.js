@@ -56,7 +56,7 @@ async function add(loggedInUser, userData, organizationId) {
         user_id: userId,
         organization_id: organizationId,
         exp_level_id: null,
-        is_resident: false
+        is_learner: false
       }));
       const employeeIds = await knex("employees")
         .transacting(t)
@@ -124,7 +124,7 @@ async function addBulk(loggedInUser, data, organizationId) {
               user_id: userId,
               organization_id: organizationId,
               exp_level_id: null,
-              is_resident: false
+              is_learner: false
             };
           });
 

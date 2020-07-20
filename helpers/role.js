@@ -4,7 +4,7 @@ module.exports = {
     OrganizationManager: 'OrganizationManager',
     ProgramDirector: 'ProgramDirector',
     FacultyMember: 'FacultyMember',
-    Resident: 'Resident',
+    Learner: 'Learner',
 
     getFmRoles
 }

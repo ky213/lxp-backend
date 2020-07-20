@@ -40,7 +40,7 @@ app.use('/api/static', express.static('upload'));
 // api routes
 // because of hosting and nginx there has to be prefix api in all the routes
 app.use('/api/users', require('./users/users.controller'));
-app.use('/api/residents', require('./users/residents.controller'));
+app.use('/api/learners', require('./users/learners.controller'));
 app.use('/api/fm', require('./users/fm.controller'));
 app.use('/api/superadmins', require('./users/super_admins.controller'));
 app.use('/api/roles', require('./roles/roles.controller'));

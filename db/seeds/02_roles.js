@@ -11,7 +11,7 @@ exports.seed = function(knex) {
         {role_id: 'OrganizationManager', name: 'Organization Manager'},
         {role_id: 'ProgramDirector', name: 'Program Manager'},
         {role_id: 'FacultyMember', name: 'Faculty Member'},
-        {role_id: 'Resident', name: 'Learner'}
+        {role_id: 'Learner', name: 'Learner'}
       ]);
     });
 };

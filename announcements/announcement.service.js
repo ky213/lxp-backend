@@ -174,7 +174,7 @@ async function getByUser(loggedInUser, includeRead, selectedorganizationId) {
       })
     }
 
-    if (loggedInUser.role == Role.Resident) {
+    if (loggedInUser.role == Role.Learner) {
       // provjeravamo da li je announcement za neki Program
       query.andWhere(function() {
         this.whereNotExists(function() {
@@ -221,7 +221,7 @@ async function getByUser(loggedInUser, includeRead, selectedorganizationId) {
     }
     
     // provjeravamo da li je announcement za neku Experience Level
-    if (loggedInUser.role == Role.Resident) {
+    if (loggedInUser.role == Role.Learner) {
       query.andWhere(function() {
         this.orWhereNotExists(function() {
           this.from("announcement_exp_levels")

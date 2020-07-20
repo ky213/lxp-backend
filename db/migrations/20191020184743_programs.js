@@ -18,7 +18,7 @@ exports.up = function(knex) {
         table.integer('block_type_id').notNullable();
         table.integer('min_experience_level').notNullable().defaultTo(1);
         table.integer('max_experience_level').notNullable().defaultTo(4);
-        table.integer('senior_residents_start_level').notNullable().defaultTo(3);
+        table.integer('senior_learners_start_level').notNullable().defaultTo(3);
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.string('created_by').notNullable();
         table.timestamp('modified_at').defaultTo(knex.fn.now());
