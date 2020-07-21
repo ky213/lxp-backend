@@ -41,7 +41,7 @@ app.use('/api/static', express.static('upload'));
 // because of hosting and nginx there has to be prefix api in all the routes
 app.use('/api/users', require('./users/users.controller'));
 app.use('/api/learners', require('./users/learners.controller'));
-app.use('/api/fm', require('./users/fm.controller'));
+app.use('/api/cm', require('./users/course_manager.controller'));
 app.use('/api/superadmins', require('./users/super_admins.controller'));
 app.use('/api/roles', require('./roles/roles.controller'));
 app.use('/api/user_roles', require('./roles/employee_roles.controller'));

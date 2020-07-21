@@ -6,7 +6,7 @@ const Role = require('helpers/role');
 
 // routes
 router.get('/', getAll); // admin only
-router.get('/getFmRoles', getFmRoles); // admin only
+router.get('/getCmRoles', getCmRoles); // admin only
 
 module.exports = router;
 
@@ -18,8 +18,8 @@ function getAll(req, res, next) {
     .catch((error) => console.log('Error getAll:', error));
 }
 
-function getFmRoles(req, res, next) {
-  roleService.getFmRoles()    
+function getCmRoles(req, res, next) {
+  roleService.getCmRoles()    
     .then(data => {
         return res.json(data);
     })

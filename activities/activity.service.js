@@ -28,7 +28,7 @@ module.exports = {
 
 
 function userHasAdminRole(user) {
-    return user.role == Role.SuperAdmin || user.role == Role.OrganizationManager || user.role == Role.Admin;
+    return user.role == Role.SuperAdmin || user.role == Role.LearningManager || user.role == Role.Admin;
 }
 
 async function getActivityTypes(user, selectedOrganizationId) {

@@ -83,7 +83,7 @@ async function getById(loggedInUser, announcementId, organizationId) {
   }
 }
 
-async function getByUser(loggedInUser, includeRead, selectedorganizationId) {
+async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
   
   if (!loggedInUser)
     return;    
@@ -92,7 +92,7 @@ async function getByUser(loggedInUser, includeRead, selectedorganizationId) {
     return;
   }
 
-  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedorganizationId) ? selectedorganizationId : loggedInUser.organization;
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
   
   includeRead = includeRead || false;
 

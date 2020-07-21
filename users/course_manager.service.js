@@ -1,12 +1,12 @@
 const bcrypt = require("bcrypt");
 const knex = require("../db");
 const { checkIfEmailExists } = require("./user.service");
-const { getFmRoles } = require("../roles/role.service");
+const { getCmRoles } = require("../roles/role.service");
 const organizationService = require("../organizations/organization.service");
 const Role = require("helpers/role");
 
 let defaultPassword = "admin";
-let fmRoles = getFmRoles();
+let cmRoles = getCmRoles();
 
 module.exports = {
   add,
@@ -312,7 +312,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
       continue;
     }
 
-    // For FM StartDate is not mandatory
+    // For CM StartDate is not mandatory
     // if (!user.startDate) {
     //   addError(user, "Start date is not defined");
     //   continue;
@@ -335,7 +335,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
       continue;
     }
 
-    // if (!fmRoles.includes(user.roleId)) {
+    // if (!cmRoles.includes(user.roleId)) {
     //   addError(user, "Role is not valid");
     //   continue;
     // }

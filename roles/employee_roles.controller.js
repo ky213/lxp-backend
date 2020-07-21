@@ -6,7 +6,7 @@ const Role = require('helpers/role');
 const converter = require('helpers/converter')
 
 // routes
-router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), getAll);
+router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getAll);
 router.get('/', createEmployeeRole);
 
 module.exports = router;

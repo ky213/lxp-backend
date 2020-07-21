@@ -5,13 +5,13 @@ const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), create); 
-router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), update); 
-router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), getAll); 
-router.get('/block-types', authorize([Role.Admin, Role.ProgramDirector, Role.OrganizationManager]), getBlockTypes); 
+router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), create); 
+router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update); 
+router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getAll); 
+router.get('/block-types', authorize([Role.Admin, Role.ProgramDirector, Role.LearningManager]), getBlockTypes); 
 router.get('/currentuser', authorize(), getByCurrentUser);
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), getById); 
-router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), deletePrograms); 
+router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getById); 
+router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deletePrograms); 
 
 module.exports = router;
 

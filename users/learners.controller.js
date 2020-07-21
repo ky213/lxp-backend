@@ -10,11 +10,11 @@ const converter = require("helpers/converter");
 router.get("/filterActive", authorize(), getAllActive);
 router.get("/filter", authorize([]), getAll);
     
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), addBulk);
+router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), add);
+router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), addBulk);
 router.post("/validateBulk", authorize(), validateBulk);
 
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager, Role.ProgramDirector]), update);
+router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update);
 
 module.exports = router;
 

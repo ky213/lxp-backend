@@ -1,17 +1,17 @@
 module.exports = {
     Admin: 'Admin',
     SuperAdmin: 'SuperAdmin',
-    OrganizationManager: 'OrganizationManager',
+    LearningManager: 'LearningManager',
     ProgramDirector: 'ProgramDirector',
-    FacultyMember: 'FacultyMember',
+    CourseManager: 'CourseManager',
     Learner: 'Learner',
 
-    getFmRoles
+    getCmRoles
 }
 
-function getFmRoles()
+function getCmRoles()
 {
-    return [this.Admin, this.OrganizationManager, this.ProgramDirector, 
-        this.FacultyMember];
+    return [this.Admin, this.LearningManager, this.ProgramDirector, 
+        this.CourseManager];
 }
 

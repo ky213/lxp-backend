@@ -1,27 +1,27 @@
 ﻿const express = require("express");
 const router = express.Router();
 const userService = require("./user.service");
-const fmService = require("./fm.service");
+const cmService = require("./course_manager.service");
 const authorize = require("helpers/authorize");
 const Role = require("helpers/role");
 const converter = require("helpers/converter");
 
 // routes
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), addBulk);
+router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), add);
+router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), addBulk);
 router.post("/validateBulk", authorize(), validateBulk);
 
 router.get("/filter", authorize(), getAll); // admin only
 router.get("/filterActive", authorize(), getAllActive);
 
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.OrganizationManager]), update);
+router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), update);
 
 module.exports = router;
 
 const isLearner = false;
 
 function getAllActive(req, res, next) {
-  return getAllFm(
+  return getAllCm(
     req.user,
     req.query.pageId,
     req.query.recordsPerPage,
@@ -45,7 +45,7 @@ function getAllActive(req, res, next) {
 }
 
 function getAll(req, res, next) {
-  return getAllFm(
+  return getAllCm(
     req.user,
     req.query.pageId,
     req.query.recordsPerPage,
@@ -68,7 +68,7 @@ function getAll(req, res, next) {
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isLearner, includeInactive, filterOrganizationId)
+function getAllCm(loggedInUser, pageId, recordsPerPage, filterName, isLearner, includeInactive, filterOrganizationId)
 {
   return userService
     .getAll(
@@ -83,31 +83,31 @@ function getAllFm(loggedInUser, pageId, recordsPerPage, filterName, isLearner, i
 }
 
 function add(req, res, next) {
-  fmService
+  cmService
     .add(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
 
 function addBulk(req, res, next) {
-    fmService
+  cmService
     .addBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
 }
 
 function update(req, res, next) {
-  fmService
+  cmService
     .update(req.user, req.body.user, req.body.organizationId)
     .then((data) => {
-        console.log('FM update data', data);
+        console.log('CM update data', data);
         res.json(data);
         })
     .catch(err => next(err));
 }
 
 function validateBulk(req, res, next) {
-  fmService
+  cmService
     .validateBulk(req.user, req.body.users, req.body.organizationId)
     .then(data => {
       res.json(data);
