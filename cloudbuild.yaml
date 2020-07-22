@@ -50,7 +50,7 @@ steps:
              -e DATABASE_USER="$_DBUSER" \
              -e DATABASE_PASSWORD="$_DBPASS" \
              eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
-             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/rms-server/node_modules/.bin/knex migrate:latest"
+             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest"
 
 
 
