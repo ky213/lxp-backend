@@ -43,7 +43,7 @@ steps:
         docker run -w /srv/app/lxp-server/db \
              -v /workspace/cloud_sql_proxy:/cloud_sql_proxy \
              --network cloudbuild \
-             -e NODE_ENV="$_NODE_ENV" \
+             -e NODE_ENV="staging" \
              -e DATABASE_HOST="127.0.0.1" \
              -e DATABASE_PORT="5432" \
              -e DATABASE_NAME="$_DBNAME" \
@@ -74,7 +74,7 @@ steps:
         --concurrency=20 \
         --service-account=lxp-staging-backend@lxp-dev-qa.iam.gserviceaccount.com \
         --timeout=60s \
-        --update-env-vars="NODE_ENV=$_NODE_ENV" \
+        --update-env-vars="NODE_ENV=staging" \
         --update-env-vars="DATABASE_HOST=$_DBHOST" \
         --update-env-vars="DATABASE_PORT=$_DBPORT" \
         --update-env-vars="DATABASE_NAME=$_DBNAME" \
