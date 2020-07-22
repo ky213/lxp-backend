@@ -63,7 +63,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud alpha run deploy \
+        gcloud alpha run deploy lxp-backend \
         --image=eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
         --vpc-connector=lxp-staging-sql-connector \
         --region=europe-west1 \
