@@ -91,7 +91,7 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
         });
     }
 
-    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.Organization);
+    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
     //console.log("Get repeating activities query: ", repeatingActivitiesModel.toSQL().toNative())
     const repeatingActivities = await repeatingActivitiesModel;

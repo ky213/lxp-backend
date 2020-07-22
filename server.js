@@ -57,7 +57,6 @@ app.use('/api/courses', require('./courses/courses.controller'));
 app.use('/api/notifications', require('./notifications/notifications.controller'));
 app.use('/xapi/statements', require('./xapi/statements.controller'));
 app.use('/xapi/activities/state', require('./xapi/state.controller'));
-app.use('/api/courses', require('./courses/courses.controller'));
 
 
 // global error handler
