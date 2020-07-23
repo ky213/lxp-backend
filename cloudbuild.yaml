@@ -15,7 +15,7 @@ steps:
     args:
       - '-c'
       - |
-        docker build -t eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA -f Dockerfile-cloud .
+        docker build -t eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA -f Dockerfile-cloud .
     waitFor:
       - '-'
 
@@ -26,7 +26,7 @@ steps:
     args:
       - '-c'
       - |
-        docker push eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA
+        docker push eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA
     waitFor:
       - 'build image'
 
@@ -43,13 +43,13 @@ steps:
         docker run -w /srv/app/lxp-server/db \
              -v /workspace/cloud_sql_proxy:/cloud_sql_proxy \
              --network cloudbuild \
-             -e NODE_ENV="staging" \
+             -e NODE_ENV="production" \
              -e DATABASE_HOST="127.0.0.1" \
              -e DATABASE_PORT="5432" \
              -e DATABASE_NAME="$_DBNAME" \
              -e DATABASE_USER="$_DBUSER" \
              -e DATABASE_PASSWORD="$_DBPASS" \
-             eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+             eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA \
              /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest & /srv/app/lxp-server/node_modules/.bin/knex seed:run "
 
 
@@ -64,17 +64,17 @@ steps:
       - '-c'
       - |
         gcloud alpha run deploy lxp-backend \
-        --image=eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
-        --vpc-connector=lxp-staging-sql-connector \
+        --image=eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA \
+        --vpc-connector=lxp-sql-prod-connector \
         --region=europe-west1 \
         --platform=managed \
         --allow-unauthenticated \
         --memory=1Gi \
         --max-instances=10 \
         --concurrency=20 \
-        --service-account=lxp-staging-backend@lxp-dev-qa.iam.gserviceaccount.com \
+        --service-account=lxp-production-backend@lxp-prod.iam.gserviceaccount.com \
         --timeout=60s \
-        --update-env-vars="NODE_ENV=staging" \
+        --update-env-vars="NODE_ENV=production" \
         --update-env-vars="DATABASE_HOST=$_DBHOST" \
         --update-env-vars="DATABASE_PORT=$_DBPORT" \
         --update-env-vars="DATABASE_NAME=$_DBNAME" \
