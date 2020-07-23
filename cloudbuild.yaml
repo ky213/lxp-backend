@@ -1,0 +1,84 @@
+steps:
+
+  # Install Cloud SQL Proxy
+  - id: 'cloud SQL proxy install'
+    name: alpine
+    entrypoint: sh
+    args:
+      - -c
+      - 'wget -O /workspace/cloud_sql_proxy https://storage.googleapis.com/cloudsql-proxy/v1.16/cloud_sql_proxy.linux.386 &&  chmod +x /workspace/cloud_sql_proxy'
+
+  # Build docker image
+  - id: 'build image'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        docker build -t eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA -f Dockerfile-cloud .
+    waitFor:
+      - '-'
+
+  # Push docker image
+  - id: 'push image'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        docker push eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA
+    waitFor:
+      - 'build image'
+
+  # Apply database migration scripts
+  - id: 'apply migration scripts'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    waitFor:
+      - 'cloud SQL proxy install'
+      - 'push image'
+    args:
+      - '-c'
+      - |
+        docker run -w /srv/app/lxp-server/db \
+             -v /workspace/cloud_sql_proxy:/cloud_sql_proxy \
+             --network cloudbuild \
+             -e NODE_ENV="staging" \
+             -e DATABASE_HOST="127.0.0.1" \
+             -e DATABASE_PORT="5432" \
+             -e DATABASE_NAME="$_DBNAME" \
+             -e DATABASE_USER="$_DBUSER" \
+             -e DATABASE_PASSWORD="$_DBPASS" \
+             eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest & /srv/app/lxp-server/node_modules/.bin/knex seed:run "
+
+
+
+    # Deploy to Cloud Run
+  - id: 'deploy on Cloud Run'
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    waitFor:
+      - 'apply migration scripts'
+    args:
+      - '-c'
+      - |
+        gcloud alpha run deploy lxp-backend \
+        --image=eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+        --vpc-connector=lxp-staging-sql-connector \
+        --region=europe-west1 \
+        --platform=managed \
+        --allow-unauthenticated \
+        --memory=1Gi \
+        --max-instances=10 \
+        --concurrency=20 \
+        --service-account=lxp-staging-backend@lxp-dev-qa.iam.gserviceaccount.com \
+        --timeout=60s \
+        --update-env-vars="NODE_ENV=staging" \
+        --update-env-vars="DATABASE_HOST=$_DBHOST" \
+        --update-env-vars="DATABASE_PORT=$_DBPORT" \
+        --update-env-vars="DATABASE_NAME=$_DBNAME" \
+        --update-env-vars="DATABASE_USER=$_DBUSER" \
+        --update-env-vars="DATABASE_PASSWORD=$_DBPASS" \
+        --update-env-vars="FRONTEND_URL=$_FRONTENDURL" \
+                                                      

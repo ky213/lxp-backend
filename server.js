@@ -63,7 +63,7 @@ app.use('/xapi/activities/state', require('./xapi/state.controller'));
 app.use(errorHandler);
 
 // start server
-const port = 4001;
+const port = process.env.PORT||4001;
 const server = app.listen(port, function () {
     console.log(process.env.NODE_ENV);
     console.log('Server listening on port ' + port);

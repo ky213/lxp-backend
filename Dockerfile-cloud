@@ -1,0 +1,15 @@
+FROM node:12.2.0
+
+WORKDIR /srv/app/lxp-server
+
+COPY package.json /srv/app/lxp-server
+RUN apt update
+COPY . /srv/app/lxp-server
+COPY package-lock.json /srv/app/lxp-server
+#RUN apt install python2.7 python-pip -y
+RUN npm install --only=prod
+
+EXPOSE $PORT
+USER node
+
+CMD [ "node", "./server.js"]
