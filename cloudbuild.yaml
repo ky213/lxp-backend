@@ -57,8 +57,7 @@ steps:
     name: 'gcr.io/cloud-builders/docker'
     entrypoint: bash
     waitFor:
-      - 'cloud SQL proxy install'
-      - 'push image'
+      - 'apply migration scripts'
     args:
       - '-c'
       - |
@@ -81,7 +80,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: bash
     waitFor:
-      - 'apply migration scripts'
+      - 'apply initial database state scripts'
     args:
       - '-c'
       - |
