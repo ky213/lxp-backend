@@ -58,15 +58,11 @@ module.exports = {
   production: {
     client: "pg",
     connection: {
-      host: "localhost",
-      port: 5432,
-      /* FOR MIGRATION */
-      /* host: 'localhost',
-       port: 54320,  */
-
-      database: "lxpdb",
-      user: "lxpuser",
-      password: "^$nDUPog6!zB"
+        host: process.env.DATABASE_HOST,
+        port: process.env.DATABASE_PORT,
+        database: process.env.DATABASE_NAME,
+        user: process.env.DATABASE_USER,
+        password: process.env.DATABASE_PASSWORD
     },
     pool: {
       min: 2,
