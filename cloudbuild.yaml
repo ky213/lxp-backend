@@ -50,8 +50,28 @@ steps:
              -e DATABASE_USER="$_DBUSER" \
              -e DATABASE_PASSWORD="$_DBPASS" \
              eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA \
-             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest & /srv/app/lxp-server/node_modules/.bin/knex seed:run "
+             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 5 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest"
 
+  # Apply database migration scripts
+  - id: 'apply database init scripts'
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    waitFor:
+      - 'apply migration scripts'
+    args:
+      - '-c'
+      - |
+        docker run -w /srv/app/lxp-server/db \
+             -v /workspace/cloud_sql_proxy:/cloud_sql_proxy \
+             --network cloudbuild \
+             -e NODE_ENV="staging" \
+             -e DATABASE_HOST="127.0.0.1" \
+             -e DATABASE_PORT="5432" \
+             -e DATABASE_NAME="$_DBNAME" \
+             -e DATABASE_USER="$_DBUSER" \
+             -e DATABASE_PASSWORD="$_DBPASS" \
+             eu.gcr.io/$PROJECT_ID/lxp-backend-prod:$SHORT_SHA \
+             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 2 & /srv/app/lxp-server/node_modules/.bin/knex seed:run "
 
 
     # Deploy to Cloud Run
@@ -59,7 +79,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: bash
     waitFor:
-      - 'apply migration scripts'
+      - 'apply database init scripts'
     args:
       - '-c'
       - |
