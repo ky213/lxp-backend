@@ -357,10 +357,10 @@ async function changePassword({oldPassword, newPassword}, user) {
             .whereIn("employee_id", employeeIds)
             .del();
 
-            await knex("calendar_events")
+            /*await knex("calendar_events")
             .transacting(t)
             .whereIn("employee_id", employeeIds)
-            .del();
+            .del();*/
 
             await knex("employee_exp_levels")
             .transacting(t)
@@ -391,6 +391,7 @@ async function changePassword({oldPassword, newPassword}, user) {
             .transacting(t)
             .whereIn("user_id", userIds)
             .del();
+
         });        
     });
   }
