@@ -26,6 +26,9 @@ router.post('/uploadFile', authorize(), uploadFile);
 
 router.put('/', authorize(), update);
 
+router.get('/allJoinedCourses', authorize(), getAllJoinedCourses);
+router.get('/joinCourse', authorize(), requestToJoinCourse);
+
 module.exports = router;
 
 async function getAll(req, res, next)  {
@@ -123,4 +126,17 @@ async function uploadFile(file, contentPath)  {
     return { status: 'success' };
   })
 }
+
+async function getAllJoinedCourses(req, res, next)  {
+  //console.log('getAll', req.query.Id);
+  courseService.getAllJoinedCourses(req.user, req.query.organizationId, req.query.page, req.query.take, req.query.filter)
+      .then(data => res.json(data));
+}
+
+async function requestToJoinCourse(req, res, next)  {
+  console.log('requestToJoinCourse', req.params.id);
+  courseService.requestToJoinCourse(req.user, req.query.courseId)
+      .then(data => res.json(data));
+}
+
 

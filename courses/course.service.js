@@ -10,7 +10,9 @@ module.exports = {
   create,
   update,
   addFile,
-  deleteCourses
+  deleteCourses,
+  getAllJoinedCourses,
+  requestToJoinCourse
 };
 
 async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
@@ -178,4 +180,59 @@ function deleteFolderContent (folderPath) {
 
     fs.rmdirSync(dir);
   });  
+}
+
+async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, pageId, recordsPerPage, filter) {
+  if (!loggedInUser) {
+    return;
+  }
+
+  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+  console.log('=>', selectedOrganizationId, loggedInUser, pageId, recordsPerPage);
+
+  let model = knex('courses')
+    .join('user_courses', 'user_courses.course_id', 'courses.course_id')
+    .where('courses.organization_id', organizationId);
+    
+
+  if (loggedInUser)
+    model.andWhere('user_courses.user_id', loggedInUser.userId);
+
+  var totalNumberOfRecords = (await model.clone().count().first()).count;
+
+  let offset = (pageId - 1) * recordsPerPage;
+
+  var courses = await model.clone()
+    .orderBy('name', 'asc')
+    .offset(offset)
+    .limit(recordsPerPage)
+    .select([
+      'courses.course_id as courseId',
+      'courses.name',
+      'courses.description',
+      'courses.image',
+      'courses.starting_date as startingDate',
+      'courses.period_days as periodDays',
+      'courses.content_path as contentPath',
+      'user_courses.joining_date as JoiningDate',
+    ]);
+
+    return {
+      courses,
+      totalNumberOfRecords
+    }
+}
+
+async function requestToJoinCourse(loggedInUser, courseId)  {
+  if (!loggedInUser)
+  return;
+
+  return knex('user_courses')
+  .insert({
+    user_id: loggedInUser.userId,
+    course_id: courseId,
+    is_able_to_join: false,
+    generated: knex.fn.now()
+  });
 }
