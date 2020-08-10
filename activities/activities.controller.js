@@ -3,6 +3,7 @@ const router = express.Router();
 const activityService = require('./activity.service');
 const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
+const converter = require("helpers/converter");
 
 // routes
  
@@ -23,6 +24,22 @@ router.get('/:id/replies', authorize(), getReplies);
 router.post('/reply', authorize(), addReply);
 router.put('/reply/:id', authorize(), updateReply);
 router.delete('/reply/:id', authorize(), deleteReply);
+
+router.post('/addActivityFile', authorize(), addActivityFile);
+router.delete('/deleteActivityFile/:id', authorize(), deleteActivityFile);
+router.get('/downloadActivityFile/:id', authorize(), downloadActivityFile);
+
+router.post('/addLogActivityFile', authorize(), addLogActivityFile);
+router.delete('/deleteLogActivityFile/:id', authorize(), deleteLogActivityFile);
+router.get('/downloadLogActivityFile/:id', authorize(), downloadLogActivityFile);
+
+router.post('/addActivityLink', authorize(), addActivityLink);
+router.delete('/deleteActivityLink/:id', authorize(), deleteActivityLink);
+
+router.post('/addLogActivityLink', authorize(), addLogActivityLink);
+router.delete('/deleteLogActivityLink/:id', authorize(), deleteLogActivityLink);
+
+
 
 module.exports = router;
 
@@ -117,4 +134,68 @@ function deleteReply(req, res, next) {
     activityService.deleteReply(req.params.id, req.user)
         .then(() => res.json(true))
         .catch(next);
+}
+
+async function addActivityFile(req, res, next)  {
+    console.log('addActivityFile', req.body);
+    activityService.addActivityFile(req.user, req.body)
+        .then(data => res.json(data));
+}
+
+async function deleteActivityFile(req, res, next)  {
+    console.log('deleteActivityFile', req.params.id);
+    activityService.deleteActivityFile(req.user, req.params.id)
+        .then(data => res.json(data));
+}
+
+async function downloadActivityFile(req, res, next)  {
+    console.log('downloadActivityFile', req.params.id);
+    activityService.downloadActivityFile(req.user, req.params.id)
+        .then(data => {
+            res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})        
+        });
+}
+
+async function addLogActivityFile(req, res, next)  {
+    console.log('addLogActivityFile', req.body);
+    activityService.addLogActivityFile(req.user, req.body)
+        .then(data => res.json(data));
+}
+
+async function deleteLogActivityFile(req, res, next)  {
+    console.log('deleteActivityFile', req.params.id);
+    activityService.deleteLogActivityFile(req.user, req.params.id)
+        .then(data => res.json(data));
+}
+
+async function downloadLogActivityFile(req, res, next)  {
+    console.log('downloadLogActivityFile', req.params.id);
+    activityService.downloadLogActivityFile(req.user, req.params.id)
+        .then(data => {
+            res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})        
+        });
+}
+
+async function addActivityLink(req, res, next)  {
+    console.log('addActivityLink', req.body);
+    activityService.addActivityLink(req.user, req.body)
+        .then(data => res.json(data));
+}
+
+async function deleteActivityLink(req, res, next)  {
+    console.log('deleteActivityLink', req.params.id);
+    activityService.deleteActivityLink(req.user, req.params.id)
+        .then(data => res.json(data));
+}
+
+async function addLogActivityLink(req, res, next)  {
+    console.log('addLogActivityLink', req.body);
+    activityService.addLogActivityLink(req.user, req.body)
+        .then(data => res.json(data));
+}
+
+async function deleteLogActivityLink(req, res, next)  {
+    console.log('deleteActivityLink', req.params.id);
+    activityService.deleteLogActivityLink(req.user, req.params.id)
+        .then(data => res.json(data));
 }

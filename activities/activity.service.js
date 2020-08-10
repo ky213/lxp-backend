@@ -1,7 +1,7 @@
 const knex = require('../db'); 
 const moment = require('moment');
 require('moment-timezone');
-const converter = require('helpers/converter');
+const converter = require("helpers/converter");
 const Role = require('helpers/role');
 const notificationService = require('../notifications/notification.service');
 const programService = require('../programs/program.service');
@@ -23,7 +23,17 @@ module.exports = {
     addReply,
     updateReply,
     deleteReply,
-    getReplies
+    getReplies,
+    addActivityFile,
+    deleteActivityFile,
+    downloadActivityFile,
+    addLogActivityFile,
+    deleteLogActivityFile,
+    downloadLogActivityFile,
+    addLogActivityLink,
+    addActivityLink,
+    deleteLogActivityLink,
+    deleteActivityLink
 };
 
 
@@ -979,6 +989,21 @@ async function getLogActivityById(activityId, user) {
         else {
             activityDetails.supervisors = [];
         }
+
+        activityDetails.files = await knex("log_activities_files")
+            .where("log_activity_id", activityId)
+            .select([
+            "log_activities_files.name",
+            "log_activities_files.size",
+            "log_activities_files.log_activity_file_id as logActivityFileId"
+            ]);
+
+        activityDetails.links = await knex("log_activities_links")
+            .where("log_activity_id", activityId)
+            .select([
+                "log_activities_links.url",
+                "log_activities_links.log_activity_link_id as logActivityLinkId"
+            ]);
     }
     
     return activityDetails;
@@ -1120,4 +1145,112 @@ async function deleteReply(replyId, user) {
     }
 
 }
+
+async function addActivityFile(loggedInUser, data) {
+    console.log('addActivityFile', data);
+  
+    return await knex('activities_files')
+      .insert({
+        activity_id: data.activityId,
+        file: Buffer.from(data.file),
+        name: data.name,
+        type: data.type,
+        extension: data.extension,
+        size: data.size
+      })
+      .returning('activity_file_id');
+  }
+  
+  async function deleteActivityFile(loggedInUser, id) {
+    console.log('deleteActivityFile => ', id);
+    
+    return knex("activities_files")
+      .where("activity_file_id", id)
+      .del();
+  }
+  
+  async function downloadActivityFile(loggedInUser, id) {
+    console.log('downloadFile => ', id);
+    return knex("activities_files")
+      .where("activity_file_id", id)
+      .select([
+        "activities_files.name",
+        "activities_files.file"      
+      ])
+      .first();
+  }
+
+  async function addLogActivityFile(loggedInUser, data) {
+    //console.log('addLogActivityFile', data);
+  
+    return await knex('log_activities_files')
+      .insert({
+        log_activity_id: data.logActivityId,
+        file: Buffer.from(data.file),
+        name: data.name,
+        type: data.type,
+        extension: data.extension,
+        size: data.size
+      })
+      .returning('log_activity_file_id');
+  }
+  
+  async function deleteLogActivityFile(loggedInUser, id) {
+    console.log('deleteLogActivityFile => ', id);
+    
+    return knex("log_activities_files")
+      .where("log_activity_file_id", id)
+      .del();
+  }
+  
+  async function downloadLogActivityFile(loggedInUser, id) {
+    console.log('downloadLogActivityFile => ', id);
+    return knex("log_activities_files")
+      .where("log_activity_file_id", id)
+      .select([
+        "log_activities_files.name",
+        "log_activities_files.file"      
+      ])
+      .first();
+  }
+
+  async function addLogActivityLink(loggedInUser, data) {
+    //console.log('addLogActivityFile', data);
+  
+    return await knex('log_activities_links')
+      .insert({
+        log_activity_id: data.logActivityId,
+        url: data.url
+      })
+      .returning('log_activity_link_id');
+  }
+  
+  async function deleteLogActivityLink(loggedInUser, id) {
+    console.log('deleteLogActivityLink => ', id);
+    
+    return knex("log_activities_links")
+      .where("log_activity_link_id", id)
+      .del();
+  }
+
+  async function addActivityLink(loggedInUser, data) {
+    //console.log('addLogActivityFile', data);
+  
+    return await knex('activities_links')
+      .insert({
+        activity_id: data.activityId,
+        url: data.url
+      })
+      .returning('activity_link_id');
+  }
+  
+  async function deleteActivityLink(loggedInUser, id) {
+    console.log('deleteActivityLink => ', id);
+    
+    return knex("activities_links")
+      .where("activity_link_id", id)
+      .del();
+  }
+
+
 
