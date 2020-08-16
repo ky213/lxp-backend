@@ -33,7 +33,11 @@ module.exports = {
     addLogActivityLink,
     addActivityLink,
     deleteLogActivityLink,
-    deleteActivityLink
+    deleteActivityLink,
+    addLogActivityReply,
+    updateLogActivityReply,
+    deleteLogActivityReply,
+    getLogActivityReplies,
 };
 
 
@@ -366,6 +370,20 @@ async function getById(activityId, user, selectedOrganizationId) {
         .where('activity_courses.activity_id', activityId);
      
         activityDetails.replies = await getReplies(activityId, user);
+        activityDetails.files = await knex("activities_files")
+            .where("activity_id", activityId)
+            .select([
+            "activities_files.name",
+            "activities_files.size",
+            "activities_files.activity_file_id as activityFileId"
+            ]);
+
+        activityDetails.links = await knex("activities_links")
+            .where("activity_id", activityId)
+            .select([
+                "activities_links.url",
+                "activities_links.activity_link_id as activityLinkId"
+            ]);
     }
     
     return activityDetails;
@@ -497,6 +515,7 @@ async function create(activity, user) {
         const status = await calculateStatus(activity, existingActivities, user);
         console.log("Got existing activities and calculate status:", existingActivities, status)
 
+        let warning = null;
         if(activity.activityTypeId != 11 && status == 2) {
             const updateActivities = existingActivities.map( (act) => act.activityId);
 
@@ -504,7 +523,8 @@ async function create(activity, user) {
                 .whereIn('activity_id', updateActivities)
                 .update({status: 1 });
 
-            existingActivities.map(act => {
+             existingActivities.map(act => {
+                warning = `There is an existing activity (${activity.name}) that is happening at the same time as your (${act.name}) activity. Please reschedule it so that there are no conflicts, thank you.`
                 notifications.push(notificationService.create({
                     notification: {
                         text: `There is an existing activity <strong>${activity.name}</strong> that has a higher priority happening at the same time as your <strong>${act.name}</strong> activity. Please reschedule it so that there are no conflicts, thank you.`,
@@ -635,6 +655,7 @@ async function create(activity, user) {
         }
 
         await Promise.all(notifications);
+        return {...activity, warning, activityId};
     })
     .catch(err => {
         console.log('Create activity error:', err);
@@ -649,6 +670,8 @@ async function update(activity, user) {
         const status = await calculateStatus(activity, existingActivities, user);
         console.log("Got existing activities and calculate status:", existingActivities, status)
 
+        let warning = null;
+
         if(activity.activityTypeId != 11 && status == 2) {
             const updateActivities = existingActivities.map((act) => act.activityId).filter(ac => ac.activityId != activity.activityId);
 
@@ -658,6 +681,7 @@ async function update(activity, user) {
                 .update({status: 1 });
             
             existingActivities.map(act => {
+                warning = `There is an existing activity (${activity.name}) that is happening at the same time as your (${act.name}) activity. Please reschedule it so that there are no conflicts, thank you.`
                 notifications.push(notificationService.create({
                     notification: {
                         text: `There is an existing activity <strong>${activity.name}</strong> that has a higher priority happening at the same time as your <strong>${act.name}</strong> activity. Please reschedule it so that there are no conflicts, thank you.`,
@@ -792,6 +816,7 @@ async function update(activity, user) {
         }
 
         await Promise.all(notifications);
+        return {...activity, warning};
     })
     .catch(err => console.log('Update activity error', err));
 }
@@ -1251,6 +1276,120 @@ async function addActivityFile(loggedInUser, data) {
       .where("activity_link_id", id)
       .del();
   }
+
+  async function getLogActivityReplies(activityId, user) {
+    console.log("Entered get log activity replies:", activityId, user)
+    let replyModel = knex.select([
+        'log_activity_replies.log_activity_reply_id as activityReplyId',
+        'users.name as firstName', 
+        'users.surname as lastName',
+        'employees.profile_photo as profilePhoto',  
+        'employees.employee_id as employeeId',
+        'activity_replies.text',
+        'activity_replies.modified_at as modifiedAt'          
+    ])
+    .from('log_activity_replies')
+    .join('employees', 'employees.employee_id', 'log_activity_replies.employee_id')
+    .join('users', 'users.user_id', 'employees.user_id')
+    .where('log_activity_replies.activity_id', activityId)
+    .where('log_activity_replies.active', true);
+    
+    
+
+    const response = await replyModel.orderBy('modified_at', 'asc');
+    let replies = [];
+    if(response && response.length > 0) {
+        replies = response.map(r => {
+            return {
+                activityReplyId: r.activityReplyId,
+                employeeId: r.employeeId,
+                avatar: converter.ConvertImageBufferToBase64(r.profilePhoto),
+                resident: `${r.firstName} ${r.lastName}`,
+                text: r.text,
+                modifiedAt: r.modifiedAt
+            }
+        });
+    }
+
+
+    return replies;
+}
+
+async function addLogActivityReply(reply, user) {
+    console.log("Entered add reply:", reply.activityId, user)
+
+    return knex.transaction(async function(t) {
+        const activityId = await 
+        knex('log_activity_replies')
+        .transacting(t)
+        .insert({
+            activity_id: reply.activityId, 
+            employee_id: user.employeeId,
+            text: reply.text,      
+            created_by: user.employeeId  || user.sub,
+            modified_by: user.employeeId || user.sub
+        }).returning('log_activity_reply_id');
+
+        try {
+            await t.commit();
+        }
+        catch(error) {
+            console.log("Error while replying to log activity: ", error)
+            await t.rollback();
+        }
+    })
+    .catch(err => console.log('Reply to activity error:', err));
+}
+
+async function updateLogActivityReply(replyId, reply, user)
+{
+    return knex.transaction(async function(t) {
+        await knex('log_activity_replies')
+        .where('log_activity_reply_id', replyId)
+        .andWhere('employee_id', user.employeeId)
+        .transacting(t)
+        .update({
+            text: reply.text,
+            modified_at: knex.fn.now(),
+            modified_by: user.employeeId
+        });
+
+        try {
+            await t.commit();
+        }
+        catch(error) {
+            console.log("Error while updating your reply to activity: ", error)
+            await t.rollback();
+        }
+    })
+    .catch(err => console.log('Reply to activity error:', err));
+}
+
+async function deleteLogActivityReply(replyId, user) {
+
+    let replyModel =  knex('log_activity_replies')
+    .where('log_activity_reply_id', replyId)
+    .andWhere('employee_id', user.employeeId);
+    
+    try {
+        var affected = await replyModel
+            .update({
+                active: false,
+                modified_at: knex.fn.now(),
+                modified_by: user.employeeId  || user.sub
+            })
+            .returning('*');
+
+        if(!affected || affected && affected.length == 0) {
+            throw new Error("You can't delete this reply!");
+        }
+    }
+    catch(error) {
+        console.log("Error while deleting your reply to activity: ", error)
+        throw error;
+    }
+
+}
 
 
 

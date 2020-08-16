@@ -25,6 +25,11 @@ router.post('/reply', authorize(), addReply);
 router.put('/reply/:id', authorize(), updateReply);
 router.delete('/reply/:id', authorize(), deleteReply);
 
+router.get('/:id/log-activity/replies', authorize(), getLogActivityReplies);  
+router.post('/log-activity/reply', authorize(), addLogActivityReply);
+router.put('/log-activity/reply/:id', authorize(), updateLogActivityReply);
+router.delete('/log-activity/reply/:id', authorize(), deleteLogActivityReply);
+
 router.post('/addActivityFile', authorize(), addActivityFile);
 router.delete('/deleteActivityFile/:id', authorize(), deleteActivityFile);
 router.get('/downloadActivityFile/:id', authorize(), downloadActivityFile);
@@ -63,13 +68,13 @@ function getById(req, res, next) {
 
 function create(req, res, next) {
     activityService.create(req.body, req.user)
-        .then(() => res.json(true))
+        .then((activity) => res.json(activity))
         .catch(err => next(err));
 }
 
 function update(req, res, next) {
     activityService.update(req.body, req.user)
-        .then(() => res.json(true))
+        .then((activity) => res.json(activity))
         .catch(err => next(err));
 }
 
@@ -199,3 +204,29 @@ async function deleteLogActivityLink(req, res, next)  {
     activityService.deleteLogActivityLink(req.user, req.params.id)
         .then(data => res.json(data));
 }
+
+function getLogActivityReplies(req, res, next) {
+    activityService.getLogActivityReplies(req.params.id, req.user)
+        .then(events => res.json(events))
+        .catch(err => next(err));
+}
+
+function addLogActivityReply(req, res, next) {
+    activityService.addLogActivityReply(req.body, req.user)
+        .then(() => res.json(true))
+        .catch(err => next(err));
+}
+
+function updateLogActivityReply(req, res, next) {
+    activityService.updateLogActivityReply(req.params.id, req.body, req.user)
+        .then(() => res.json(true))
+        .catch(err => next(err));
+}
+
+function deleteLogActivityReply(req, res, next) {
+    //console.log("Got to delete reply:", req.params.id, req.user)
+    activityService.deleteLogActivityReply(req.params.id, req.user)
+        .then(() => res.json(true))
+        .catch(next);
+}
+
