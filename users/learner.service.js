@@ -38,7 +38,8 @@ async function add(loggedInUser, userData, organizationId) {
           email: userData.email.trim(),
           gender: userData.gender,
           start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10)
+          password: bcrypt.hashSync(defaultPassword, 10),
+          group_id: userData.groupId
         })
         .returning("user_id");
 
@@ -100,7 +101,8 @@ async function addBulk(loggedInUser, data, organizationId) {
           email: userData.email.trim(),
           gender: userData.gender,
           start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10)
+          password: bcrypt.hashSync(defaultPassword, 10),
+          group_id: userData.groupId
         })
         .then(() => {
           output.push({ ...userData, status: "ok" });
@@ -168,6 +170,7 @@ async function update(loggedInUser, user, organizationId) {
         gender: user.gender,
         start_date: user.startDate,  
         email: user.email.trim(),
+        group_id: user.groupId
       });
 
     await knex("employees")

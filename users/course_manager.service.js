@@ -49,15 +49,18 @@ async function add(loggedInUser, userData, organizationId) {
           email: userData.email.trim(),
           gender: userData.gender,
           start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10)
+          password: bcrypt.hashSync(defaultPassword, 10),
+          group_id: userData.groupId
         })
         .returning("user_id");
+
       let _employees = userIds.map(userId => ({
         user_id: userId,
         organization_id: organizationId,
         exp_level_id: null,
         is_learner: false
       }));
+
       const employeeIds = await knex("employees")
         .transacting(t)
         .insert(_employees)
@@ -115,7 +118,8 @@ async function addBulk(loggedInUser, data, organizationId) {
           email: userData.email,
           gender: userData.gender,
           start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10)
+          password: bcrypt.hashSync(defaultPassword, 10),
+          group_id: userData.groupId
         })
         .returning("user_id")
         .then(userIds => {
@@ -243,7 +247,8 @@ async function update(loggedInUser, user, organizationId) {
           surname: user.surname.trim(),
           gender: user.gender,
           start_date: user.startDate,
-          email: user.email.trim()
+          email: user.email.trim(),
+          group_id: user.groupId
         });
 
       return knex("employees")

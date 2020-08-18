@@ -43,7 +43,8 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organizations.created_by as createdBy',
             'organizations.modified_at as modifiedAt',
             'organizations.modified_by as modifiedBy',
-            'organizations.is_active as isActive'
+            'organizations.is_active as isActive',
+            'organizations.default_group_id as defaultGroupId'
         ]);
 
     //console.log("Got organizations:", organizations)
@@ -61,7 +62,8 @@ async function getById(id, user) {
         'organizations.created_by as createdBy',
         'organizations.modified_at as modifiedAt',
         'organizations.modified_by as modifiedBy',
-        'organizations.is_active as isActive'
+        'organizations.is_active as isActive',
+        'organizations.default_group_id as defaultGroupId'
     ])
     .from('organizations')
         .where('organizations.organization_id', id)
@@ -85,7 +87,8 @@ async function create(organization, user) {
             background_color_code: organization.backgroundColorCode,
             created_by: user.sub,
             modified_by: user.sub,
-            is_active: organization.isActive
+            is_active: organization.isActive,
+            default_group_id:  organization.defaultGroupId
         }).returning('organization_id');
 
 
@@ -124,7 +127,8 @@ async function update(organization, user)
             background_color_code: organization.backgroundColorCode,
             modified_at: knex.fn.now(),
             modified_by: user.sub,
-            is_active: organization.isActive
+            is_active: organization.isActive,
+            default_group_id:  organization.defaultGroupId
         });
 }
 
@@ -139,7 +143,8 @@ async function getByName(name, user) {
         'organizations.created_by as createdBy',
         'organizations.modified_at as modifiedAt',
         'organizations.modified_by as modifiedBy',
-        'organizations.is_active as isActive'
+        'organizations.is_active as isActive',
+        'organizations.default_group_id as defaultGroupId'
     ])
     .from('organizations')
         .whereRaw(`LOWER(organizations.name) = ?`, [`${name.toLowerCase().trim()}`])
