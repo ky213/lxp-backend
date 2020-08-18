@@ -57,7 +57,8 @@ app.use('/api/courses', require('./courses/courses.controller'));
 app.use('/api/notifications', require('./notifications/notifications.controller'));
 app.use('/xapi/statements', require('./xapi/statements.controller'));
 app.use('/xapi/activities/state', require('./xapi/state.controller'));
-
+app.use('/api/group_type', require('./group_type/group_type.controller'));
+app.use('/api/groups', require('./groups/groups.controller'));
 
 // global error handler
 app.use(errorHandler);
