@@ -1285,8 +1285,8 @@ async function addActivityFile(loggedInUser, data) {
         'users.surname as lastName',
         'employees.profile_photo as profilePhoto',  
         'employees.employee_id as employeeId',
-        'activity_replies.text',
-        'activity_replies.modified_at as modifiedAt'          
+        'log_activity_replies.text',
+        'log_activity_replies.modified_at as modifiedAt'          
     ])
     .from('log_activity_replies')
     .join('employees', 'employees.employee_id', 'log_activity_replies.employee_id')
