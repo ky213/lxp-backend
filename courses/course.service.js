@@ -32,7 +32,10 @@ async function genetateCloudStorageUploadURL(dirPath, filename) {
     const [url] = await cloudStorage
         .bucket(bucket)
         .file(dirPath + filename)
-        .getSignedUrl(options);
+        .getSignedUrl(options).catch((err)=>{
+            console.log(err);
+            throw err;
+        });
 
     console.log('Generated PUT signed URL:');
     console.log(url);
