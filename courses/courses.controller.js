@@ -59,8 +59,8 @@ async function create(req, res, next) {
     let contentPath = `${uuidv4()}/`;
 
     let cloudFileURL = ""
-    if (req.files && req.files.file) {
-        let fileName = req.files.file.name;
+    if (req.body.tincan) {
+        let fileName = req.body.tincan;
         cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName);
     }
 

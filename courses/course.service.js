@@ -27,12 +27,11 @@ async function genetateCloudStorageUploadURL(dirPath, filename) {
         version: 'v4',
         action: 'write',
         expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-        contentType: 'application/zip',
     };
 
     const [url] = await cloudStorage
         .bucket(bucket)
-        .file(filename)
+        .file(dirPath + filename)
         .getSignedUrl(options);
 
     console.log('Generated PUT signed URL:');
@@ -49,13 +48,13 @@ function deleteFileFromCloudStorage(filePath) {
     cloudStorage
         .bucket(bucket)
         .deleteFiles({directory: filePath}, (err) => {
-        if (!err) {
-            console.log("deleting files in path gs://", bucket + "/" + filePath);
-        } else {
-            console.log("error : " + err);
-            throw err;
-        }
-    })
+            if (!err) {
+                console.log("deleting files in path gs://", bucket + "/" + filePath);
+            } else {
+                console.log("error : " + err);
+                throw err;
+            }
+        })
 }
 
 async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
