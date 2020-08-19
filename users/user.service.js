@@ -29,7 +29,8 @@ async function authenticate({ email, password }) {
             'surname as lastName', 
             'is_super_admin',
             'password',
-            'profile_photo as profilePhoto'            
+            'profile_photo as profilePhoto',
+            'group_id as groupId'            
             ]
         )
         .first();
@@ -68,6 +69,7 @@ async function authenticate({ email, password }) {
                     .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')                    
                     .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
                     .leftJoin('program_directors', 'program_directors.employee_id', 'employees.employee_id')
+                    .leftJoin('groups','users.group_id','groups.group_id')
                 .where('employees.user_id', user.userId)
                     .andWhere('organizations.is_active', true)
                 .limit(1)
@@ -80,7 +82,7 @@ async function authenticate({ email, password }) {
                     'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
                     'organizations.background_color_code as organizationBackgroundColor', 'employee_programs.program_id as programId',
                     'program_directors.program_id as directorProgramId', 'employees.exp_level_id as experienceLevelId',
-                    'organizations.logo as organizationLogo']
+                    'groups.name as groupName' , 'organizations.logo as organizationLogo']
                 );
 
                 if(!employee.programId) {
@@ -119,8 +121,8 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
         .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')
         .leftJoin('experience_levels', 'experience_levels.exp_level_id', 'employees.exp_level_id')
         .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
-        .leftJoin('programs', 'programs.program_id', 'employee_programs.program_id');
-       
+        .leftJoin('programs', 'programs.program_id', 'employee_programs.program_id')
+        .leftJoin('groups','users.group_id','groups.group_id');
         /*
     if (user.role == Role.ProgramDirector)
     {
@@ -184,7 +186,8 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
             'roles.name as roleName',
             'experience_levels.name as expLevelName',
             'programs.name as programName',
-            'programs.program_id as programId'
+            'programs.program_id as programId',
+            'groups.name as groupName'
         ]);
     
     return {

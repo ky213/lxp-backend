@@ -43,13 +43,13 @@ function getByUserId(req, res, next) {
 }
 
 function update(req, res, next) {
-  superAdminService.update(req.user, req.body.userId, req.body.name, req.body.surname, req.body.email, req.body.isActive)
+  superAdminService.update(req.user, req.body.userId, req.body.name, req.body.surname, req.body.email, req.body.isActive, req.body.groupId)
   .then(data => res.json(data))
   .catch(err => next(err));
 }
 
 function add(req, res, next) {
-  superAdminService.add(req.user, req.body.name, req.body.surname, req.body.email)
+  superAdminService.add(req.user, req.body.name, req.body.surname, req.body.email, req.body.groupId)
     .then(data => res.json(data))
     .catch(err => {
       console.log('error', err);
