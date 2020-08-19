@@ -1,0 +1,64 @@
+### Login action
+POST http://localhost:4001/api/users/authenticate
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "nebojsa.pongracic@gmail.com",
+  "password": "admin"
+}
+
+> {%
+     client.global.set("authToken", response.body.token );
+%}
+
+
+
+
+### upload file
+POST http://localhost:4001/api/courses/
+Accept: application/json
+Authorization: Bearer {{authToken}}
+Cookie: sessionToken={{authToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="CYBERSECURITY_Module_1.zip"
+Content-Type: application/zip
+
+< /Users/tomaszwojciechowski/WORKSPACES/alwasaet/LXP-tincan-packages/CYBERSECURITY_Module_1.zip
+
+--WebAppBoundary
+Content-Disposition: form-data; name="name"
+
+BBBB
+--WebAppBoundary
+Content-Disposition: form-data; name="description"
+
+empty description - aaa
+--WebAppBoundary
+Content-Disposition: form-data; name="programId"
+
+281ca421-e111-4280-b4ec-1869da4b6091
+--WebAppBoundary
+Content-Disposition: form-data; name="periodDays"
+
+0
+--WebAppBoundary
+Content-Disposition: form-data; name="selectedOrganization"
+
+82019eac-350c-440a-b969-bd0fe67ef628
+--WebAppBoundary
+
+
+###
+DELETE http://localhost:4001/api/courses/deleteCourses
+Accept: application/json
+Authorization: Bearer {{authToken}}
+Cookie: sessionToken={{authToken}}
+Content-Type: application/json
+
+{
+      "courseIds":["9f59b4f1-e849-4c9f-a7ba-d616dc0d1333"],
+       "selectedOrganizationId":"82019eac-350c-440a-b969-bd0fe67ef628"
+}
