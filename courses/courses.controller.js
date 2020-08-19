@@ -60,7 +60,7 @@ async function create(req, res, next) {
 
     if (req.files && req.files.file){
         let file = req.files.file;
-        courseService.uploadFileToCloudStorage(contentPath, file);
+        await courseService.uploadFileToCloudStorage(contentPath, file);
     }
 
     courseService.create(req.user, req.body.selectedOrganization, req.body.programId,

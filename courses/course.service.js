@@ -45,7 +45,6 @@ async function uploadFileToCloudStorage(dirPath, zipArchive) {
                         console.log("file ", zipArchive.name, " unziped into entry files and uploaded to gs://", bucket + "/" + dirPath + filePath);
                     } else {
                         console.log("error : " + err);
-                        throw err;
                     }
                 })
             }
