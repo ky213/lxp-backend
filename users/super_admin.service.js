@@ -46,7 +46,7 @@ async function getByUserId(loggedInUser, userId) {
   return user;
 }
 
-async function add(loggedInUser, name, surname, email) {
+async function add(loggedInUser, name, surname, email, groupId) {
   email = email && email.trim().toLowerCase() || email;
   name = name && name.trim() || name;
   surname = surname && surname.trim() || surname;
@@ -60,11 +60,12 @@ async function add(loggedInUser, name, surname, email) {
       email,
       is_active: true,
       is_super_admin: 1,
-      password: bcrypt.hashSync(defaultPassword, 10)
+      password: bcrypt.hashSync(defaultPassword, 10),
+      group_id: groupId
     });
 }
 
-async function update(loggedInUser, userId, name, surname, email, isActive) {
+async function update(loggedInUser, userId, name, surname, email, isActive, groupId) {
   email = email && email.trim().toLowerCase() || email;
   name = name && name.trim() || name;
   surname = surname && surname.trim() || surname;
@@ -77,7 +78,8 @@ async function update(loggedInUser, userId, name, surname, email, isActive) {
       name: name,
       surname: surname,
       email: email,
-      is_active: isActive
+      is_active: isActive,
+      group_id: groupId
     });
 }
 
