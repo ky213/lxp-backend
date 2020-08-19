@@ -94,7 +94,7 @@ steps:
         --max-instances=10 \
         --concurrency=20 \
         --service-account=lxp-staging-backend@lxp-dev-qa.iam.gserviceaccount.com \
-        --timeout=300s \
+        --timeout=600s \
         --update-env-vars="NODE_ENV=staging" \
         --update-env-vars="DATABASE_HOST=$_DBHOST" \
         --update-env-vars="DATABASE_PORT=$_DBPORT" \
