@@ -3,7 +3,6 @@ const moment = require('moment');
 const Role = require('helpers/role');
 const fs = require('fs');
 const path = require('path');
-const unzip = require('unzip-stream');
 const {Storage} = require('@google-cloud/storage');
 
 module.exports = {
@@ -15,45 +14,33 @@ module.exports = {
     deleteCourses,
     getAllJoinedCourses,
     requestToJoinCourse,
-    uploadFileToCloudStorage
+    genetateCloudStorageUploadURL
 };
 
 var Readable = require('stream').Readable;
 var cloudStorage = new Storage();
+var bucket = process.env.STORAGE_BUCKET;
 
-async function uploadFileToCloudStorage(dirPath, zipArchive) {
+async function genetateCloudStorageUploadURL(dirPath, filename) {
 
-    let bucket = process.env.STORAGE_BUCKET;
+    const options = {
+        version: 'v4',
+        action: 'write',
+        expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+        contentType: 'application/zip',
+    };
 
+    const [url] = await cloudStorage
+        .bucket(bucket)
+        .file(filename)
+        .getSignedUrl(options);
 
-    let stream = new Readable();
-    stream.push(zipArchive.data);
-    stream.push(null);
+    console.log('Generated PUT signed URL:');
+    console.log(url);
 
-    stream.pipe(unzip.Parse())
-        .on('entry', function (entry) {
-            var filePath = entry.path;
-            var type = entry.type; // 'Directory' or 'File'
-
-            if (type === 'File') {
-                let cloudFile = cloudStorage
-                    .bucket(bucket)
-                    .file(dirPath + filePath);
-
-                cloudFile.save(entry.data, (err) => {
-                    if (!err) {
-                        console.log("file ", zipArchive.name, " unziped into entry files and uploaded to gs://", bucket + "/" + dirPath + filePath);
-                    } else {
-                        console.log("error : " + err);
-                    }
-                })
-            }
-
-
-        });
-
-
+    return url;
 }
+
 
 function deleteFileFromCloudStorage(filePath) {
 

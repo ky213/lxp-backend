@@ -58,28 +58,34 @@ async function getByUserAll(req, res, next) {
 async function create(req, res, next) {
     let contentPath = `${uuidv4()}/`;
 
-    if (req.files && req.files.file){
-        let file = req.files.file;
-        await courseService.uploadFileToCloudStorage(contentPath, file);
+    let cloudFileURL = ""
+    if (req.files && req.files.file) {
+        let fileName = req.files.file.name;
+        cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName);
     }
 
     courseService.create(req.user, req.body.selectedOrganization, req.body.programId,
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
         .then(data => {
-            res.json(data)
+            data.uploadUrl = cloudFileURL;
+            res.json(data);
         })
 }
 
 async function update(req, res) {
 
-    if (req.files && req.files.file){
-        let file = req.files.file;
-        uploadFileToCloudStorage(req.body.contentPath, file);
+    let cloudFileURL = ""
+    if (req.files && req.files.file) {
+        let fileName = req.files.file.name;
+        cloudFileURL = await courseService.genetateCloudStorageUploadURL(req.body.contentPath, fileName);
     }
 
     courseService.update(req.user, req.body.selectedOrganization, req.body.courseId, req.body.programId,
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
-        .then(data => res.json(data))
+        .then(data => {
+            data.uploadUrl = cloudFileURL;
+            res.json(data);
+        })
 }
 
 async function downloadFile(req, res, next) {
