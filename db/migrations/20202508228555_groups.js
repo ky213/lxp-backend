@@ -13,7 +13,7 @@ exports.up = function(knex) {
     table.string('modified_by').notNullable();
 
     table.foreign('organization_id').references('organization_id').inTable('organizations');
-    table.foreign('group_type_id').references('group_type_id').inTable('group_types');
+    table.foreign('group_type_id').references('group_type_id').inTable('group_types').onDelete("RESTRICT");
   });
 };
 

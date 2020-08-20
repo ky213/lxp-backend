@@ -43,7 +43,7 @@ function update(req, res, next) {
 }
 
 function deletegroups(req, res, next) {
-    groupsService.deletegroups(req.body, req.user)
+    groupsService.deleteGroups(req.body, req.user)
         .then(() => res.json(true))
         .catch(err => next(err));
 }
