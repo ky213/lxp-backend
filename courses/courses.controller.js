@@ -14,8 +14,6 @@ router.get('/', authorize(), getAll);
 
 router.get('/downloadFile/:id', authorize(), downloadFile);
 
-router.put('/', authorize(), update);
-
 router.delete('/deleteCourses', authorize(), deleteCourses);
 router.get('/getById', authorize(), getById);
 router.get('/getAll', authorize(), getAll);
@@ -23,9 +21,8 @@ router.get('/getByUser', authorize(), getByUser);
 router.get('/getByUserAll', authorize(), getByUserAll);
 
 router.post('/', authorize(), create);
-router.post('/uploadFile', authorize(), uploadFile);
-
 router.put('/', authorize(), update);
+router.post('/uploadFile', authorize(), uploadFile);
 
 router.get('/allJoinedCourses', authorize(), getAllJoinedCourses);
 router.get('/joinCourse', authorize(), requestToJoinCourse);
@@ -75,15 +72,17 @@ async function create(req, res, next) {
 async function update(req, res) {
 
     let cloudFileURL = ""
-    if (req.files && req.files.file) {
-        let fileName = req.files.file.name;
+    if (req.body.tincan) {
+        let fileName = req.body.tincan;
         cloudFileURL = await courseService.genetateCloudStorageUploadURL(req.body.contentPath, fileName);
     }
 
     courseService.update(req.user, req.body.selectedOrganization, req.body.courseId, req.body.programId,
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
         .then(data => {
-            data.uploadUrl = cloudFileURL;
+            data = {
+                uploadUrl: cloudFileURL,
+            };
             res.json(data);
         })
 }
