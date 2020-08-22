@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["https://staging.lxpia.com/"],
+      "method": ["GET", "HEAD","OPTIONS","PUT"],
+      "responseHeader": ["Content-Type"],
+      "maxAgeSeconds": 300
+    }
+]
