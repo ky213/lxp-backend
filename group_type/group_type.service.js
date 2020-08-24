@@ -4,88 +4,85 @@ const Role = require('helpers/role');
 const knex = require('../db');
 
 module.exports = {
-    getAll,
-    getById,
-    create,
-    update,
-    deletegrouptypes
+  getAll,
+  getById,
+  create,
+  update,
+  deletegrouptypes,
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
-    console.log('getAll');
-    let offset = ((pageId || 1) - 1) * recordsPerPage;
+  console.log('getAll');
+  let offset = ((pageId || 1) - 1) * recordsPerPage;
 
-    let model = knex.table("group_types")
-    .join('organizations', 'organizations.organization_id', 'group_types.organization_id');
+  let model = knex
+    .table('group_types')
+    .join(
+      'organizations',
+      'organizations.organization_id',
+      'group_types.organization_id'
+    );
 
-    if(user.role == Role.SuperAdmin && organizationId) {
-        model.andWhere('group_types.organization_id', organizationId);
-    }
-    else {
-        model.andWhere('group_types.organization_id', user.organization);
-    }
+  if (user.role == Role.SuperAdmin && organizationId) {
+    model.andWhere('group_types.organization_id', organizationId);
+  } else {
+    model.andWhere('group_types.organization_id', user.organization);
+  }
 
-    if (filter) {
-        model.whereRaw(`LOWER(group_types.name) LIKE ?`, [`%${filter.toLowerCase().trim()}%`]);
-    }
+  if (filter) {
+    model.whereRaw(`LOWER(group_types.name) LIKE ?`, [
+      `%${filter.toLowerCase().trim()}%`,
+    ]);
+  }
 
-    const totalNumberOfRecords = await model.clone().count();
-    if (totalNumberOfRecords[0].count <= offset) {
-        offset = 0;
-    }
-    console.log('groupTypes' , organizationId);
-    const groupTypes = await model.clone()
-        .orderBy('group_types.group_type_id', 'desc')
-        .limit(recordsPerPage || 15)
-        .select([
-            "group_types.group_type_id as groupTypeId",
-            "group_types.name",
-            "group_types.organization_id as organizationId",
-            "organizations.name as organizationName"
-        ]);
+  const totalNumberOfRecords = await model.clone().count();
+  if (totalNumberOfRecords[0].count <= offset) {
+    offset = 0;
+  }
+  console.log('groupTypes', organizationId);
+  const groupTypes = await model
+    .clone()
+    .orderBy('group_types.group_type_id', 'desc')
+    .limit(recordsPerPage || 15)
+    .select([
+      'group_types.group_type_id as groupTypeId',
+      'group_types.name',
+      'group_types.organization_id as organizationId',
+      'organizations.name as organizationName',
+    ]);
 
-    return {
-        groupTypes,
-        totalNumberOfRecords: totalNumberOfRecords[0].count
-    };
+  return {
+    groupTypes,
+    totalNumberOfRecords: totalNumberOfRecords[0].count,
+  };
 }
 
 async function getById(groupTypeId) {
-    return await knex
-    .table("group_types")
-    .where("group_types.group_type_id", groupTypeId)
-    .select([
-      "group_types.group_type_id as groupTypeId",
-      "group_types.name"
-    ]);
+  return await knex
+    .table('group_types')
+    .where('group_types.group_type_id', groupTypeId)
+    .select(['group_types.group_type_id as groupTypeId', 'group_types.name']);
 }
 
 async function create(groupType) {
- 
-    await knex('group_types')
-        .insert({
-            name: groupType.name,
-            organization_id: groupType.organizationId
-        }).returning('group_type_id');
+  await knex('group_types')
+    .insert({
+      name: groupType.name,
+      organization_id: groupType.organizationId,
+    })
+    .returning('group_type_id');
 }
 
 async function update(groupType) {
-    console.log("Got update group types:", groupTypes)
-    return await knex('group_types')
-        .where('group_type_id', groupType.groupTypeId)
-        .andWhere('organization_id', groupType.organizationId)
-        .update({
-            name: groupType.name
-        });
+  return await knex('group_types')
+    .where('group_type_id', groupType.groupTypeId)
+    .andWhere('organization_id', groupType.organizationId)
+    .update({
+      name: groupType.name,
+    });
 }
 
-async function deletegrouptypes(groupTypes)
-{
-    console.log("Got delete group types:", groupTypes)
-    return knex('group_types')
-        .whereIn('group_type_id', groupTypes)
-        .del();
+async function deletegrouptypes(groupTypes) {
+  console.log('Got delete group types:', groupTypes);
+  return knex('group_types').whereIn('group_type_id', groupTypes).del();
 }
-
-
-

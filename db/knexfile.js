@@ -1,19 +1,19 @@
-require("dotenv").config({
-  path: `../env-files/${process.env.NODE_ENV || "development"}.env`
+require('dotenv').config({
+  path: `../env-files/${process.env.NODE_ENV || 'development'}.env`,
 });
 
-global.Promise = require("bluebird");
+global.Promise = require('bluebird');
 // knexfile.js
 module.exports = {
   development: {
-    client: "pg",
+    client: 'pg',
     connection: {
-      database: "lxpdb",
-      user: "admin",
-      password: "admin",
+      database: 'lxpdb',
+      user: 'admin',
+      password: 'admin',
 
       //  # WORKING
-      host: "lxp-postgresdb",
+      host: 'lxp-postgresdb',
       port: 5432,
 
       //  # FOR MIGRATION
@@ -22,62 +22,62 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 10,
     },
     migrations: {
-      directory: "./migrations",
-      tableName: "migrations"
+      directory: './migrations',
+      tableName: 'migrations',
     },
     seeds: {
-      directory: "./seeds"
-    }
+      directory: './seeds',
+    },
   },
 
   staging: {
-    client: "pg",
+    client: 'pg',
     connection: process.env.DATABASE_URL || {
       host: process.env.DATABASE_HOST,
       port: process.env.DATABASE_PORT,
       database: process.env.DATABASE_NAME,
       user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD
+      password: process.env.DATABASE_PASSWORD,
     },
     pool: {
       min: 2,
-      max: 10
+      max: 10,
     },
     migrations: {
-      directory: "./migrations",
-      tableName: "migrations"
+      directory: './migrations',
+      tableName: 'migrations',
     },
     seeds: {
-      directory: "./seeds"
-    }
+      directory: './seeds',
+    },
   },
 
   production: {
-    client: "pg",
+    client: 'pg',
     connection: {
-      host: "localhost",
+      host: 'localhost',
       port: 5432,
       /* FOR MIGRATION */
       /* host: 'localhost',
        port: 54320,  */
 
-      database: "lxpdb",
-      user: "lxpuser",
-      password: "^$nDUPog6!zB"
+      database: 'lxpdb',
+      user: 'lxpuser',
+      password: '^$nDUPog6!zB',
     },
     pool: {
       min: 2,
-      max: 10
+      max: 10,
     },
     migrations: {
-      directory: "./migrations",
-      tableName: "migrations"
+      directory: './migrations',
+      tableName: 'migrations',
     },
     seeds: {
-      directory: "./seeds"
-    }
-  }
+      directory: './seeds',
+    },
+  },
 };
