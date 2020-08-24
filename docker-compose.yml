@@ -13,6 +13,8 @@ services:
     environment:
       - NODE_ENV=development
       - FRONTEND_URL=http://localhost:4101
+      - STORAGE_BUCKET=lxp-uploads-development
+      - GOOGLE_APPLICATION_CREDENTIALS=lxp-courses-uploader-dev.json
     ports:
       - 4008:4001
     volumes:
