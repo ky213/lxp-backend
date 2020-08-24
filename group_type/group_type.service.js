@@ -12,7 +12,7 @@ module.exports = {
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
-    console.log('getAll');
+
     let offset = ((pageId || 1) - 1) * recordsPerPage;
 
     let model = knex.table("group_types")
@@ -33,7 +33,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     if (totalNumberOfRecords[0].count <= offset) {
         offset = 0;
     }
-    console.log('groupTypes' , organizationId);
+
     const groupTypes = await model.clone()
         .orderBy('group_types.group_type_id', 'desc')
         .limit(recordsPerPage || 15)
@@ -70,7 +70,6 @@ async function create(groupType) {
 }
 
 async function update(groupType) {
-    console.log("Got update group types:", groupTypes)
     return await knex('group_types')
         .where('group_type_id', groupType.groupTypeId)
         .andWhere('organization_id', groupType.organizationId)
@@ -81,7 +80,6 @@ async function update(groupType) {
 
 async function deletegrouptypes(groupTypes)
 {
-    console.log("Got delete group types:", groupTypes)
     return knex('group_types')
         .whereIn('group_type_id', groupTypes)
         .del();
