@@ -19,7 +19,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
 
     let model = knex.table('groups')
     .join('organizations', 'organizations.organization_id', 'groups.organization_id')
-    .join('group_types', 'group_types.group_type_id', 'group_types.group_type_id');
+    .join('group_types', 'group_types.group_type_id', 'groups.group_type_id');
 
     if(user.role == Role.SuperAdmin && organizationId) {
         model.andWhere('groups.organization_id', organizationId);
@@ -93,6 +93,7 @@ async function create(group, user) {
         .insert({
             name: group.name,
             group_type_id: group.typeId,
+            description: group.description,
             organization_id: group.organizationId,
             created_by: user.sub,
             modified_by: user.sub,
@@ -113,6 +114,7 @@ async function update(group, user)
         .update({
             name: group.name,
             group_type_id: group.typeId,
+            description: group.description,
             organization_id: group.organizationId,
             modified_at: knex.fn.now(),
             modified_by: user.sub,
@@ -124,6 +126,7 @@ async function getByName(name, user) {
     return await knex.select([
         'groups.group_id as groupId', 
         'groups.name', 
+        'groups.description',
         'groups.group_type_id',    
         'groups.organization_id as organizationId', 
         'groups.created_at as createdAt',
