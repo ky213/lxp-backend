@@ -45,6 +45,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         .select([
             'groups.group_id as groupId', 
             'groups.name', 
+            'groups.description',
             'groups.group_type_id',
             'groups.organization_id as organizationId', 
             'groups.created_at as createdAt',
@@ -64,6 +65,7 @@ async function getById(groupId) {
     return knex.select([
         'groups.group_id as groupId', 
         'groups.name', 
+        'groups.description',
         'groups.group_type_id',
         'groups.organization_id as organizationId', 
         'groups.created_at as createdAt',
