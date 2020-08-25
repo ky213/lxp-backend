@@ -13,7 +13,8 @@ module.exports = {
     getBlockTypes,
     getProgramIdByProgramName,
     deletePrograms,
-    deleteAllInactive
+    deleteAllInactive,
+    getDefaultProgram
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
@@ -163,6 +164,43 @@ async function getById(id, user, selectedorganizationId) {
             employeeId: d.employeeId
         }));
     }
+
+    return program;
+}
+
+async function getDefaultProgram(user, selectedorganizationId) {
+    const name = 'Default Program';
+
+    let select = knex.select([
+        'programs.program_id as programId',
+        'programs.name',
+        'programs.organization_id as organizationId',
+        'programs.description',
+        'programs.duty_time_from as dutyTimeFrom',
+        'programs.duty_time_to as dutyTimeTo',
+        'programs.allowed_annual_vacation_weeks as allowedAnnualVacationWeeks',
+        'programs.allowed_educational_leave_days as allowedEducationalLeaveDays',
+        'programs.allowed_emergency_leave_days as allowedEmergencyLeaveDays',
+        'programs.total_block_junior as totalBlockJunior',
+        'programs.total_block_senior as totalBlockSenior',
+        'programs.block_type_id as blockTypeId',
+        'programs.min_experience_level as minExperienceLevel',
+        'programs.max_experience_level as maxExperienceLevel',
+        'programs.senior_learners_start_level as seniorLearnersStartLevel',
+    ])
+    .from('programs');
+
+    if (user.role == Role.SuperAdmin && selectedorganizationId) {
+        select.where('programs.organization_id', selectedorganizationId);
+    }
+    else {
+        select.where('programs.organization_id', user.organization);
+    }
+
+    let program = await select
+        .whereRaw(`LOWER(programs.name) = ?`, [`${name.toLowerCase().trim()}`])
+        .limit(1)
+        .first();
 
     return program;
 }
