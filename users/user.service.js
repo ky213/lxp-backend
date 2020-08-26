@@ -122,13 +122,6 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
         .leftJoin('experience_levels', 'experience_levels.exp_level_id', 'employees.exp_level_id')
         .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
         .leftJoin('programs', 'programs.program_id', 'employee_programs.program_id')
-        .leftJoin('groups','users.group_id','groups.group_id');
-        /*
-    if (user.role == Role.ProgramDirector)
-    {
-        model.leftJoin('program_directors', 'program_directors.program_id', 'programs.program_id');
-        model.andWhere('program_directors.employee_id', user.employeeId);
-    }*/
 
     model.where('employees.organization_id', organizationId);
     model.andWhere('users.is_super_admin', 0);
@@ -164,7 +157,6 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
         offset = 0;
 
     var users = await model.clone()
-        //.orderBy(['employees.is_active', 'surname'], ['desc', 'asc'])
         .orderBy('employees.is_active', 'desc')
         .orderBy('surname', 'asc')
         .offset(offset)
@@ -186,15 +178,33 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
             'roles.name as roleName',
             'experience_levels.name as expLevelName',
             'programs.name as programName',
-            'programs.program_id as programId',
-            'users.group_id as groupId',
-            'groups.name as groupName'
+            'programs.program_id as programId'
         ]);
     
-    return {
-        users,
-        totalNumberOfRecords
-    }
+        const allUserGroups =
+        await knex.table('groups_employee')
+            .join('employees', 'employees.employee_id', 'groups_employee.employee_id')
+            .join('groups', 'groups.group_id', 'groups_employee.group_id')
+            .whereIn('employees.user_id', users.map(u => u.userId))
+            .select([
+                'groups.group_id as groupId',
+                'groups.name as name'
+            ]);                               
+
+        return {
+            users: users.map(user => {
+            return {
+                ...user,
+                groupIds: allUserGroups.filter(u => u.userId == user.userId).map(d => {
+                    return {
+                        name: d.name,
+                        groupId: d.groupId
+                    }
+                })
+            }
+        }), 
+        totalNumberOfRecords: totalNumberOfRecords[0].count
+    };  
 }
 
 async function getAllUsers(loggedInUser, organizationId, includeInactive) {
@@ -203,7 +213,6 @@ async function getAllUsers(loggedInUser, organizationId, includeInactive) {
     let model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
         .where('employees.organization_id', organizationId)        
-        // .andWhere('employees.employee_id', "<>", loggedInUser.employeeId)
         .andWhere('users.is_super_admin', 0);
     
     if (!includeInactive)
@@ -213,8 +222,7 @@ async function getAllUsers(loggedInUser, organizationId, includeInactive) {
     .select([
         'employees.employee_id',
         'users.name',
-        'users.surname',
-        'users.group_id as groupId'
+        'users.surname'
     ]);
 
     return users.map(u => {return {
@@ -225,19 +233,7 @@ async function getAllUsers(loggedInUser, organizationId, includeInactive) {
 
 async function getByEmployeeId(user, employeeId) {
 
-    let model = knex.table('employees')
-        .join('users','users.user_id','employees.user_id')
-        .leftJoin('experience_levels','employees.exp_level_id','experience_levels.exp_level_id')
-        .leftJoin('employee_programs','employees.employee_id','employee_programs.employee_id')
-        .leftJoin('employee_roles','employees.employee_id','employee_roles.employee_id')
-        .leftJoin('roles','roles.role_id','employee_roles.role_id')
-        .where('employees.employee_id', employeeId);
-
-    if(user.role != Role.SuperAdmin) {
-        model.andWhere('employees.organization_id', user.organization);
-    }
-
-    return await model.select([
+    let selectEmployee =  knex.select([
         'users.user_id as userId', 
         'users.email', 
         'users.name',
@@ -245,10 +241,9 @@ async function getByEmployeeId(user, employeeId) {
         'users.gender',
         'users.phone_number as phoneNumber',
         'users.pager_number as pagerNumber',
-        'users.start_date as startDate',
-        'users.group_id as groupId',
-        'employees.is_active as isActive',
-        'users.profile_photo as profilePhoto',       
+        'users.start_date as startDate',        
+        'users.profile_photo as profilePhoto', 
+        'employees.is_active as isActive',      
         'employees.employee_id as employeeId',
         'employees.exp_level_id as expLevelId',
         'employee_programs.program_id as programId',
@@ -257,14 +252,44 @@ async function getByEmployeeId(user, employeeId) {
         'employee_roles.role_id as roleId',
         'roles.name as roleName'
     ])
+    .from('employees')
+    .join('users','users.user_id','employees.user_id')
+    .leftJoin('experience_levels','employees.exp_level_id','experience_levels.exp_level_id')
+    .leftJoin('employee_programs','employees.employee_id','employee_programs.employee_id')
+    .leftJoin('employee_roles','employees.employee_id','employee_roles.employee_id')
+    .leftJoin('roles','roles.role_id','employee_roles.role_id');
+    
+    if(user.role != Role.SuperAdmin) {
+        model.andWhere('employees.organization_id', user.organization);
+    }
+
+    let userData = await selectEmployee
+    .where('employees.employee_id', employeeId)
+    .limit(1)
     .first();
+
+    if(userData) {
+        const groups = await knex.table('groups_employee')
+        .join('employees', 'employees.employee_id', 'groups_employee.employee_id')
+        .join('groups', 'groups.group_id', 'groups_employee.group_id')
+        .andWhere('employees.employee_id', employeeId)
+        .select([
+            'groups.group_id as groupId',
+            'groups.name as name'
+         ]);
+
+        userData.groupIds = groups.map(d => ({
+            name: d.name,
+            groupId: d.groupId
+        }));
+    }
+
+    return userData
 }
 
 async function getByUserId(user, userId) {
 
-    return await knex.table('users')
-        .where('user_id', userId)
-        .select([
+    let select =  kknex.select([
             'user_id as userId', 
             'email', 
             'name',
@@ -273,10 +298,32 @@ async function getByUserId(user, userId) {
             'phone_number as phoneNumber',
             'pager_number as pagerNumber',
             'start_date as startDate',
-            'profile_photo as profilePhoto',
-            'group_id as groupId'
+            'profile_photo as profilePhoto'
         ])
+        .from('users');
+
+        let userData = await select
+        .where('user_id', userId)
+        .limit(1)
         .first();
+        
+        if(userData) {
+            const groups = await knex.table('groups_employee')
+            .join('employees', 'employees.employee_id', 'groups_employee.employee_id')
+            .join('groups', 'groups.group_id', 'groups_employee.group_id')
+            .andWhere('employees.user_id', userId)
+            .select([
+            'groups.group_id as groupId',
+            'groups.name as name'
+            ]);
+
+            userData.groupIds = groups.map(d => ({
+                name: d.name,
+                groupId: d.groupId
+            }));
+        }
+
+        return userData
 }
 
 async function checkIfEmailExists(email, userId) {
@@ -363,11 +410,6 @@ async function changePassword({oldPassword, newPassword}, user) {
             .transacting(t)
             .whereIn("employee_id", employeeIds)
             .del();
-
-            /*await knex("calendar_events")
-            .transacting(t)
-            .whereIn("employee_id", employeeIds)
-            .del();*/
 
             await knex("employee_exp_levels")
             .transacting(t)

@@ -42,20 +42,18 @@ async function add(loggedInUser, userData, organizationId) {
 
   return knex
     .transaction(async function(t) {
-            
-        let _userIds = userData.groupIds.map( group => ({
-          name: userData.name.trim(),
-          surname: userData.surname.trim(),
-          email: userData.email.trim(),
-          gender: userData.gender,
-          start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10),
-          group_id: group.groupId}));
 
       let userIds = await knex("users")
-        .transacting(t)
-        .insert(_userIds)
-        .returning("user_id");
+      .transacting(t)
+      .insert({
+        name: userData.name.trim(),
+        surname: userData.surname.trim(),
+        email: userData.email.trim(),
+        gender: userData.gender,
+        start_date: userData.startDate,
+        password: bcrypt.hashSync(defaultPassword, 10)
+      })
+      .returning("user_id");
 
       let _employees = userIds.map(userId => ({
         user_id: userId,
@@ -68,6 +66,16 @@ async function add(loggedInUser, userData, organizationId) {
         .transacting(t)
         .insert(_employees)
         .returning("employee_id");
+
+      let _employeeGroups = userData.groupIds.map(group => ({
+        employee_id: employeeIds[0],
+        group_id: group.groupId
+        }));
+
+      await knex("groups_employee")
+        .transacting(t)
+        .insert(_employeeGroups)
+        .returning("group_id");
 
       await knex("employee_roles")
         .transacting(t)
@@ -133,8 +141,7 @@ async function addBulk(loggedInUser, data, organizationId) {
           email: userData.email,
           gender: userData.gender,
           start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10),
-          group_id: userData.groupId
+          password: bcrypt.hashSync(defaultPassword, 10)
         })
         .returning("user_id")
         .then(userIds => {
@@ -158,12 +165,15 @@ async function addBulk(loggedInUser, data, organizationId) {
               }));
 
               if(userProgram) {
-              knex("employee_programs")
-              .transacting(t)
-              .insert({
-                  employee_id: _employees[0],
+                let employeePrograms = employeeIds.map(employeeId => ({
+                  employee_id: employeeId,
                   program_id: userProgram.programId
-              }); }
+                }));
+                
+                knex("employee_programs")
+                .transacting(t)
+                .insert(employeePrograms);
+            }
 
               return t
                 .into("employee_roles")
@@ -271,8 +281,7 @@ async function update(loggedInUser, user, organizationId) {
           surname: user.surname.trim(),
           gender: user.gender,
           start_date: user.startDate,
-          email: user.email.trim(),
-          group_id: user.groupId
+          email: user.email.trim()
         });
 
       return knex("employees")
@@ -283,6 +292,19 @@ async function update(loggedInUser, user, organizationId) {
           organization_id: user.organizationId
         });
     });
+
+    if (user.groupIds) {
+      const insertgroupIds = user.groupIds.map(group => {
+          return {
+            employee_id: user.employeeId,
+            group_id: group.groupId
+          }
+      });
+
+      await knex('groups_employee').where('employee_id', user.employeeId).del();
+      await knex('groups_employee')
+          .insert(insertgroupIds);
+  }
 
     await updateRoleQuery;
 
