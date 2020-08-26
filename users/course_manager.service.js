@@ -42,17 +42,19 @@ async function add(loggedInUser, userData, organizationId) {
 
   return knex
     .transaction(async function(t) {
-      const userIds = await knex("users")
-        .transacting(t)
-        .insert({
+            
+        let _userIds = userData.groupIds.map( group => ({
           name: userData.name.trim(),
           surname: userData.surname.trim(),
           email: userData.email.trim(),
           gender: userData.gender,
           start_date: userData.startDate,
           password: bcrypt.hashSync(defaultPassword, 10),
-          group_id: userData.groupId
-        })
+          group_id: group.groupId}));
+
+      let userIds = await knex("users")
+        .transacting(t)
+        .insert(_userIds)
         .returning("user_id");
 
       let _employees = userIds.map(userId => ({
@@ -66,6 +68,7 @@ async function add(loggedInUser, userData, organizationId) {
         .transacting(t)
         .insert(_employees)
         .returning("employee_id");
+
       await knex("employee_roles")
         .transacting(t)
         .insert({

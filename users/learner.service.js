@@ -31,18 +31,20 @@ async function add(loggedInUser, userData, organizationId) {
 
   return knex
     .transaction(async function(t) {
+      
+      let _userIds = userData.groupIds.map( group => ({
+            name: userData.name.trim(),
+            surname: userData.surname.trim(),
+            email: userData.email.trim(),
+            gender: userData.gender,
+            start_date: userData.startDate,
+            password: bcrypt.hashSync(defaultPassword, 10),
+            group_id: group.groupId}));
+
       let userIds = await knex("users")
-        .transacting(t)
-        .insert({
-          name: userData.name.trim(),
-          surname: userData.surname.trim(),
-          email: userData.email.trim(),
-          gender: userData.gender,
-          start_date: userData.startDate,
-          password: bcrypt.hashSync(defaultPassword, 10),
-          group_id: userData.groupId
-        })
-        .returning("user_id");
+          .transacting(t)
+          .insert(_userIds)
+          .returning("user_id");
 
       let _employees = userIds.map(userId => ({
         user_id: userId,
@@ -69,7 +71,8 @@ async function add(loggedInUser, userData, organizationId) {
           .insert({
             employee_id: employeeIds[0],
             program_id: userProgram.programId
-          });   }
+          });   
+        }
 
       return {
         isValid: true
@@ -123,7 +126,7 @@ async function addBulk(loggedInUser, data, organizationId) {
               user_id: userId,
               organization_id: organizationId,
               exp_level_id: null,
-              is_learner: false
+              is_learner: true
             };
           });
 
@@ -134,7 +137,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             .then(employeeIds => {
               let employeeRoles = employeeIds.map(employeeId => ({
                 employee_id: employeeId,
-                role_id: userData.roleId
+                role_id: Role.Learner
               }));
 
               if(userProgram) {
