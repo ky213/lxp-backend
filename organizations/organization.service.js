@@ -9,7 +9,8 @@ module.exports = {
     create,
     update,
     getByName,
-    deleteOrganizations
+    deleteOrganizations,
+    getDefaultGroup
 };
 
 async function getAll(user, pageId, recordsPerPage, filter) {
@@ -47,12 +48,13 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organizations.default_group_id as defaultGroupId'
         ]);
 
+       
     //console.log("Got organizations:", organizations)
     return { organizations, totalNumberOfRecords: totalNumberOfRecords[0].count };
 }
 
 async function getById(id, user) {
-    return knex.select([
+    let select =  knex.select([
         'organizations.organization_id as organizationId', 
         'organizations.name', 
         'organizations.logo',
@@ -65,13 +67,28 @@ async function getById(id, user) {
         'organizations.is_active as isActive',
         'organizations.default_group_id as defaultGroupId'
     ])
-    .from('organizations')
-        .where('organizations.organization_id', id)
-        .limit(1)
-        .first()
-    .then(function(output){
-        return output;
-    });
+    .from('organizations');
+
+    let organization = await select
+    .where('organizations.organization_id', id)
+    .limit(1)
+    .first();
+
+    if(organization) {
+        const groups = await knex.table('groups')
+        .where('groups.group_id', organization.defaultGroupId)
+        .select([
+            'groups.group_id as groupId',
+            'groups.name as name'
+         ]);
+
+         organization.groupIds = groups.map(d => ({
+            name: d.name,
+            groupId: d.groupId
+        }));
+    }
+
+    return organization;
 }
 
 async function create(organization, user) {
@@ -169,4 +186,17 @@ async function deleteOrganizations(organizations, user)
         .update({
             is_active: false
         });
+}
+
+async function getDefaultGroup(id) {    
+    return knex.select([
+        'organizations.default_group_id as defaultGroupId'
+    ])
+    .from('organizations')
+        .where('organizations.organization_id', id)
+        .limit(1)
+        .first()
+    .then(function(output){
+        return output;
+    });
 }

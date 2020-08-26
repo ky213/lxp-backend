@@ -4,6 +4,7 @@ const { checkIfEmailExists } = require("./user.service");
 const { getCmRoles } = require("../roles/role.service");
 const organizationService = require("../organizations/organization.service");
 const programService = require('../programs/program.service');
+
 const Role = require("helpers/role");
 
 let defaultPassword = "admin";
@@ -129,6 +130,7 @@ async function addBulk(loggedInUser, data, organizationId) {
   }
 
   const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId);
+  const defaultGroup = await organizationService.getDefaultGroup(organizationId);
 
   async function InsertUserAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
@@ -163,6 +165,15 @@ async function addBulk(loggedInUser, data, organizationId) {
                 employee_id: employeeId,
                 role_id: userData.roleId
               }));
+
+              let employeeGroups = employeeIds.map(employeeId => ({
+                employee_id: employeeId,
+                group_id: defaultGroup.groupId
+              }));
+
+               knex("groups_employee")
+                .transacting(t)
+                .insert(employeeGroups);
 
               if(userProgram) {
                 let employeePrograms = employeeIds.map(employeeId => ({

@@ -3,6 +3,7 @@ const knex = require("../db");
 const Role = require("helpers/role");
 const { checkIfEmailExists } = require("./user.service");
 const programService = require('../programs/program.service');
+const organizationService = require('../organizations/organization.service');
 
 let defaultPassword = "admin";
 
@@ -112,6 +113,7 @@ async function addBulk(loggedInUser, data, organizationId) {
   }
 
   const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId);
+  const defaultGroup = await organizationService.getDefaultGroup(organizationId);
 
   async function InsertLearnerAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
@@ -146,6 +148,15 @@ async function addBulk(loggedInUser, data, organizationId) {
                 role_id: Role.Learner
               }));
 
+              let employeeGroups = employeeIds.map(employeeId => ({
+                employee_id: employeeId,
+                group_id: defaultGroup.groupId
+              }));
+
+               knex("groups_employee")
+                .transacting(t)
+                .insert(employeeGroups);
+
               if(userProgram) {
                 let employeePrograms = employeeIds.map(employeeId => ({
                   employee_id: employeeId,
@@ -155,8 +166,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                  knex("employee_programs")
                 .transacting(t)
                 .insert(employeePrograms);
-
-            }
+              }
 
               return t
                 .into("employee_roles")
