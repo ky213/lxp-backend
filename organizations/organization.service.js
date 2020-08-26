@@ -90,8 +90,17 @@ async function create(organization, user) {
             is_active: organization.isActive,
             default_group_id:  organization.defaultGroupId
         }).returning('organization_id');
-
-
+        
+        await knex('programs')
+        .transacting(t)
+        .insert({
+                name: 'Default Program',
+                organization_id: organizationId[0],
+                created_by: user.sub,
+                modified_by: user.sub,
+                block_type_id: 3
+            }).returning('program_id'); 
+            
         await knex('activity_types')
         .transacting(t)
         .insert([

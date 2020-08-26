@@ -187,6 +187,7 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
             'experience_levels.name as expLevelName',
             'programs.name as programName',
             'programs.program_id as programId',
+            'users.group_id as groupId',
             'groups.name as groupName'
         ]);
     
@@ -212,7 +213,8 @@ async function getAllUsers(loggedInUser, organizationId, includeInactive) {
     .select([
         'employees.employee_id',
         'users.name',
-        'users.surname'
+        'users.surname',
+        'users.group_id as groupId'
     ]);
 
     return users.map(u => {return {
@@ -244,6 +246,7 @@ async function getByEmployeeId(user, employeeId) {
         'users.phone_number as phoneNumber',
         'users.pager_number as pagerNumber',
         'users.start_date as startDate',
+        'users.group_id as groupId',
         'employees.is_active as isActive',
         'users.profile_photo as profilePhoto',       
         'employees.employee_id as employeeId',
@@ -270,7 +273,8 @@ async function getByUserId(user, userId) {
             'phone_number as phoneNumber',
             'pager_number as pagerNumber',
             'start_date as startDate',
-            'profile_photo as profilePhoto'
+            'profile_photo as profilePhoto',
+            'group_id as groupId'
         ])
         .first();
 }

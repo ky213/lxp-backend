@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const knex = require("../db");
 const Role = require("helpers/role");
 const { checkIfEmailExists } = require("./user.service");
+const programService = require('../programs/program.service');
 
 let defaultPassword = "admin";
 
@@ -61,6 +62,15 @@ async function add(loggedInUser, userData, organizationId) {
           role_id: Role.Learner
         });      
 
+        const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId);
+        if(userProgram) {
+          await knex("employee_programs")
+          .transacting(t)
+          .insert({
+            employee_id: employeeIds[0],
+            program_id: userProgram.programId
+          });   }
+
       return {
         isValid: true
       };
@@ -91,6 +101,8 @@ async function addBulk(loggedInUser, data, organizationId) {
     };
   }
 
+  const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId);
+
   async function InsertLearnerAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
       return t
@@ -104,9 +116,52 @@ async function addBulk(loggedInUser, data, organizationId) {
           password: bcrypt.hashSync(defaultPassword, 10),
           group_id: userData.groupId
         })
-        .then(() => {
-          output.push({ ...userData, status: "ok" });
-          return resolve();
+        .returning("user_id")
+        .then(userIds => {
+          let _employees = userIds.map(userId => {
+            return {
+              user_id: userId,
+              organization_id: organizationId,
+              exp_level_id: null,
+              is_learner: false
+            };
+          });
+
+          return t
+            .into("employees")
+            .insert(_employees)
+            .returning("employee_id")
+            .then(employeeIds => {
+              let employeeRoles = employeeIds.map(employeeId => ({
+                employee_id: employeeId,
+                role_id: userData.roleId
+              }));
+
+              if(userProgram) {
+              knex("employee_programs")
+              .transacting(t)
+              .insert({
+                  employee_id: _employees[0],
+                  program_id: userProgram.programId
+              }); }
+
+              return t
+                .into("employee_roles")
+                .insert(employeeRoles)
+                .then(() => {
+                  output.push({ ...userData, status: "ok" });
+                  return resolve();
+                })
+                .catch(err => {
+                  output.push({ ...userData, status: "error", error: err });
+                  return resolve();
+                });              
+ 
+            })
+            .catch(err => {
+              output.push({ ...userData, status: "error", error: err });
+              return resolve();
+            });
         })
         .catch(err => {
           output.push({ ...userData, status: "error", error: err });

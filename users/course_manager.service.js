@@ -3,6 +3,7 @@ const knex = require("../db");
 const { checkIfEmailExists } = require("./user.service");
 const { getCmRoles } = require("../roles/role.service");
 const organizationService = require("../organizations/organization.service");
+const programService = require('../programs/program.service');
 const Role = require("helpers/role");
 
 let defaultPassword = "admin";
@@ -72,6 +73,16 @@ async function add(loggedInUser, userData, organizationId) {
           role_id: userData.roleId
         });
 
+        const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId );
+        if(userProgram) {
+          await knex("employee_programs")
+          .transacting(t)
+          .insert({
+            employee_id: employeeIds[0],
+            program_id: userProgram.programId
+          });   
+      }
+
       return {
         isValid: true
       };
@@ -106,9 +117,10 @@ async function addBulk(loggedInUser, data, organizationId) {
     };
   }
 
+  const userProgram = await  programService.getDefaultProgram(loggedInUser, organizationId);
+
   async function InsertUserAsync(t, userData) {
     return new Promise(async function(resolve, reject) {
-      //const organizations = await organizationService.getAll();
 
       return t
         .into("users")
@@ -142,6 +154,14 @@ async function addBulk(loggedInUser, data, organizationId) {
                 role_id: userData.roleId
               }));
 
+              if(userProgram) {
+              knex("employee_programs")
+              .transacting(t)
+              .insert({
+                  employee_id: _employees[0],
+                  program_id: userProgram.programId
+              }); }
+
               return t
                 .into("employee_roles")
                 .insert(employeeRoles)
@@ -152,7 +172,8 @@ async function addBulk(loggedInUser, data, organizationId) {
                 .catch(err => {
                   output.push({ ...userData, status: "error", error: err });
                   return resolve();
-                });
+                });              
+ 
             })
             .catch(err => {
               output.push({ ...userData, status: "error", error: err });
