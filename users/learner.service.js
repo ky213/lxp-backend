@@ -123,7 +123,7 @@ async function addBulk(loggedInUser, data, organizationId) {
               user_id: userId,
               organization_id: organizationId,
               exp_level_id: null,
-              is_learner: false
+              is_learner: true
             };
           });
 
@@ -134,7 +134,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             .then(employeeIds => {
               let employeeRoles = employeeIds.map(employeeId => ({
                 employee_id: employeeId,
-                role_id: userData.roleId
+                role_id: Role.Learner
               }));
 
               if(userProgram) {
