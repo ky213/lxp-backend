@@ -13,10 +13,15 @@ module.exports = {
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
-    console.log("Get all groups:", user, pageId, recordsPerPage, filter)
-    
-    let offset = ((pageId || 1) - 1) * recordsPerPage;
 
+    if (!recordsPerPage)
+    recordsPerPage = 10;
+
+    if (!pageId)
+    pageId = 1;
+
+    let offset = ((pageId || 1) - 1) * recordsPerPage;
+ 
     let model = knex.table('groups')
     .join('organizations', 'organizations.organization_id', 'groups.organization_id')
     .join('group_types', 'group_types.group_type_id', 'groups.group_type_id');
