@@ -20,7 +20,7 @@ function getAll(req, res, next) {
         req.query.recordsPerPage,
         req.query.filter
     )
-    .then(groups => groups && groups.totalNumberOfRecords > 0 ? res.json(groups): res.status(404).json({message: "Not found"}))
+    .then(groups => res.json(groups))
     .catch(err => next(err));
 }
 

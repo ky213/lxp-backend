@@ -2,6 +2,8 @@
 const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const knex = require('../db'); 
+const groupTypeService = require('../group_type/group_type.service');
+const groupsService = require('../groups/groups.service');
 
 module.exports = {
     getAll,
@@ -107,7 +109,12 @@ async function create(organization, user) {
             is_active: organization.isActive,
             default_group_id:  organization.defaultGroupId
         }).returning('organization_id');
-        
+                 
+        let blockType = await knex('program_block_types')
+            .where('description', 'Four weeks')
+            .select('block_type_id')
+            .first();
+
         await knex('programs')
         .transacting(t)
         .insert({
@@ -115,9 +122,30 @@ async function create(organization, user) {
                 organization_id: organizationId[0],
                 created_by: user.sub,
                 modified_by: user.sub,
-                block_type_id: 3
+                block_type_id: blockType.block_type_id
             }).returning('program_id'); 
-            
+        
+        let groupType = await knex('group_types')
+        .transacting(t)
+        .insert({
+            name: 'Default',
+            organization_id: organizationId[0]
+        }).returning('group_type_id');
+
+        console.log("groupType:", groupType[0]);
+
+        await knex('groups')
+        .transacting(t)
+        .insert({
+            name: 'Users',
+            group_type_id: groupType[0],
+            description: 'Users Default Group',
+            organization_id: organizationId[0],
+            created_by: user.sub,
+            modified_by: user.sub,
+            is_active: true
+        });  
+
         await knex('activity_types')
         .transacting(t)
         .insert([
