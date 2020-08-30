@@ -148,32 +148,54 @@ async function addBulk(loggedInUser, data, organizationId) {
                 role_id: Role.Learner
               }));
 
-              let employeeGroups = employeeIds.map(employeeId => ({
-                employee_id: employeeId,
-                group_id: defaultGroup.groupId
-              }));
-
-               knex("groups_employee")
-                .transacting(t)
-                .insert(employeeGroups);
-
-              if(userProgram) {
-                let employeePrograms = employeeIds.map(employeeId => ({
-                  employee_id: employeeId,
-                  program_id: userProgram.programId
-                }));
-                
-                 knex("employee_programs")
-                .transacting(t)
-                .insert(employeePrograms);
-              }
-
               return t
                 .into("employee_roles")
                 .insert(employeeRoles)
                 .then(() => {
-                  output.push({ ...userData, status: "ok" });
-                  return resolve();
+                  if(userProgram) {
+                    let employeePrograms = employeeIds.map(employeeId => ({
+                      employee_id: employeeId,
+                      program_id: userProgram.programId
+                    }));
+    
+                    return t
+                    .into("employee_programs")
+                    .insert(employeePrograms)
+                    .then(() => {
+                      if(userData.groupIds && userData.groupIds.length > 0)
+                      {
+                          userData.groupIds.forEach(group => {
+                          let employeeGroups = employeeIds.map(employeeId => ({
+                            employee_id: employeeId,
+                            group_id: group 
+                          }));
+                        
+                          return t
+                          .into("groups_employee")
+                          .insert(employeeGroups)
+                          .then(() => {
+                            output.push({ ...userData, status: "ok" });
+                            return resolve();
+                          })
+                        });             
+                      }
+                      else
+                      {
+                        let employeeGroups = employeeIds.map(employeeId => ({
+                          employee_id: employeeId,
+                          group_id: defaultGroup.defaultGroupId
+                        }));
+
+                        return t
+                          .into("groups_employee")
+                          .insert(employeeGroups)
+                          .then(() => {
+                            output.push({ ...userData, status: "ok" });
+                            return resolve();
+                          })
+                      }
+                    })
+                  }
                 })
                 .catch(err => {
                   output.push({ ...userData, status: "error", error: err });

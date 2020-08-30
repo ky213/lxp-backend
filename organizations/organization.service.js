@@ -106,8 +106,7 @@ async function create(organization, user) {
             background_color_code: organization.backgroundColorCode,
             created_by: user.sub,
             modified_by: user.sub,
-            is_active: organization.isActive,
-            default_group_id:  organization.defaultGroupId
+            is_active: organization.isActive
         }).returning('organization_id');
                  
         let blockType = await knex('program_block_types')
@@ -132,9 +131,7 @@ async function create(organization, user) {
             organization_id: organizationId[0]
         }).returning('group_type_id');
 
-        console.log("groupType:", groupType[0]);
-
-        await knex('groups')
+        let groupId = await knex('groups')
         .transacting(t)
         .insert({
             name: 'Users',
@@ -144,7 +141,14 @@ async function create(organization, user) {
             created_by: user.sub,
             modified_by: user.sub,
             is_active: true
-        });  
+        }).returning('group_id');  
+
+        await knex('organizations')
+        .where('organization_id', organizationId[0])
+        .transacting(t)
+        .update({
+            default_group_id:  groupId[0]
+        });
 
         await knex('activity_types')
         .transacting(t)
@@ -217,14 +221,25 @@ async function deleteOrganizations(organizations, user)
 }
 
 async function getDefaultGroup(id) {    
-    return knex.select([
+    let select = knex.select([
+        'organizations.organization_id as organizationId', 
+        'organizations.name', 
+        'organizations.logo',
+        'organizations.color_code as colorCode',       
+        'organizations.background_color_code as backgroundColorCode', 
+        'organizations.created_at as createdAt',
+        'organizations.created_by as createdBy',
+        'organizations.modified_at as modifiedAt',
+        'organizations.modified_by as modifiedBy',
+        'organizations.is_active as isActive',
         'organizations.default_group_id as defaultGroupId'
     ])
-    .from('organizations')
+    .from('organizations');
+    
+    let organization = await select
         .where('organizations.organization_id', id)
         .limit(1)
-        .first()
-    .then(function(output){
-        return output;
-    });
+        .first();
+
+    return organization;
 }
