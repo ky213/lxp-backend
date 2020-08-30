@@ -29,8 +29,7 @@ async function authenticate({ email, password }) {
             'surname as lastName', 
             'is_super_admin',
             'password',
-            'profile_photo as profilePhoto',
-            'group_id as groupId'            
+            'profile_photo as profilePhoto'            
             ]
         )
         .first();
@@ -69,7 +68,6 @@ async function authenticate({ email, password }) {
                     .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')                    
                     .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
                     .leftJoin('program_directors', 'program_directors.employee_id', 'employees.employee_id')
-                    .leftJoin('groups','users.group_id','groups.group_id')
                 .where('employees.user_id', user.userId)
                     .andWhere('organizations.is_active', true)
                 .limit(1)
@@ -82,7 +80,7 @@ async function authenticate({ email, password }) {
                     'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
                     'organizations.background_color_code as organizationBackgroundColor', 'employee_programs.program_id as programId',
                     'program_directors.program_id as directorProgramId', 'employees.exp_level_id as experienceLevelId',
-                    'groups.name as groupName' , 'organizations.logo as organizationLogo']
+                    'organizations.logo as organizationLogo']
                 );
 
                 if(!employee.programId) {
