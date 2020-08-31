@@ -59,10 +59,10 @@ function getAll(req, res, next) {
       ...user,
       profilePhoto: converter.ConvertImageBufferToBase64(user.profilePhoto)
     }));
-
+    
     return res.json({
       users,
-      totalNumberOfRecords: parseInt(data.totalNumberOfRecords[0]["count"])
+      totalNumberOfRecords: parseInt(data.totalNumberOfRecords)
     });
   })
   .catch(error => console.log("Error getAll:", error));

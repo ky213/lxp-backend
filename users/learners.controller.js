@@ -64,7 +64,7 @@ function getAll(req, res, next)
 
     return res.json({
       users,
-      totalNumberOfRecords: parseInt(data.totalNumberOfRecords[0]["count"])
+      totalNumberOfRecords: parseInt(data.totalNumberOfRecords)
     });
   })
   .catch(error => console.log("Error getAll:", error));
