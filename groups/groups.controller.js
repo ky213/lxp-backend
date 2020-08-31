@@ -5,11 +5,11 @@ const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), create); 
-router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), update); 
+router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), create); 
+router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update); 
 router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), deletegroups); 
-router.get('/', authorize([Role.SuperAdmin]), getAll); 
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);  
+router.get('/', authorize(), getAll); 
+router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getById);  
 module.exports = router;
 
 function getAll(req, res, next) {
