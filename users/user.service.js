@@ -258,7 +258,7 @@ async function getByEmployeeId(user, employeeId) {
     .leftJoin('roles','roles.role_id','employee_roles.role_id');
     
     if(user.role != Role.SuperAdmin) {
-        model.andWhere('employees.organization_id', user.organization);
+        selectEmployee.andWhere('employees.organization_id', user.organization);
     }
 
     let userData = await selectEmployee
