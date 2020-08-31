@@ -3,7 +3,7 @@ exports.up = function(knex) {
     table
     .uuid('group_id').defaultTo(knex.raw('uuid_generate_v4()'))  
       .primary();
-    table.string('name', 80).notNullable().unique();
+    table.string('name', 80).notNullable();
     table.uuid('group_type_id').notNullable();
     table.boolean('is_active').notNullable().defaultTo(true);    
     table.uuid('organization_id').notNullable();
@@ -14,6 +14,9 @@ exports.up = function(knex) {
 
     table.foreign('organization_id').references('organization_id').inTable('organizations');
     table.foreign('group_type_id').references('group_type_id').inTable('group_types').onDelete("RESTRICT");
+
+    table.unique(['name', 'organization_id']);
+    
   });
 };
 

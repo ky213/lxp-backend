@@ -3,11 +3,12 @@ exports.up = function(knex) {
     table
       .uuid('group_type_id').defaultTo(knex.raw('uuid_generate_v4()'))  
       .primary();
-    table.string('name', 50).notNullable().unique();
+    table.string('name', 50).notNullable();
     table.uuid('organization_id').notNullable();
  
     table.foreign('organization_id').references('organization_id').inTable('organizations');
     
+    table.unique(['name', 'organization_id']);
   });
 };
 
