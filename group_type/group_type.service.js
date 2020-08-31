@@ -82,5 +82,15 @@ async function update(groupType) {
 }
 
 async function deletegrouptypes(groupTypes) {
-  return knex('group_types').whereIn('group_type_id', groupTypes).del();
+  return knex('group_types')
+    .whereIn('group_type_id', groupTypes)
+    .del()
+    .catch((error) => {
+      let errorObj = {
+        status: 'error',
+        code: error.code,
+        message: error.message,
+      };
+      throw new Error(JSON.stringify(errorObj));
+    });
 }
