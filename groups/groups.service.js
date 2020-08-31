@@ -148,10 +148,22 @@ async function getByName(name, user) {
 
 async function deleteGroups(groups, user)
 {
-    console.log("Got delete groups:", groups, user)
-    return knex('groups')
-        .whereIn('group_id', groups)
-        .update({
-            is_active: false
-        });
+    let groupEmployeeCount = await knex('groups_employee')
+    .whereIn('group_id', groups)
+    .count();    
+  
+    let groupExists = groupEmployeeCount[0].count > 0;
+
+    if (!groupExists){
+        return knex('groups')
+            .whereIn('group_id', groups)
+            .update({
+                is_active: false
+            });
+    }
+    else
+    {
+        let errorObj = {status: "error", code: 1, message :  'Foreign key constraint'};
+        throw new Error(JSON.stringify(errorObj));
+    }
 }
