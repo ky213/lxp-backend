@@ -15,7 +15,6 @@ router.get('/downloadFile/:id', authorize(), downloadFile);
 
 router.delete('/deleteCourses', authorize(), deleteCourses);
 router.get('/getById', authorize(), getById);
-router.get('/getAll', authorize(), getAll);
 router.get('/getByUser', authorize(), getByUser);
 router.get('/getByUserAll', authorize(), getByUserAll);
 router.get('/getAllJoined', authorize(), getAllJoinedCourses);
@@ -135,8 +134,8 @@ async function uploadFile(file, contentPath) {
     })
 }
 
-
 async function requestToJoinCourse(req, res, next) {
     courseService.requestToJoinCourse(req.user, req.query.courseId)
-        .then(data => res.json(data));
+        .then(data => res.json(data))
+        .catch(err => next(err));
 }
