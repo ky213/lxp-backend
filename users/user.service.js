@@ -280,6 +280,19 @@ async function getByEmployeeId(user, employeeId) {
             name: d.name,
             groupId: d.groupId
         }));
+
+        const courses = await knex.table('user_courses')
+        .join('courses', 'user_courses.course_id', 'courses.course_id')
+        .andWhere('user_courses.user_id', userData.userId)
+        .select([
+            'courses.course_id as courseId',
+            'courses.name as name'
+         ]);
+
+        userData.joinedCourses = courses.map(d => ({
+            name: d.name,
+            courseId: d.courseId
+        }));
     }
 
     return userData
