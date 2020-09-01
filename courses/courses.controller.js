@@ -11,7 +11,6 @@ var fs = require('fs');
 // routes
 router.get('/:id', authorize(), getById);
 router.get('/', authorize(), getAll);
-
 router.get('/downloadFile/:id', authorize(), downloadFile);
 
 router.delete('/deleteCourses', authorize(), deleteCourses);
@@ -19,20 +18,25 @@ router.get('/getById', authorize(), getById);
 router.get('/getAll', authorize(), getAll);
 router.get('/getByUser', authorize(), getByUser);
 router.get('/getByUserAll', authorize(), getByUserAll);
+router.get('/getAllJoined', authorize(), getAllJoinedCourses);
 
 router.post('/', authorize(), create);
 router.put('/', authorize(), update);
 router.post('/uploadFile', authorize(), uploadFile);
-
-router.get('/allJoinedCourses', authorize(), getAllJoinedCourses);
-router.get('/joinCourse', authorize(), requestToJoinCourse);
+router.post('/joinCourse', authorize(), requestToJoinCourse);
 
 module.exports = router;
 
 async function getAll(req, res, next) {
-    //console.log('getAll', req.query.Id);
     courseService.getAll(req.user, req.query.organizationId, req.query.programId, req.query.page, req.query.take, req.query.filter)
-        .then(data => res.json(data));
+        .then(data => res.json(data))
+        .catch(err => next(err));
+}
+
+function getAllJoinedCourses(req, res, next) {
+    courseService.getAllJoinedCourses(req.user, req.query.organizationId, req.query.programId, req.query.page, req.query.take, req.query.filter)
+        .then(data => res.json(data))
+        .catch(err => next(err));
 }
 
 async function getById(req, res, next) {
@@ -131,16 +135,8 @@ async function uploadFile(file, contentPath) {
     })
 }
 
-async function getAllJoinedCourses(req, res, next) {
-    //console.log('getAll', req.query.Id);
-    courseService.getAllJoinedCourses(req.user, req.query.organizationId, req.query.page, req.query.take, req.query.filter)
-        .then(data => res.json(data));
-}
 
 async function requestToJoinCourse(req, res, next) {
-    console.log('requestToJoinCourse', req.params.id);
     courseService.requestToJoinCourse(req.user, req.query.courseId)
         .then(data => res.json(data));
 }
-
-

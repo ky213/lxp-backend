@@ -206,22 +206,24 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
         .del();
 }
 
-async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, pageId, recordsPerPage, filter) {
+async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
     if (!loggedInUser) {
         return;
     }
 
     let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
-    console.log('=>', selectedOrganizationId, loggedInUser, pageId, recordsPerPage);
+    console.log('getAllJoinedCourses =>  ', selectedOrganizationId, loggedInUser, pageId, recordsPerPage);
 
     let model = knex('courses')
         .join('user_courses', 'user_courses.course_id', 'courses.course_id')
-        .where('courses.organization_id', organizationId);
+        .join('programs', 'programs.program_id', 'courses.program_id')
+        .where('courses.organization_id', organizationId)
+        .andWhere('user_courses.user_id', loggedInUser.userId)
+        .andWhere('user_courses.is_able_to_join', true);
 
-
-    if (loggedInUser)
-        model.andWhere('user_courses.user_id', loggedInUser.userId);
+    if (programId)
+        model.andWhere('courses.program_id', programId);
 
     var totalNumberOfRecords = (await model.clone().count().first()).count;
 
@@ -240,6 +242,8 @@ async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, pageId,
             'courses.period_days as periodDays',
             'courses.content_path as contentPath',
             'user_courses.joining_date as JoiningDate',
+            'programs.program_id as programId',
+            'programs.name as programName',
         ]);
 
     return {
@@ -256,7 +260,7 @@ async function requestToJoinCourse(loggedInUser, courseId) {
         .insert({
             user_id: loggedInUser.userId,
             course_id: courseId,
-            is_able_to_join: false,
+            is_able_to_join: true,
             generated: knex.fn.now()
         });
 }
