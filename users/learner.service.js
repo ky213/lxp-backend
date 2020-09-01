@@ -292,6 +292,20 @@ async function update(loggedInUser, user, organizationId) {
             .insert(insertgroupIds);
     }
 
+    if (user.courseIds) {
+      const insertcourseIds = user.courseIds.map(courseId => {
+          return {
+            user_id: user.user.userId,
+            is_able_to_join: true,
+            course_id: courseId
+          }
+      });
+
+      await knex('user_courses').where('user_id', user.userId).del();
+      await knex('user_courses')
+          .insert(insertcourseIds);
+  }
+
     return {
       isValid: true      
     };
