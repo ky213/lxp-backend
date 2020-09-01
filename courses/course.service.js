@@ -261,6 +261,6 @@ async function requestToJoinCourse(loggedInUser, courseId) {
             user_id: loggedInUser.userId,
             course_id: courseId,
             is_able_to_join: true,
-            generated: knex.fn.now()
+            joining_date: knex.fn.now()
         });
 }
