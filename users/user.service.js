@@ -14,7 +14,8 @@ module.exports = {
     checkIfEmailExists,
     changePassword,
     deleteEmployees,
-    updateProfileData
+    updateProfileData,
+    updateBulk,
 };
 
 async function authenticate({ email, password }) {
@@ -470,3 +471,64 @@ async function changePassword({oldPassword, newPassword}, user) {
             pager_number: pagerNumber
         })
   }
+
+  async function updateBulk(loggedInUser, data, organizationId) {
+
+    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  
+    let updates = [];
+    let output = [];
+  
+    async function UpdateEmployeeAsync(t, userData) {
+      return new Promise(async function(resolve, reject) {
+          if(userData.groupIds && userData.groupIds.length > 0)
+          {  
+                userData.groupIds.forEach(group => {
+                    let employeeGroups = {
+                    employee_id: userData.employeeId,
+                    group_id: group 
+                };
+  
+              return t
+              .into("groups_employee")
+              .insert(employeeGroups)
+              .then(() =>  {
+                output.push({ ...userData, status: "ok" });
+                return resolve();
+              })
+              .catch(err => {
+                output.push({ ...userData, status: "error", error: err });
+                return resolve();
+              }); 
+            }); 
+          }
+        });
+      }
+  
+    MapToArray = t => {
+      data.forEach(user => {
+        updates.push(UpdateEmployeeAsync(t, user));
+      });
+    };
+  
+    return await knex
+      .transaction(t => {
+        MapToArray(t);
+  
+        Promise.all(updates)
+          .then(() => {
+            return t.commit(output);
+          })
+          .catch(err => {
+            return t.rollback(output);
+          });
+      })
+      .catch(error => {
+        t.rollback();
+        return {
+          isValid: false,
+          errorDetails: error
+        };
+      });
+  }
+  

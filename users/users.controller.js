@@ -3,6 +3,7 @@ const router = express.Router();
 const userService = require("./user.service");
 const authorize = require("helpers/authorize");
 const converter = require("helpers/converter");
+const Role = require("helpers/role");
 
 router.get("/getAllActive", authorize(), getAllActiveUsers);
 router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
@@ -12,6 +13,7 @@ router.put("/change-password", authorize(), changePassword);
 router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
 router.put("/updateProfileData", authorize(), updateProfileData);
 router.delete("/deleteEmployees", authorize(), deleteEmployees);
+router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
 
 module.exports = router;
 
@@ -122,3 +124,11 @@ async function updateProfileData(req, res, next) {
       .then(() => res.json("Data successfully updated!"))
       .catch(err => next(err));
   }
+
+  
+function updateBulk(req, res, next) {
+  userService
+    .updateBulk(req.user, req.body.users, req.body.organizationId)
+    .then(() => res.json(true))
+    .catch(err => next(err));
+}
