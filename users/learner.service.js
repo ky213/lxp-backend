@@ -11,6 +11,7 @@ module.exports = {
   add,
   addBulk,
   update,
+  updateBulk,
   validateBulk
 };
 
@@ -292,12 +293,12 @@ async function update(loggedInUser, user, organizationId) {
             .insert(insertgroupIds);
     }
 
-    if (user.courseIds) {
-      const insertcourseIds = user.courseIds.map(courseId => {
+    if (user.joinedCourses) {
+      const insertcourseIds = user.joinedCourses.map(course => {
           return {
-            user_id: user.user.userId,
+            user_id: user.userId,
             is_able_to_join: true,
-            course_id: courseId
+            course_id: course.courseId
           }
       });
 
@@ -384,4 +385,64 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
   output.hasErrors = output.numOfRecordsInvalid > 0;
 
   return output;
+}
+
+async function updateBulk(loggedInUser, data, organizationId) {
+
+  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+
+  let updtes = [];
+  let output = [];
+ 
+  async function UpdateLearnerAsync(t, userData) {
+    return new Promise(async function(resolve, reject) {
+
+		  userData.groupIds.forEach(group => {
+            let employeeGroups = userData.employeeIds.map(employeeId => ({
+                employee_id: employeeId,
+                group_id: group 
+            }));
+                        
+            return t
+            .into("groups_employee")
+            .update(employeeGroups)
+            .then(() => {
+                output.push({ ...userData, status: "ok" });
+                return resolve();
+                })
+			      .catch(err => {
+			          output.push({ ...userData, status: "error", error: err });
+			          return resolve();
+			        });        
+          });
+      });
+    }
+
+  MapToArray = t => {
+    data.forEach(user => {
+      updates.push(
+        UpdateLearnerAsync(t, user)
+      );
+    });
+  };
+
+  return await knex
+    .transaction(t => {
+      MapToArray(t);
+
+      Promise.all(updates)
+        .then(() => {
+          return t.commit(output);
+        })
+        .catch(err => {
+          return t.rollback(output);
+        });
+    })
+    .catch(error => {
+      t.rollback();
+      return {
+        isValid: false,
+        errorDetails: error
+      };
+    });
 }
