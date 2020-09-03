@@ -87,6 +87,7 @@ async function deletegrouptypes(groupTypes) {
     .del()
     .catch((error) => {
       let errorObj = {
+        isValid: false,
         status: 'error',
         code: error.code,
         message: error.message,

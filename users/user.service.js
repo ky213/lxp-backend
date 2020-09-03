@@ -497,7 +497,7 @@ async function changePassword({oldPassword, newPassword}, user) {
                 return resolve();
               })
               .catch(err => {
-                output.push({ ...userData, status: "error", error: err });
+                output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                 return resolve();
               }); 
             }); 

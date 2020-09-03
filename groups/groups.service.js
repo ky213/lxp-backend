@@ -163,7 +163,7 @@ async function deleteGroups(groups, user)
     }
     else
     {
-        let errorObj = {status: "error", code: 1, message :  'Foreign key constraint'};
+        let errorObj = {isValid: false, status: "error", code: 1, message :  'Foreign key constraint'};
         throw new Error(JSON.stringify(errorObj));
     }
 }

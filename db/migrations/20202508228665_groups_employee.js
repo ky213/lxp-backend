@@ -8,6 +8,8 @@ exports.up = function(knex) {
 
     table.foreign('group_id').references('group_id').inTable('groups');
     table.foreign('employee_id').references('employee_id').inTable('employees');
+
+    table.unique(['group_id', 'employee_id']);
   });
 };
 

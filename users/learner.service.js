@@ -11,7 +11,7 @@ module.exports = {
   add,
   addBulk,
   update,
-  updateBulk,
+  updateCoursesBulk,
   validateBulk
 };
 
@@ -65,6 +65,26 @@ async function add(loggedInUser, userData, organizationId) {
       await knex("groups_employee")
         .transacting(t)
         .insert(_employeeGroups);
+
+      if (userData.joinedCourses) {
+        let insertcourseIds = userData.joinedCourses.map(course => ({
+              user_id: userIds[0],
+              is_able_to_join: true,
+              course_id: course.courseId,
+              joining_date: knex.fn.now()
+            }));
+    
+          await knex('user_courses')
+          .transacting(t)
+          .insert(insertcourseIds)
+          .catch(err => {
+            return {
+              isValid: false,
+              status: "error", 
+              errorDetails: err 
+            };
+          });                
+      }
 
       await knex("employee_roles")
         .transacting(t)
@@ -199,18 +219,18 @@ async function addBulk(loggedInUser, data, organizationId) {
                   }
                 })
                 .catch(err => {
-                  output.push({ ...userData, status: "error", error: err });
+                  output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                   return resolve();
                 });              
  
             })
             .catch(err => {
-              output.push({ ...userData, status: "error", error: err });
+              output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
               return resolve();
             });
         })
         .catch(err => {
-          output.push({ ...userData, status: "error", error: err });
+          output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
           return resolve();
         });        
     });
@@ -298,7 +318,8 @@ async function update(loggedInUser, user, organizationId) {
           return {
             user_id: user.userId,
             is_able_to_join: true,
-            course_id: course.courseId
+            course_id: course.courseId,
+            joining_date: knex.fn.now()
           }
       });
 
@@ -387,34 +408,38 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
   return output;
 }
 
-async function updateBulk(loggedInUser, data, organizationId) {
+async function updateCoursesBulk(loggedInUser, data, organizationId) {
 
   organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
-  let updtes = [];
+  let updates = [];
   let output = [];
  
   async function UpdateLearnerAsync(t, userData) {
-    return new Promise(async function(resolve, reject) {
-
-		  userData.groupIds.forEach(group => {
-            let employeeGroups = userData.employeeIds.map(employeeId => ({
-                employee_id: employeeId,
-                group_id: group 
-            }));
+    return new Promise(async function(resolve, reject) {  
+      if(userData.joinedCourses && userData.joinedCourses.length > 0)
+      {     
+		    userData.joinedCourses.forEach(course => {
+          let insertUserCourse = {
+              user_id: userData.userId,
+              is_able_to_join: true,
+              course_id: course,
+              joining_date: knex.fn.now()
+          };
                         
-            return t
-            .into("groups_employee")
-            .update(employeeGroups)
-            .then(() => {
-                output.push({ ...userData, status: "ok" });
+          return t
+          .into("user_courses")
+          .insert(insertUserCourse)
+          .then(() => {
+              output.push({ ...userData, status: "ok" });
+              return resolve();
+              })
+              .catch(err => {             
+                output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                 return resolve();
-                })
-			      .catch(err => {
-			          output.push({ ...userData, status: "error", error: err });
-			          return resolve();
-			        });        
+              });               
           });
+        }
       });
     }
 
