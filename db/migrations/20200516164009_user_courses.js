@@ -10,6 +10,8 @@ exports.up = function(knex) {
     
     table.foreign('user_id').references('user_id').inTable('users');
     table.foreign('course_id').references('course_id').inTable('courses');
+
+    table.unique(['user_id', 'course_id']);
   });
 };
 

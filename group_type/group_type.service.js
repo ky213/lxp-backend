@@ -84,7 +84,7 @@ async function deletegrouptypes(groupTypes)
         .whereIn('group_type_id', groupTypes)
         .del()
         .catch(error => {
-            let errorObj = {status: "error", code: error.code, message :  error.message};
+            let errorObj = {isValid: false, status: "error", code: error.code, message :  error.message};
             throw new Error(JSON.stringify(errorObj));
           });
 }
