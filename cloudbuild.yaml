@@ -80,7 +80,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: bash
     waitFor:
-      - 'apply initial database state scripts'
+      - 'apply migration scripts'
     args:
       - '-c'
       - |
