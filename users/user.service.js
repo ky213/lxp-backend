@@ -312,7 +312,8 @@ async function getByEmployeeId(user, employeeId) {
 
         userData.joinedCourses = courses.map(d => ({
             name: d.name,
-            courseId: d.courseId
+            courseId: d.courseId,
+            contentPath: d.contentPath
         }));
     }
 
