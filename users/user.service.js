@@ -187,8 +187,20 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
             .whereIn('employees.user_id', users.map(u => u.userId))
             .select([
                 'groups.group_id as groupId',
-                'groups.name as name'
+                'groups.name as name',
+                'employees.user_id as userId'
             ]);                               
+
+        const allUserCourses =
+            await knex.table('user_courses')
+                .join('courses', 'courses.course_id', 'user_courses.course_id')
+                .whereIn('user_courses.user_id', users.map(u => u.userId))
+                .select([
+                    'user_courses.course_id as courseId',
+                    'courses.name as name',
+                    'user_courses.joining_date as joiningDate',
+                    'user_courses.user_id as userId'
+            ]); 
 
         return {
             users: users.map(user => {
@@ -198,6 +210,13 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
                     return {
                         name: d.name,
                         groupId: d.groupId
+                    }
+                }),
+                joinedCourses: allUserCourses.filter(u => u.userId == user.userId).map(d => {
+                    return {
+                        name: d.name,
+                        courseId: d.courseId,
+                        joiningDate: d.joiningDate
                     }
                 })
             }
