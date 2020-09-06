@@ -23,7 +23,7 @@ exports.seed = async function(knex) {
         organization_id: organization.organization_id, 
         program_id: program.program_id,
         name: 'Cyber Security',
-        content_path: '/cyber-security/'
+        content_path: 'cyber-security/'
       },
     ]);
   }
