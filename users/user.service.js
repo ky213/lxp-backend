@@ -306,7 +306,8 @@ async function getByEmployeeId(user, employeeId) {
         .andWhere('user_courses.user_id', userData.userId)
         .select([
             'courses.course_id as courseId',
-            'courses.name as name'
+            'courses.name as name',
+            'courses.content_path as contentPath'
          ]);
 
         userData.joinedCourses = courses.map(d => ({
@@ -550,4 +551,3 @@ async function changePassword({oldPassword, newPassword}, user) {
         };
       });
   }
-  
