@@ -11,7 +11,6 @@ module.exports = {
   add,
   addBulk,
   update,
-  updateCoursesBulk,
   validateBulk
 };
 
@@ -406,68 +405,4 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
   output.hasErrors = output.numOfRecordsInvalid > 0;
 
   return output;
-}
-
-async function updateCoursesBulk(loggedInUser, data, organizationId) {
-
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-
-  let updates = [];
-  let output = [];
- 
-  async function UpdateLearnerAsync(t, userData) {
-    return new Promise(async function(resolve, reject) {  
-      if(userData.joinedCourses && userData.joinedCourses.length > 0)
-      {     
-		    userData.joinedCourses.forEach(course => {
-          let insertUserCourse = {
-              user_id: userData.userId,
-              is_able_to_join: true,
-              course_id: course,
-              joining_date: knex.fn.now()
-          };
-                        
-          return t
-          .into("user_courses")
-          .insert(insertUserCourse)
-          .then(() => {
-              output.push({ ...userData, status: "ok" });
-              return resolve();
-              })
-              .catch(err => {             
-                output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
-                return resolve();
-              });               
-          });
-        }
-      });
-    }
-
-  MapToArray = t => {
-    data.forEach(user => {
-      updates.push(
-        UpdateLearnerAsync(t, user)
-      );
-    });
-  };
-
-  return await knex
-    .transaction(t => {
-      MapToArray(t);
-
-      Promise.all(updates)
-        .then(() => {
-          return t.commit(output);
-        })
-        .catch(err => {
-          return t.rollback(output);
-        });
-    })
-    .catch(error => {
-      t.rollback();
-      return {
-        isValid: false,
-        errorDetails: error
-      };
-    });
 }

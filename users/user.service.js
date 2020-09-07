@@ -307,13 +307,23 @@ async function getByEmployeeId(user, employeeId) {
         .select([
             'courses.course_id as courseId',
             'courses.name as name',
-            'courses.content_path as contentPath'
+            'courses.content_path as contentPath',
+            'courses.image',
+            'courses.description as description',
+            'courses.period_days as periodDays',
+            'courses.starting_date as startingDate',
+            'courses.program_id as programId'
          ]);
 
         userData.joinedCourses = courses.map(d => ({
             name: d.name,
             courseId: d.courseId,
-            contentPath: d.contentPath
+            contentPath: d.contentPath,
+            image : d.image,
+            description : d.description,
+            periodDays : d.periodDays,
+            startingDate : d.startingDate,
+            programId : d.programId
         }));
     }
 
@@ -499,36 +509,60 @@ async function changePassword({oldPassword, newPassword}, user) {
   
     let updates = [];
     let output = [];
+   
+    async function UpdateLearnerAsync(t, userData) {
+      return new Promise(async function(resolve, reject) {     
+        if(userData.joinedCourses && userData.joinedCourses.length > 0)
+        { 
+            userData.joinedCourses.forEach(course => {
+                let insertUserCourse = {
+                user_id: userData.userId,
+                is_able_to_join: true,
+                course_id: course,
+                joining_date: knex.fn.now()
+            };
+                          
+            return t
+            .into("user_courses")
+            .insert(insertUserCourse)
+            .then(() =>  {
+              output.push({ ...userData, status: "ok" });
+            })
+            .catch(err => {
+              output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+            }); 
+          }); 
+        }
   
-    async function UpdateEmployeeAsync(t, userData) {
-      return new Promise(async function(resolve, reject) {
-          if(userData.groupIds && userData.groupIds.length > 0)
-          {  
-                userData.groupIds.forEach(group => {
-                    let employeeGroups = {
-                    employee_id: userData.employeeId,
-                    group_id: group 
-                };
-  
+        if(userData.groupIds && userData.groupIds.length > 0)
+        {  
+            userData.groupIds.forEach(group => {
+                let employeeGroups = {
+                employee_id: userData.employeeId,
+                group_id: group 
+              };
+        
               return t
               .into("groups_employee")
               .insert(employeeGroups)
               .then(() =>  {
-                output.push({ ...userData, status: "ok" });
-                return resolve();
-              })
+                  output.push({ ...userData, status: "ok" });
+               })
               .catch(err => {
-                output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
-                return resolve();
+                  output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                }); 
               }); 
-            }); 
-          }
+            }
+          
+            return resolve();
         });
       }
   
-    MapToArray = t => {
+    const MapToArray = t => {
       data.forEach(user => {
-        updates.push(UpdateEmployeeAsync(t, user));
+        updates.push(
+          UpdateLearnerAsync(t, user)
+        );
       });
     };
   

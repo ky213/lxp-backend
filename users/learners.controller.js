@@ -15,7 +15,6 @@ router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningMan
 router.post("/validateBulk", authorize(), validateBulk);
 
 router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update);
-router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateCoursesBulk);
 
 
 module.exports = router;
@@ -120,9 +119,3 @@ function validateBulk(req, res, next) {
     .catch(err => next(err));
 }
 
-function updateCoursesBulk(req, res, next) {
-  learnerService
-    .updateCoursesBulk(req.user, req.body.users, req.body.organizationId)
-    .then(() => res.json(true))
-    .catch(err => next(err));
-}
