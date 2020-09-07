@@ -176,15 +176,17 @@ async function addBulk(loggedInUser, data, organizationId) {
                     let employeePrograms = employeeIds.map(employeeId => ({
                       employee_id: employeeId,
                       program_id: userProgram.programId
-                    }));
-    
+                    }));    
                     return t
                     .into("employee_programs")
                     .insert(employeePrograms)
-                    .then(() => {
-                      if(userData.groupIds && userData.groupIds.length > 0)
-                      {
-                          userData.groupIds.forEach(group => {
+                    .catch(err => {
+                      output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                    }); 
+                  }// end userProgram if 
+                  
+                  if(userData.groupIds && userData.groupIds.length > 0){
+                        userData.groupIds.forEach(group => {
                           let employeeGroups = employeeIds.map(employeeId => ({
                             employee_id: employeeId,
                             group_id: group 
@@ -193,14 +195,14 @@ async function addBulk(loggedInUser, data, organizationId) {
                           return t
                           .into("groups_employee")
                           .insert(employeeGroups)
-                          .then(() => {
-                            output.push({ ...userData, status: "ok" });
-                            return resolve();
-                          })
+                          .catch(err => {
+                            output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                          });
                         });             
-                      }
-                      else
-                      {
+                    }
+                    else
+                    {
+                      if(defaultGroup){
                         let employeeGroups = employeeIds.map(employeeId => ({
                           employee_id: employeeId,
                           group_id: defaultGroup.defaultGroupId
@@ -209,19 +211,36 @@ async function addBulk(loggedInUser, data, organizationId) {
                         return t
                           .into("groups_employee")
                           .insert(employeeGroups)
-                          .then(() => {
-                            output.push({ ...userData, status: "ok" });
-                            return resolve();
-                          })
-                      }
-                    })
-                  }
+                          .catch(err => {
+                            output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                          }); 
+                        }//end if defaultGroup
+                      }// end if groups
+                        
+                      if(userData.joinedCourses && userData.joinedCourses.length > 0){ 
+                          userData.joinedCourses.forEach(course => {                              
+                              let insertUserCourse = userIds.map(userId => ({
+                                user_id: userId,
+                                is_able_to_join: true,
+                                course_id: course,
+                                joining_date: knex.fn.now()
+                            }));
+                                          
+                            return t
+                            .into("user_courses")
+                            .insert(insertUserCourse)
+                            .catch(err => {
+                              output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                            }); 
+                          }); 
+                      }// end if course   
+                    output.push({ ...userData, status: "ok" });       
+                    return resolve(); 
                 })
                 .catch(err => {
                   output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                   return resolve();
-                });              
- 
+                });            
             })
             .catch(err => {
               output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
