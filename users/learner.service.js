@@ -184,14 +184,14 @@ async function addBulk(loggedInUser, data, organizationId) {
                       output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                     }); 
                   }// end userProgram if 
-                  
+
                   if(userData.groupIds && userData.groupIds.length > 0){
                         userData.groupIds.forEach(group => {
                           let employeeGroups = employeeIds.map(employeeId => ({
                             employee_id: employeeId,
                             group_id: group 
                           }));
-                        
+
                           return t
                           .into("groups_employee")
                           .insert(employeeGroups)
@@ -202,7 +202,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                     }
                     else
                     {
-                      if(defaultGroup){
+                      if(defaultGroup && defaultGroup.defaultGroupId){
                         let employeeGroups = employeeIds.map(employeeId => ({
                           employee_id: employeeId,
                           group_id: defaultGroup.defaultGroupId
