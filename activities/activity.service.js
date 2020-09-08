@@ -857,7 +857,6 @@ async function logActivity(activity, user)
             start: activity.start,      
             end: activity.end,      
             activity_type_id: activity.activityTypeId,
-            participation_level: activity.participationLevel,
             location: activity.location,
             details: activity.details,
             logged_by: user.employeeId,
@@ -916,7 +915,6 @@ async function updateLogActivity(activity, user)
             .update({
                 //program_id: activity.programId, 
                 name: activity.name,
-                participation_level: activity.participationLevel,
                 start: activity.start,      
                 end: activity.end,      
                 details: activity.details,
@@ -977,7 +975,6 @@ async function getLogActivityById(activityId, user) {
         'log_activities.location',
         'log_activities.details',
         'log_activities.status',
-        'log_activities.participation_level as participationLevel',
         'log_activities.logged_by as loggedBy',
         'users.name as loggedByFirstName',
         'users.surname as loggedByLastName',
