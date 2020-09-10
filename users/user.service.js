@@ -509,7 +509,7 @@ async function changePassword({oldPassword, newPassword}, user) {
   
     let updates = [];
     let output = [];
-   
+
     async function UpdateLearnerAsync(t, userData) {
       return new Promise(async function(resolve, reject) {     
         if(userData.joinedCourses && userData.joinedCourses.length > 0)
@@ -521,15 +521,16 @@ async function changePassword({oldPassword, newPassword}, user) {
                 course_id: course,
                 joining_date: knex.fn.now()
             };
-                          
+
             return t
             .into("user_courses")
             .insert(insertUserCourse)
             .then(() =>  {
-              output.push({ ...userData, status: "ok" });
+                output.push({ ...userData, status: "ok" });
             })
             .catch(err => {
               output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+              return resolve();
             }); 
           }); 
         }
@@ -540,8 +541,8 @@ async function changePassword({oldPassword, newPassword}, user) {
                 let employeeGroups = {
                 employee_id: userData.employeeId,
                 group_id: group 
-              };
-        
+              };        
+              
               return t
               .into("groups_employee")
               .insert(employeeGroups)
@@ -550,27 +551,30 @@ async function changePassword({oldPassword, newPassword}, user) {
                })
               .catch(err => {
                   output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
+                  return resolve();
                 }); 
               }); 
-            }
-          
+            }          
             return resolve();
+        }).
+        catch(error => {
+            return {
+                isValid: false,
+                errorDetails: error
+              };
         });
       }
   
     const MapToArray = t => {
       data.forEach(user => {
-        updates.push(
-          UpdateLearnerAsync(t, user)
-        );
+        updates.push(UpdateLearnerAsync(t, user));
       });
     };
   
     return await knex
-      .transaction(t => {
-        MapToArray(t);
-  
-        Promise.all(updates)
+      .transaction(t => { 
+        MapToArray(t);  
+        Promise.all(updates)        
           .then(() => {
             return t.commit(output);
           })
@@ -579,6 +583,7 @@ async function changePassword({oldPassword, newPassword}, user) {
           });
       })
       .catch(error => {
+        console.log('inside rollback err ', output);
         t.rollback();
         return {
           isValid: false,
