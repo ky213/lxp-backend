@@ -133,10 +133,10 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
     )
 
     let allUsers = await pdAll.then(f => {
-        if (f.length === 0) {
+        if (f.rows.length === 0) {
             return 0
         }
-        return f[0].a;
+        return f.rows[0].a;
     });
 
     let completedQuery = knex.raw("select count(*)::integer as a from \"statements\" where " +
