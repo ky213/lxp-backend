@@ -15,7 +15,7 @@ router.post('/distribution/progress/users/attempted', authorize(), findProgressD
 router.post('/distribution/progress/users/not_attempted', authorize(), findProgressDistrubitionNotAttemptedUserData);
 
 router.post('/distribution/breakdown', authorize(), breakdownDistrubitionData);
-router.post('/distribution/breakdown/users/search', authorize(), breakdownDistrubitionData);
+router.post('/distribution/breakdown/users/search', authorize(), breakdownDistrubitionUsersSearch);
 
 module.exports = router;
 
