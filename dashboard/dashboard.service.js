@@ -200,7 +200,7 @@ async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
         "and payload -> 'context' ->> 'registration' = ? " +
         "group by 1 ) as st " +
         "where st.last_generated < ? " +
-        "group by st.answered_questions", [programId + "|" + courseId], breakdownDate);
+        "group by st.answered_questions", [programId + "|" + courseId, breakdownDate]);
 
 
     return await collectedPointsDistribution.then(f => {
