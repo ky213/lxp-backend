@@ -9,13 +9,13 @@ var AdmZip = require('adm-zip');
 var fs = require('fs');
 
 // routes
-router.get('/distribution/progress', authorize(), progressDistrubitionData);
-router.get('/distribution/progress/users/completed', authorize(), findProgressDistrubitionCompletedUserData);
-router.get('/distribution/progress/users/attempted', authorize(), findProgressDistrubitionAttemptedUserData);
-router.get('/distribution/progress/users/not_attempted', authorize(), findProgressDistrubitionNotAttemptedUserData);
+router.post('/distribution/progress', authorize(), progressDistrubitionData);
+router.post('/distribution/progress/users/completed', authorize(), findProgressDistrubitionCompletedUserData);
+router.post('/distribution/progress/users/attempted', authorize(), findProgressDistrubitionAttemptedUserData);
+router.post('/distribution/progress/users/not_attempted', authorize(), findProgressDistrubitionNotAttemptedUserData);
 
-router.get('/distribution/breakdown', authorize(), breakdownDistrubitionData);
-router.get('/distribution/breakdown/users/search', authorize(), breakdownDistrubitionData);
+router.post('/distribution/breakdown', authorize(), breakdownDistrubitionData);
+router.post('/distribution/breakdown/users/search', authorize(), breakdownDistrubitionData);
 
 module.exports = router;
 
