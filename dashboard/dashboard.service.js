@@ -127,11 +127,10 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
 
     console.log("progressDistributionData:", courseId);
 
-    let pdAll = knex('employees')
-        .innerJoin('users', 'employees.user_id', 'users.user_id')
-        .where('employees.is_learner', true)
-        .andWhere('employees.organization_id', organizationId)
-        .select(knex.raw('count(*)::integer as a'));
+    let pdAll = knex.raw(
+        "select count(*)::integer as a from employees e inner join users u on e.user_id = u.user_id where e.is_learner = true and e.organization_id = ?",
+        [organizationId]
+    )
 
     let allUsers = await pdAll.then(f => {
         if (f.length === 0) {
