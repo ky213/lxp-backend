@@ -240,7 +240,7 @@ async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseI
         "group by 1 ) as st " +
         "where st.answers_count > ? " +
         "and st.answers_count < ? " +
-        "and st.last_generated < ? " +
+        "and st.last_generated_statement < ? " +
         "order by st.email offset ? limit ? "
         , [programId + "|" + courseId, minAnswers, maxAnswers, breakdownDate, offset, pageSize]);
 
