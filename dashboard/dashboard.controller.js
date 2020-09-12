@@ -20,37 +20,43 @@ router.post('/distribution/breakdown/users/search', authorize(), breakdownDistru
 module.exports = router;
 
 async function progressDistrubitionData(req, res, next) {
-    dashboardService.progressDistrubitionData(req.user, req.query.organizationId, req.query.programId, req.query.courseId)
+    data = req.body
+    dashboardService.progressDistrubitionData(req.user, data.organizationId, data.programId, data.courseId)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 async function findProgressDistrubitionCompletedUserData(req, res, next) {
-    dashboardService.findProgressDistrubitionCompletedUserData(req.user, req.query.programId, req.query.courseId, req.query.offset, req.query.pageSize)
+    data = req.body
+    dashboardService.findProgressDistrubitionCompletedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 async function findProgressDistrubitionAttemptedUserData(req, res, next) {
-    dashboardService.findProgressDistrubitionAttemptedUserData(req.user, req.query.programId, req.query.courseId, req.query.offset, req.query.pageSize)
+    data = req.body
+    dashboardService.findProgressDistrubitionAttemptedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 async function findProgressDistrubitionNotAttemptedUserData(req, res, next) {
-    dashboardService.findProgressDistrubitionNotAttemptedUserData(req.user, req.query.programId, req.query.courseId, req.query.offset, req.query.pageSize)
+    data = req.body
+    dashboardService.findProgressDistrubitionNotAttemptedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 function breakdownDistrubitionData(req, res, next) {
-    dashboardService.breakdownDistrubitionData(req.user, req.query.programId, req.query.courseId)
+    data = req.body
+    dashboardService.breakdownDistrubitionData(req.user, data.programId, data.courseId)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 function breakdownDistrubitionUsersSearch(req, res, next) {
-    dashboardService.breakdownDistrubitionUsersSearch(req.user, req.query.programId, req.query.courseId, req.query.minAnswers, req.query.maxAnswers, req.query.offset, req.query.pageSize)
+    data = req.body
+    dashboardService.breakdownDistrubitionUsersSearch(req.user, data.programId, data.courseId, data.minAnswers, data.maxAnswers, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
