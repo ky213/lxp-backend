@@ -128,9 +128,9 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
     console.log("progressDistributionData:", courseId);
 
     let pdAll = knex('employees')
-        .join('users', 'employees.user_id', 'users.user_id')
+        .innerJoin('users', 'employees.user_id', 'users.user_id')
         .where('employees.is_learner', true)
-        .andWhere('employees.organization_id', '=', organizationId)
+        .andWhere('employees.organization_id', organizationId)
         .select(knex.raw('count(*)::integer as a'));
 
     let allUsers = await pdAll.then(f => {
