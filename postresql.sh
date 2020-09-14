@@ -1,11 +1,11 @@
 #!/bin/bash
 function create_container {
     docker run -d --name $CONTAINER_NAME \
-    -e POSTGRES_USER=admin \
-    -e POSTGRES_PASSWORD=admin \
-    -e POSTGRES_HOST_AUTH_METHOD=trust \
-    -e POSTGRES_DB=lxpdb \
-    -p 25432:5432 postgres
+    -e POSTGRES_USER=$POSTGRES_USER \
+    -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    -e POSTGRES_HOST_AUTH_METHOD=true \
+    -e POSTGRES_DB=$POSTGRES_DB \
+    -p $PORT:5432 postgres
 
     sleep 2
     cd ./db
@@ -25,11 +25,21 @@ function delete_container {
     docker rm -f $CONTAINER_NAME
 }
 
+
+
 CONTAINER_NAME="lxp-psql"
+POSTGRES_USER="admin"
+POSTGRES_PASSWORD="admin"
+POSTGRES_DB="lxpdb"
+PORT=25432
 
 case "$1" in
 "create" | "new" | "run") 
     create_container
+;;
+
+"connect")
+    psql -U $POSTGRES_USER -h 127.0.0.1 -p $PORT $POSTGRES_DB
 ;;
 
 "start") 
