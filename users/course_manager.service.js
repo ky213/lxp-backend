@@ -19,18 +19,18 @@ module.exports = {
 
 async function add(loggedInUser, userData, organizationId) {
   userData = {
-    ...userData, 
+    ...userData,
     email: userData.email && userData.email.toLowerCase() || userData.email
   };
 
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-    
+  organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+
   let validationOutput = await validateBulk(
     loggedInUser,
     [userData],
     organizationId
   );
-  
+
   if (validationOutput.hasErrors) {
     return {
       isValid: false,
@@ -92,7 +92,7 @@ async function add(loggedInUser, userData, organizationId) {
           .insert({
             employee_id: employeeIds[0],
             program_id: userProgram.programId
-          });   
+          });
       }
 
       return {
@@ -112,8 +112,8 @@ async function addBulk(loggedInUser, data, organizationId) {
     ...d,
     email: d.email && d.email.toLowerCase() || d.email
   }));
-  
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+
+  organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let inserts = [];
   let output = [];
@@ -139,7 +139,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         .into("users")
         .insert({
           name: userData.name,
-          surname: userData.surname,          
+          surname: userData.surname,
           email: userData.email,
           gender: userData.gender,
           start_date: userData.startDate,
@@ -165,7 +165,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 employee_id: employeeId,
                 role_id: userData.roleId
               }));
-              
+
               return t
                 .into("employee_roles")
                 .insert(employeeRoles)
@@ -174,29 +174,31 @@ async function addBulk(loggedInUser, data, organizationId) {
                     let employeePrograms = employeeIds.map(employeeId => ({
                       employee_id: employeeId,
                       program_id: userProgram.programId
-                    }));    
-                    return t
+                    }));
+                    t
                     .into("employee_programs")
                     .insert(employeePrograms)
                     .catch(err => {
+                      console.log(err);
                       output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
-                    }); 
-                  }// end userProgram if 
+                    });
+                  }// end userProgram if
 
                   if(userData.groupIds && userData.groupIds.length > 0){
                         userData.groupIds.forEach(group => {
                           let employeeGroups = employeeIds.map(employeeId => ({
                             employee_id: employeeId,
-                            group_id: group 
+                            group_id: group
                           }));
 
-                          return t
+                          t
                           .into("groups_employee")
                           .insert(employeeGroups)
                           .catch(err => {
+                            console.log(err);
                             output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                           });
-                        });             
+                        });
                     }
                     else
                     {
@@ -210,27 +212,31 @@ async function addBulk(loggedInUser, data, organizationId) {
                           .into("groups_employee")
                           .insert(employeeGroups)
                           .catch(err => {
+                            console.log(err);
                             output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
-                          }); 
+                          });
                         }//end if defaultGroup
-                      }// end if groups                     
-                    output.push({ ...userData, status: "ok" });       
-                    return resolve(); 
+                      }// end if groups
+                    output.push({ ...userData, status: "ok" });
+                    return resolve();
                 })
                 .catch(err => {
+                  console.log(err);
                   output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
                   return resolve();
-                });            
+                });
             })
             .catch(err => {
+              console.log(err);
               output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
               return resolve();
             });
         })
         .catch(err => {
+          console.log(err);
           output.push({ ...userData, isValid: false, status: "error", errorDetails: err });
           return resolve();
-        });        
+        });
     });
   }
 
@@ -246,24 +252,28 @@ async function addBulk(loggedInUser, data, organizationId) {
 
       Promise.all(inserts)
         .then(() => {
+          console.log('Commit.');
           return t.commit(output);
         })
         .catch(err => {
-          return t.rollback(output);
+          console.log('Rollback. Because:', err );
+          t.rollback(output);
+          throw err;
         });
     })
     .catch(err => {
       console.log("error", err);
+      throw err;
     });
 }
 
 async function update(loggedInUser, user, organizationId) {
   user = {
     ...user,
-    email: user.email && user.email.toLowerCase() || user.email    
+    email: user.email && user.email.toLowerCase() || user.email
   };
-  
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+
+  organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let validationOutput = await validateBulk(loggedInUser, [user], organizationId);
   if (validationOutput.hasErrors) {
@@ -349,12 +359,12 @@ async function update(loggedInUser, user, organizationId) {
 }
 
 async function validateBulk(loggedInUser, usersData, organizationId) {
-  usersData = usersData.map(d => ({ 
+  usersData = usersData.map(d => ({
     ...d,
-    email: d.email && d.email.toLowerCase().trim() || d.email    
+    email: d.email && d.email.toLowerCase().trim() || d.email
   }));
-  
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+
+  organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
   let output = {
     hasErrors: false,
@@ -363,7 +373,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
   };
 
   let emails = [];
-  
+
   function addError(userData, error) {
     output.data.push({ ...userData, status: "error", error });
     output.numOfRecordsInvalid = output.numOfRecordsInvalid + 1;
@@ -427,7 +437,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
 
     if (user.organizationId) {
       const exists = organizationService.getById(organizationId, loggedInUser);
-      if (!exists || (exists && exists.length == 0)) {
+      if (!exists || (exists && exists.length === 0)) {
         addError(user, "Specified organization does not exist");
         continue;
       }
