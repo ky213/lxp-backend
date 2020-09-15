@@ -8,7 +8,12 @@ const programService = require('../programs/program.service');
 const Role = require("helpers/role");
 
 let defaultPassword = "admin";
-let cmRoles = getCmRoles();
+let cmRolesP = async function(){
+  return await getCmRoles().then(r=> {
+    cmRoles = r;
+  });
+}()
+var cmRoles=[]
 
 module.exports = {
   add,
@@ -402,7 +407,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
       continue;
     }
 
-    if (user.gender != 'M' && user.gender != 'F') {
+    if (user.gender !== 'M' && user.gender !== 'F') {
       addError(user, "Gender is not valid");
       continue;
     }
@@ -430,10 +435,22 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
       continue;
     }
 
-    // if (!cmRoles.includes(user.roleId)) {
-    //   addError(user, "Role is not valid");
-    //   continue;
-    // }
+    if(cmRoles){
+      let valid = false;
+      cmRoles.forEach(item=>{
+        if(item.roleId === user.roleId || item.name === user.roleId){
+          valid=true;
+          usersData[i].roleId=item.roleId;
+          usersData[i].roleName=item.name;
+        }
+      })
+
+      if(!valid) {
+        addError(user, "Role is not valid");
+        continue;
+      }
+    }
+
 
     if (user.organizationId) {
       const exists = organizationService.getById(organizationId, loggedInUser);
