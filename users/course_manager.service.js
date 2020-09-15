@@ -153,12 +153,12 @@ async function addBulk(loggedInUser, data, organizationId) {
         .returning("user_id")
         .then(userIds => {
           let _employees = userIds.map(userId => {
-            return {
+             return {
               user_id: userId,
               organization_id: organizationId,
               exp_level_id: null,
               is_learner: false
-            };
+            }
           });
 
           return t
@@ -180,7 +180,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                       employee_id: employeeId,
                       program_id: userProgram.programId
                     }));
-                    t
+                    return t
                     .into("employee_programs")
                     .insert(employeePrograms)
                     .catch(err => {
@@ -196,7 +196,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                             group_id: group
                           }));
 
-                          t
+                          return t
                           .into("groups_employee")
                           .insert(employeeGroups)
                           .catch(err => {
