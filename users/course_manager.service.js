@@ -151,6 +151,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             })
             .returning("user_id")
             .then(userIds => {
+                console.log("user created: ",userIds)
                 return userIds;
             })
             .catch(err => {
@@ -172,6 +173,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             .insert(_employees)
             .returning("employee_id")
             .then(employeeIds => {
+                console.log("employee created: ",employeeIds)
                 return employeeIds;
             })
             .catch(err => {
@@ -188,6 +190,9 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         await t.into("employee_roles")
             .insert(employeeRoles)
+            .then(r=>{
+                console.log("employee_roles created: ",employeeIds)
+            })
             .catch(err => {
                 console.log(err);
                 output.push({...userData, isValid: false, status: "error", errorDetails: err});
@@ -204,6 +209,9 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             await t.into("employee_programs")
                 .insert(employeePrograms)
+                .then(r=>{
+                    console.log("employee_programs created: ",employeeIds)
+                })
                 .catch(err => {
                     console.log(err);
                     output.push({...userData, isValid: false, status: "error", errorDetails: err});
@@ -226,6 +234,9 @@ async function addBulk(loggedInUser, data, organizationId) {
                 var insertEmployeeGroups = (emplGroups) => {
                     t.into("groups_employee")
                         .insert(emplGroups)
+                        .then(r=>{
+                            console.log("groups_employee created: ",employeeIds)
+                        })
                         .catch(err => {
                             console.log(err);
                             output.push({...userData, isValid: false, status: "error", errorDetails: err});
@@ -259,6 +270,9 @@ async function addBulk(loggedInUser, data, organizationId) {
 
                 await t.into("groups_employee")
                     .insert(employeeGroups)
+                    .then(r=>{
+                        console.log("groups_employee created: ",employeeIds)
+                    })
                     .catch(err => {
                         console.log(err);
                         output.push({...userData, isValid: false, status: "error", errorDetails: err});
