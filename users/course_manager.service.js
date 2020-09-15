@@ -173,7 +173,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             .insert(_employees)
             .returning("employee_id")
             .then(employeeIds => {
-                console.log("employee created: ",employeeIds)
+                console.log("employee created")
                 return employeeIds;
             })
             .catch(err => {
@@ -191,7 +191,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         await t.into("employee_roles")
             .insert(employeeRoles)
             .then(r=>{
-                console.log("employee_roles created: ",employeeIds)
+                console.log("employee_roles created")
             })
             .catch(err => {
                 console.log(err);
@@ -210,7 +210,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             await t.into("employee_programs")
                 .insert(employeePrograms)
                 .then(r=>{
-                    console.log("employee_programs created: ",employeeIds)
+                    console.log("employee_programs created")
                 })
                 .catch(err => {
                     console.log(err);
@@ -235,7 +235,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                     t.into("groups_employee")
                         .insert(emplGroups)
                         .then(r=>{
-                            console.log("groups_employee created: ",employeeIds)
+                            console.log("groups_employee created")
                         })
                         .catch(err => {
                             console.log(err);
@@ -271,7 +271,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 await t.into("groups_employee")
                     .insert(employeeGroups)
                     .then(r=>{
-                        console.log("groups_employee created: ",employeeIds)
+                        console.log("groups_employee created")
                     })
                     .catch(err => {
                         console.log(err);
