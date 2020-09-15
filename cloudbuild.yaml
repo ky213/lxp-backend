@@ -91,6 +91,7 @@ steps:
         --platform=managed \
         --allow-unauthenticated \
         --memory=1Gi \
+        --cpu=2 \
         --max-instances=10 \
         --concurrency=20 \
         --service-account=lxp-staging-backend@lxp-dev-qa.iam.gserviceaccount.com \
