@@ -328,7 +328,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             try {
                 for (let i = 0; i < data.length; i++) {
                     let user = data[i]
-                    await InsertUserAsync(t, user);
+                    await InsertLearnerAsync(t, user);
                 }
                 await t.commit(output)
             } catch (err) {
