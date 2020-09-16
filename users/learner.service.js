@@ -158,7 +158,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 throw  err;
             });
 
-        let _employees = userIds.map(userId => {
+        let _employees = usersIds.map(userId => {
             return {
                 user_id: userId,
                 organization_id: organizationId,
@@ -172,7 +172,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             .returning("employee_id")
             .then(employeeIds => {
                 console.log("employee created")
-                return userIds;
+                return employeeIds;
             })
             .catch(err => {
                 console.log(err);
@@ -281,7 +281,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             let inserts = [];
             userData.joinedCourses.forEach(course => {
-                let insertUserCourse = userIds.map(userId => ({
+                let insertUserCourse = usersIds.map(userId => ({
                     user_id: userId,
                     is_able_to_join: true,
                     course_id: course,
