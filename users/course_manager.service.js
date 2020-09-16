@@ -138,7 +138,7 @@ async function addBulk(loggedInUser, data, organizationId) {
     const defaultGroup = await organizationService.getDefaultGroup(organizationId);
 
 
-    async function InsertUserAsync2(t, userData) {
+    async function InsertUserAsync(t, userData) {
 
         usersIds = await t.into("users")
             .insert({
@@ -293,7 +293,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
                 for(let i=0;i<data.length;i++){
                     let user = data[i]
-                    await InsertUserAsync2(t, user);
+                    await InsertUserAsync(t, user);
                 }
 
                 await t.commit(output)
