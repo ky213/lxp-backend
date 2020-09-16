@@ -319,7 +319,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         }
 
         output.push({...userData, status: "ok"});
-        return resolve();
+
     }
 
 
