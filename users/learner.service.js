@@ -180,7 +180,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 throw  err;
             });
 
-        let employeeRoles = employeeIds.map(employeeId => ({
+        let employeeRoles = employeesIds.map(employeeId => ({
             employee_id: employeeId,
             role_id: Role.Learner
         }));
@@ -198,7 +198,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             });
 
         if (userProgram) {
-            let employeePrograms = employeeIds.map(employeeId => ({
+            let employeePrograms = employeesIds.map(employeeId => ({
                 employee_id: employeeId,
                 program_id: userProgram.programId
             }));
@@ -219,7 +219,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             let inserts = [];
             userData.groupIds.forEach(group => {
-                let employeeGroups = employeeIds.map(employeeId => ({
+                let employeeGroups = employeesIds.map(employeeId => ({
                     employee_id: employeeId,
                     group_id: group
                 }));
@@ -254,7 +254,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         } else {
 
             if (defaultGroup && defaultGroup.defaultGroupId) {
-                let employeeGroups = employeeIds.map(employeeId => ({
+                let employeeGroups = employeesIds.map(employeeId => ({
                     employee_id: employeeId,
                     group_id: defaultGroup.defaultGroupId
                 }));
