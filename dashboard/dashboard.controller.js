@@ -17,7 +17,16 @@ router.post('/distribution/progress/users/not_attempted', authorize(), findProgr
 router.post('/distribution/breakdown', authorize(), breakdownDistrubitionData);
 router.post('/distribution/breakdown/users/search', authorize(), breakdownDistrubitionUsersSearch);
 
+router.post('/distribution/users/profile', authorize(), userProfile);
+
 module.exports = router;
+
+async function userProfile(req, res, next) {
+    data = req.body
+    dashboardService.getUserProfile(req.user, data.user_id)
+        .then(data => res.json(data))
+        .catch(err => next(err));
+}
 
 async function progressDistrubitionData(req, res, next) {
     data = req.body
