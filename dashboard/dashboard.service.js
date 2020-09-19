@@ -341,8 +341,8 @@ async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
         }
 
         return f.rows.map(r => ({
-            points: r.answered_questions,
-            count: r.count
+            success_answers: r.answered_questions,
+            number_of_users: r.count
         }));
     }).catch(err => {
         console.log(err);
