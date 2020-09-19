@@ -180,7 +180,7 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
     });
 }
 
-async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, programId, courseId, offset, pageSize) {
+async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgranizationId, programId, courseId, offset, pageSize) {
     if (!loggedInUser) {
         console.log("not authenticated")
         return;
@@ -190,9 +190,14 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, progra
         return;
     }
 
-    let notAttemptedUsers = knex.raw("select * from users where email not in (select replace(payload->'actor'->>'mbox','mailto:','') as email " +
-        "from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
-        "and payload->'context'->>'registration' = ?) order by email offset ? limit ?", [programId + "|" + courseId, offset, pageSize])
+    let notAttemptedUsers = knex.raw( "select * from users u " +
+        "         left join employees e on e.user_id = u.user_id " +
+        "where e.is_learner = true and e.organization_id = ? " +
+        "         and u.email not in (select distinct replace(payload->'actor'->>'mbox','mailto:','') as email " +
+        "         from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
+        "         and payload->'context'->>'registration' = ?) " +
+        "         order by u.email offset ? limit ? ",
+        [ orgranizationId, programId + "|" + courseId, offset, pageSize])
 
     return await notAttemptedUsers.then(r => {
 

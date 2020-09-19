@@ -51,7 +51,7 @@ async function findProgressDistrubitionAttemptedUserData(req, res, next) {
 
 async function findProgressDistrubitionNotAttemptedUserData(req, res, next) {
     data = req.body
-    dashboardService.findProgressDistrubitionNotAttemptedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
+    dashboardService.findProgressDistrubitionNotAttemptedUserData(req.user, data.organizationId, data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
