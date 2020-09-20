@@ -29,7 +29,8 @@
         "pg": "^7.12.1",
         "rootpath": "^0.1.2",
         "rrule": "2.6.4",
-        "uuid": "^7.0.3"
+        "uuid": "^7.0.3",
+        "email-validator": "^2.0.4"
     },
     "devDependencies": {
         "nodemon": "^1.18.6"

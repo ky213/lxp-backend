@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const knex = require("../db");
 const Role = require("helpers/role");
+const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
 const programService = require('../programs/program.service');
 const organizationService = require('../organizations/organization.service');
@@ -465,6 +466,13 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             addError(user, "The same email already defined in the file");
             continue;
         }
+
+        if (!validator.validate(user.email))
+        {
+            addError(user, "The format of the email address isn't correct");
+            continue;
+        }
+
         emails.push(user.email);
 
         let emailExists = await checkIfEmailExists(user.email, user.userId);
