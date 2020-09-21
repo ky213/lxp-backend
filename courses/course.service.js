@@ -203,7 +203,11 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
 
     return knex("courses")
         .whereIn("course_id", courseIds)
-        .del();
+        .del()
+        .catch(error => {
+            let errorObj = {isValid: false, status: "error", code: error.code, message : 'Can not delete a course with joined learners'};
+            throw new Error(JSON.stringify(errorObj));
+          });
 }
 
 async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {

@@ -99,9 +99,9 @@ async function downloadFile(req, res, next) {
 }
 
 async function deleteCourses(req, res, next) {
-    console.log('deleteCourse', req.body);
     courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedOrganizationId)
-        .then(data => res.json(data));
+        .then(data => res.json(data))
+        .catch(err => next(err));
 }
 
 async function uploadFile(file, contentPath) {
