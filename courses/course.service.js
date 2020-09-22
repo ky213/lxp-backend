@@ -205,8 +205,9 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
         .whereIn("course_id", courseIds)
         .del()
         .catch(error => {
-            let errorObj = {isValid: false, status: "error", code: error.code, message : 'Can not delete a course with joined learners'};
-            throw new Error(JSON.stringify(errorObj));
+            const message = 'Can not delete a course with joined learners' ;
+            let errorObj = {isValid: false, status: "error", code: error.code, message : message};
+            throw new Error(message);
           });
 }
 
