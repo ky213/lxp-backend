@@ -14,7 +14,7 @@ module.exports = {
 };
 
 async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take) {
-    console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take)
+    //console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take)
     let offset = ((page || 1) - 1) * take;
 
     let model = knex.table('statements');
@@ -29,18 +29,21 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
     if(experiences) {
         const parsedExperiences = JSON.parse(experiences).map(pe => pe.value);
-
         parsedExperiences.map(pe => {
-            model.andWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
+            model.orWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
         })
-        //parsedExperiences.join(',')
-        //model.whereRaw(`payload->'verb'->>'display'->>'en' in (?)`, [parsedExperiences.join(',')]);
-        //model.orWhereRaw(`payload->'verb'->>'display'->>'en-US' in (?)`, [parsedExperiences.join(',')]);
-       // statement => statement.verb && statement.verb.display && (statement.verb.display.en || statement.verb.display["en-US"]
     }
 
     if (agent) {
-        model.whereRaw(`payload->>'actor' = ?`, [agent]);
+        const parsedAgent = JSON.parse(agent).map(n => n.fullName);    
+        // then, create a dynamic list of comma-separated question marks
+        let generateNames = ''; 
+        parsedAgent.map((el, i) => {
+            if (i == parsedAgent.length-1) return generateNames += `'${el}'`;
+            else return generateNames += `'${el}',`;
+        });
+
+        model.whereRaw(`payload->'actor'->>'name' IN (${generateNames})`);
     }
 
     if (verbId) {
