@@ -29,9 +29,15 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
     if(experiences) {
         const parsedExperiences = JSON.parse(experiences).map(pe => pe.value);
-        parsedExperiences.map(pe => {
-            model.orWhereRaw(`payload->'verb'->>'display' like ?`, [`%${pe}%`]);
-        })
+        
+        let generateExperiences = ''; 
+        parsedExperiences.map((el, i) => {
+            if (i == parsedExperiences.length-1) return generateExperiences += `'${el}'`;
+            else return generateExperiences += `'${el}',`;
+        });
+
+        model.whereRaw(`payload->'verb'->'display'->>'en-US' IN (${generateExperiences})`);
+
     }
 
     if (agent) {
