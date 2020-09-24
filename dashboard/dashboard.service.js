@@ -86,7 +86,7 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
                 response_fail_count: r.response_fail_count,
                 name: r.name,
                 surname: r.surname,
-                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD, THH:mm:ssZ") || null
+                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
         return results
@@ -163,7 +163,7 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
                 response_fail_count: r.response_fail_count,
                 name: r.name,
                 surname: r.surname,
-                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD, THH:mm:ssZ") || null
+                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
         return results
@@ -206,7 +206,7 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
                 response_fail_count: null,
                 name: r.name,
                 surname: r.surname,
-                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD, THH:mm:ssZ") || null
+                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
         return results
@@ -451,7 +451,7 @@ async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseI
                 scores: r.scores,
                 name: r.name,
                 surname: r.surname,
-                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD, THH:mm:ssZ") || null
+                start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
 
@@ -483,7 +483,7 @@ async function getUserProfile(loggedInUser, choosenUserId) {
             scores: r.scores,
             name: r.name,
             surname: r.surname,
-            start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD, THH:mm:ssZ") || null
+            start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
         }
     }).catch(err => {
         console.log(err);
@@ -517,8 +517,8 @@ async function getUserProfile(loggedInUser, choosenUserId) {
             orgranization_id: r.organization_id,
             program_id: r.program_id,
             course_name: r.course_name,
-            starting_date: r.starting_date && moment(r.starting_date).format("YYYY-MM-DD, THH:mm:ssZ") || null,
-            joining_date:  r.joining_date && moment(r.joining_date).format("YYYY-MM-DD, THH:mm:ssZ") || null,
+            starting_date: r.starting_date && moment(r.starting_date).format("YYYY-MM-DD") || null,
+            joining_date:  r.joining_date && moment(r.joining_date).format("YYYY-MM-DD") || null,
             orgranization_name: r.orgranization_name,
             program_name: r.program_name
 
