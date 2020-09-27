@@ -1,0 +1,876 @@
+{
+	"info": {
+		"_postman_id": "74e80df7-0d73-4f64-b3a4-d3a9bf91bdad",
+		"name": "LXP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "authenticate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0c8095e6-4096-4f40-97ae-51315d0d5fc4",
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"pm.environment.set(\"authtoken\",jsonData.token);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"nebojsa.pongracic@gmail.com\",\"password\":\"admin\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/users/authenticate",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"users",
+						"authenticate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progressDistribution",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9da6c5a7-061e-44ff-a980-152c69a9dcea",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"value": "wp.pl",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"organizationId\":\"719a553c-95d8-408f-beed-6a973ab03b07\",\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\"\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/progress",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"progress"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progress distribution completed users",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "78501422-885a-4996-938a-154562cc80d7",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"value": "wp.pl",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\",\n    \"offset\": 0,\n    \"pageSize\": 2\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/progress/users/completed",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"progress",
+						"users",
+						"completed"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progress distribution attempted user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6bc37e59-d9c3-45f4-abd7-06bab167ce81",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"type": "text",
+						"value": "wp.pl",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\",\n    \"offset\": 0,\n    \"pageSize\": 10\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/progress/users/attempted",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"progress",
+						"users",
+						"attempted"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progress distribution not attempted user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "413efaeb-0a18-44a2-8313-38575ac28ffb",
+						"exec": [
+							"console.log(pm.response.json())"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"type": "text",
+						"value": "wp.pl",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"organizationId\":\"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\",\n    \"offset\": 0,\n    \"pageSize\": 1000\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/progress/users/not_attempted",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"progress",
+						"users",
+						"not_attempted"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progress breakdown",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "ee93799e-a46f-45d2-8291-7e5b672b8758",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"type": "text",
+						"value": "wp.pl",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\"\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/breakdown",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"breakdown"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "progress breakdown users search",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "225d1c99-3db2-4b78-bdc4-a393dc2e2bf9",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "application/json"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com",
+						"disabled": true
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"type": "text",
+						"value": "wp.pl",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"programId\":\"0dc061d8-a131-429f-b6b4-b1913998d31f\",\n    \"courseId\":\"ea5692e4-8598-4c3f-9465-7d6e8d6c0414\",\n    \"minAnswers\": 0, \n    \"maxAnswers\": 7, \n    \"offset\": 0, \n    \"pageSize\": 10\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/breakdown/users/search",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"breakdown",
+						"users",
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Profile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "013f1786-1c22-4da1-b55d-0283d322308a",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "authority",
+						"value": "api.staging.lxpia.com"
+					},
+					{
+						"key": "user-agent",
+						"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36"
+					},
+					{
+						"key": "dnt",
+						"value": "1"
+					},
+					{
+						"key": "content-type",
+						"value": "application/json"
+					},
+					{
+						"key": "accept",
+						"value": "*/*"
+					},
+					{
+						"key": "origin",
+						"value": "https://staging.lxpia.com"
+					},
+					{
+						"key": "sec-fetch-site",
+						"value": "same-site"
+					},
+					{
+						"key": "sec-fetch-mode",
+						"value": "cors"
+					},
+					{
+						"key": "sec-fetch-dest",
+						"value": "empty"
+					},
+					{
+						"key": "referer",
+						"value": "https://staging.lxpia.com/lxp/pages/login"
+					},
+					{
+						"key": "accept-language",
+						"value": "en-GB,en-US;q=0.9,en;q=0.8"
+					},
+					{
+						"key": "Host",
+						"type": "text",
+						"value": "wp.pl",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\":\"e6ec7ba9-42a7-483c-a839-199d93a721fe\"\n}"
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/dashboards/distribution/users/profile",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"dashboards",
+						"distribution",
+						"users",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "addBulk CM",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"host": true,
+					"accept-encoding": true,
+					"connection": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"users\": [\n        {\n            \"name\": \"A3 \",\n            \"surname\": \"AA3\",\n            \"email\": \"aa3@testbacklog.com\",\n            \"roleId\": \"CourseManager\",\n            \"gender\": \"M\",\n            \"groupNames\": [\n                \"\"\n            ],\n            \"error\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"groupIds\": [],\n            \"roleName\": \"Course Manager\",\n            \"status\": \"ok\"\n        }\n    ],\n    \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/cm/addBulk",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"cm",
+						"addBulk"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "addBulk Learners",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept-encoding": true,
+					"connection": true,
+					"host": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"users\": [\n        {\n            \"name\": \"L1 \",\n            \"surname\": \"L1\",\n            \"email\": \"l1@neworganization.com\",\n            \"gender\": \"M\",\n            \"startDate\": \"2020-09-07T22:00:00.000Z\",\n            \"groupNames\": \"\",\n            \"courseNames\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"error\": \"\",\n            \"groupIds\": [],\n            \"joinedCourses\": [],\n            \"status\": \"ok\"\n        }\n    ],\n    \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/learners/addBulk",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"learners",
+						"addBulk"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "validateBulk",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"host": true,
+					"accept-encoding": true,
+					"connection": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authtoken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"users\": [\n        {\n            \"name\": \"A 1\",\n            \"surname\": \"AA1 \",\n            \"email\": \"aa1@testbacklog.com\",\n            \"roleId\": \"CourseManager\",\n            \"gender\": \"M\",\n            \"groupNames\": [\n                \"Users\"\n            ],\n            \"error\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"groupIds\": [\n                \"f86b0381-2882-4a40-b65f-3974b32daae4\"\n            ],\n            \"status\": \"ok\"\n        },\n        {\n            \"name\": \"B 1\",\n            \"surname\": \"BB 1\",\n            \"email\": \"bb1@testbacklog.com\",\n            \"roleId\": \"Admin\",\n            \"gender\": \"M\",\n            \"groupNames\": [\n                \"Users\"\n            ],\n            \"error\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"groupIds\": [\n                \"f86b0381-2882-4a40-b65f-3974b32daae4\"\n            ],\n            \"status\": \"ok\"\n        },\n        {\n            \"name\": \"C 1\",\n            \"surname\": \"CC 1\",\n            \"email\": \"cc1@testbacklog.com\",\n            \"roleId\": \"ProgramDirector\",\n            \"gender\": \"M\",\n            \"groupNames\": [\n                \"Users\"\n            ],\n            \"error\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"groupIds\": [\n                \"f86b0381-2882-4a40-b65f-3974b32daae4\"\n            ],\n            \"status\": \"ok\"\n        },\n        {\n            \"name\": \"D 1\",\n            \"surname\": \"DD 1\",\n            \"email\": \"dd1@testbacklog.com\",\n            \"roleId\": \"LearningManager\",\n            \"gender\": \"F\",\n            \"groupNames\": [\n                \"Users\"\n            ],\n            \"error\": \"\",\n            \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\",\n            \"groupIds\": [\n                \"f86b0381-2882-4a40-b65f-3974b32daae4\"\n            ],\n            \"status\": \"ok\"\n        }\n    ],\n    \"organizationId\": \"8713a7fd-e5d9-4255-b0cb-90d13739d367\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{backend-url}}/api/cm/validateBulk",
+					"host": [
+						"{{backend-url}}"
+					],
+					"path": [
+						"api",
+						"cm",
+						"validateBulk"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
