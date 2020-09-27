@@ -73,8 +73,17 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
         "offset ? limit ? ",
         [programId + "|" + courseId, offset, pageSize]);
 
-    return await completedUsers.then(r => {
+        let completed =  await completedUsers.then(f => {
+            if (f.rows.length === 0) {
+                return 0
+            }            
+            return f.rows.length;
+        }).catch(err => {
+            console.log(err);
+            throw err;
+        });
 
+     return await completedUsers.then(r => {
         var results = []
         r.rows.forEach(r => {
             results.push({
@@ -88,13 +97,17 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
                 surname: r.surname,
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
-        })
+        });
+        if(results)
+            results.push({numOfUsers: completed});
         return results
 
-    }).catch(err => {
+    })
+    .catch(err => {
         console.log(err);
         throw err;
     });
+
 }
 
 async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId, courseId, offset, pageSize) {
@@ -150,8 +163,18 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
         "where  st.passed = false " +
         "offset ? limit ? ",
         [programId + "|" + courseId, offset, pageSize]);
-    return await attemptedUsers.then(r => {
 
+        let attempted = await attemptedUsers.then(f => {
+            if (f.rows.length === 0) {
+                return 0
+            }            
+            return f.rows.length;
+        }).catch(err => {
+            console.log(err);
+            throw err;
+        });
+
+    return await attemptedUsers.then(r => {
         var results = []
         r.rows.forEach(r => {
             results.push({
@@ -166,8 +189,9 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
+        if(results)
+            results.push({numOfUsers: attempted});
         return results
-
     }).catch(err => {
         console.log(err);
         throw err;
@@ -193,8 +217,17 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
         "         order by u.email offset ? limit ? ",
         [ orgranizationId, programId + "|" + courseId, offset, pageSize])
 
-    return await notAttemptedUsers.then(r => {
+        let notAttempted = await notAttemptedUsers.then(f => {
+            if (f.rows.length === 0) {
+                return 0
+            }            
+            return f.rows.length;
+        }).catch(err => {
+            console.log(err);
+            throw err;
+        });
 
+    return await notAttemptedUsers.then(r => {
         var results = []
         r.rows.forEach(r => {
             results.push({
@@ -209,12 +242,15 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
+        if(results)
+            results.push({numOfUsers: notAttempted});
         return results
-
-    }).catch(err => {
+    })
+    .catch(err => {
         console.log(err);
         throw err;
     });
+
 }
 
 
@@ -439,7 +475,6 @@ async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseI
 
 
     return await collectedPointsDistribution.then(f => {
-
         let results = []
         f.rows.forEach(r => {
             results.push({
@@ -454,7 +489,6 @@ async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseI
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
-
         return results;
     }).catch(err => {
         console.log(err);
