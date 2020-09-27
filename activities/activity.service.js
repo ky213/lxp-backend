@@ -294,9 +294,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.assigned_by as assignedBy',
         'activities.exp_level_id as level',
         'users.name as assignedByFirstName',
-        'users.surname as assignedByLastName',
-        'activities_repetitions.rrule',
-        'activities.during'
+        'users.surname as assignedByLastName'
     ])
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
@@ -542,12 +540,10 @@ async function create(activity, user) {
                 program_id: activity.programId, 
                 name: activity.name,
                 start: activity.start,      
-                end: activity.end,  
-                during: activity.during,    
+                end: activity.end,     
                 priority: activity.priority,
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
-                repeat: activity.repeat,
                 description: activity.description,
                 assigned_by: user.employeeId || user.sub,
                 status: activity.activityTypeId == 11 ? 1 : status,
@@ -700,16 +696,13 @@ async function update(activity, user) {
             .update({
                 program_id: activity.programId, 
                 name: activity.name,
-                start: activity.start,  
-                during: activity.during,    
+                start: activity.start,    
                 end: activity.end,      
                 priority: activity.priority,
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
-                repeat: activity.repeat,
                 description: activity.description,
                 status: activity.activityTypeId == 11 ? 1 : status,
-                repeat: activity.repeat,
                 modified_by: user.employeeId || user.sub,
                 modified_at: knex.fn.now()
             });
