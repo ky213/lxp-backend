@@ -332,7 +332,7 @@ async function getByEmployeeId(user, employeeId) {
 
 async function getByUserId(user, userId) {
 
-    let select =  kknex.select([
+    let select =  knex.select([
             'user_id as userId', 
             'email', 
             'name',
