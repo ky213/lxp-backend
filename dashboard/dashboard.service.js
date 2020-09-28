@@ -101,10 +101,7 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser,selectedOr
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         });
-        if(results)
-            results.push({numOfUsers: result.completed , numofCompleted: completed});
-        return results
-
+        return  { users : results , numOfUsers: result.completed ,  nnumofCompleted: completed}
     })
     .catch(err => {
         console.log(err);
@@ -194,10 +191,8 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, selectedO
                 surname: r.surname,
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
-        })
-        if(results)
-            results.push({numOfUsers: result.inProgress , numofAttempted: attempted});
-        return results
+        })        
+        return  { users : results , numOfUsers: result.inProgress ,  numofAttempted: attempted}
     }).catch(err => {
         console.log(err);
         throw err;
@@ -263,9 +258,7 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, select
                 start_date: r.start_date && moment(r.start_date).format("YYYY-MM-DD") || null
             })
         })
-        if(results)
-            results.push({numOfUsers: allUsers , numofNotAttempted: notAttempted});
-        return results
+        return  { users : results , numOfUsers: allUsers ,  numofNotAttempted: notAttempted}
     })
     .catch(err => {
         console.log(err);

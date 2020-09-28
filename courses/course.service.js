@@ -4,6 +4,7 @@ const Role = require('helpers/role');
 const fs = require('fs');
 const path = require('path');
 const {Storage} = require('@google-cloud/storage');
+const dashboardService = require('../dashboard/dashboard.service.js');
 
 module.exports = {
     getAll,
@@ -67,7 +68,6 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
     let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
-
     console.log('=>', selectedOrganizationId, programId, pageId, recordsPerPage);
 
     let model = knex('courses')
@@ -81,7 +81,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
     let offset = (pageId - 1) * recordsPerPage;
 
-    var courses = await model.clone()
+    var coursesIds = await model.clone()
         .orderBy('name', 'asc')
         .offset(offset)
         .limit(recordsPerPage)
@@ -97,6 +97,15 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
             'programs.name as programName',
         ]);
 
+        let tempCourse = coursesIds.map(async (course) => {
+            let result = await dashboardService.progressDistrubitionData(loggedInUser, organizationId, programId, course.courseId);
+            course.inProgress = (result && result.inProgress) > 0 ? true : false;
+            course.NumofUsersInProgress = result.inProgress;
+            return course;
+        });
+
+        let courses = await Promise.all(tempCourse);
+   
     return {
         courses,
         totalNumberOfRecords
