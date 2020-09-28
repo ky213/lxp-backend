@@ -50,11 +50,6 @@ async function getById(loggedInUser, announcementId, organizationId) {
     .where('announcement_id', announcementId)
     .select(['programs.program_id as programId', 'programs.name']);
 
-  let expLevels = await knex('announcement_exp_levels')
-    .join('experience_levels', 'experience_levels.exp_level_id', 'announcement_exp_levels.exp_level_id')
-    .where('announcement_id', announcementId)
-    .select(['experience_levels.exp_level_id as expLevelId', 'experience_levels.name']);
-
   let roles = await knex('announcement_roles')
     .join('roles', 'roles.role_id', 'announcement_roles.role_id')
     .where('announcement_id', announcementId)
@@ -77,7 +72,6 @@ async function getById(loggedInUser, announcementId, organizationId) {
     isActive: data.is_active,
     organization_id: organizationId,
     programs,
-    expLevels,
     roles,
     files: files.map(x => ({...x, size: converter.bytesToSize(x.size)}))
   }
@@ -131,16 +125,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
               'announcement_roles.announcement_id = announcements.announcement_id'
             )          
         })
-      })
-      .andWhere(function() {
-        this.orWhereNotExists(function() {
-          this.from("announcement_exp_levels")
-            .select("*")
-            .whereRaw(
-              'announcement_exp_levels.announcement_id = announcements.announcement_id'
-            )
-        })
-      })
+      })     
       .andWhere(function() {
         this.whereNotExists(function() {
           this.from("announcement_programs")
@@ -219,29 +204,6 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
         })
       })
     }
-    
-    // provjeravamo da li je announcement za neku Experience Level
-    if (loggedInUser.role == Role.Learner) {
-      query.andWhere(function() {
-        this.orWhereNotExists(function() {
-          this.from("announcement_exp_levels")
-            .select("*")
-            .whereRaw(
-              'announcement_exp_levels.announcement_id = announcements.announcement_id'
-            )          
-        })
-        this.orWhereExists(function() {
-          this.from("employees")
-            .join(
-              "announcement_exp_levels",
-              "announcement_exp_levels.exp_level_id",
-              "employees.exp_level_id"
-            )
-            .where('employees.employee_id', loggedInUser.employeeId)
-            .select("*")
-        })
-      });
-    }
 
     let announcements = await query
       .groupBy('announcements.announcement_id')
@@ -305,22 +267,7 @@ async function create(loggedInUser, data) {
         .insert(queryAnnPrograms);
     }
 
-    /* EXP LEVELS */
-    let queryExpLevels = [];    
-    data.expLevels.map(expLevelId => {
-      queryExpLevels.push({
-        announcement_id: ids[0],
-        exp_level_id: expLevelId        
-      })
-    })
-
-    if (queryExpLevels.length > 0)
-    {
-      await knex("announcement_exp_levels")
-        .transacting(t)
-        .insert(queryExpLevels);
-    }
-
+   
     /* ROLES */
     let queryRoles = [];    
     data.roles.map(roleId => {
@@ -377,27 +324,7 @@ async function update(loggedInUser, data) {
         .transacting(t)
         .insert(queryAnnPrograms);
     }
-
-    /* EXP LEVELS */
-    let queryExpLevels = [];    
-    data.expLevels.map(expLevelId => {
-      queryExpLevels.push({
-        announcement_id: data.announcementId,
-        exp_level_id: expLevelId        
-      })
-    })
-
-    await knex("announcement_exp_levels")
-      .transacting(t)
-      .where('announcement_id', data.announcementId)
-      .del();
-
-    if (queryExpLevels.length > 0)
-    {
-      await knex("announcement_exp_levels")
-        .transacting(t)
-        .insert(queryExpLevels);
-    }
+ 
 
     /* ROLES */
     let queryRoles = [];    
