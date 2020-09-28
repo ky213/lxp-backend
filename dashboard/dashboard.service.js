@@ -19,7 +19,7 @@ var Readable = require('stream').Readable;
 var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
 
-async function findProgressDistrubitionCompletedUserData(loggedInUser, programId, courseId, offset, pageSize) {
+async function findProgressDistrubitionCompletedUserData(loggedInUser,selectedOrganizationId, programId, courseId, offset, pageSize) {
     if (!loggedInUser) {
         console.log("not authenticated")
         return;
@@ -28,6 +28,9 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
         console.log("not authorized")
         return;
     }
+
+    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let result = await progressDistrubitionData(loggedInUser, organizationId, programId, courseId);
 
     let completedUsers = knex.raw("select * from (select a.email, " +
         "                      sum(a.answers_count)        as answers_count, " +
@@ -99,7 +102,7 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
             })
         });
         if(results)
-            results.push({numOfUsers: completed});
+            results.push({numOfUsers: result.completed , numofCompleted: completed});
         return results
 
     })
@@ -110,7 +113,7 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser, programId
 
 }
 
-async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId, courseId, offset, pageSize) {
+async function findProgressDistrubitionAttemptedUserData(loggedInUser, selectedOrganizationId, programId, courseId, offset, pageSize) {
     if (!loggedInUser) {
         console.log("not authenticated")
         return;
@@ -119,6 +122,9 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
         console.log("not authorized")
         return;
     }
+
+    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let result = await progressDistrubitionData(loggedInUser, organizationId, programId, courseId);
 
     let attemptedUsers = knex.raw("select * from (select a.email, " +
         "                      sum(a.answers_count)        as answers_count, " +
@@ -190,7 +196,7 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
             })
         })
         if(results)
-            results.push({numOfUsers: attempted});
+            results.push({numOfUsers: result.inProgress , numofAttempted: attempted});
         return results
     }).catch(err => {
         console.log(err);
@@ -198,7 +204,7 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, programId
     });
 }
 
-async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgranizationId, programId, courseId, offset, pageSize) {
+async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, selectedOrganizationId, programId, courseId, offset, pageSize) {
     if (!loggedInUser) {
         console.log("not authenticated")
         return;
@@ -207,6 +213,21 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
         console.log("not authorized")
         return;
     }
+    
+    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let pdAll = knex.raw( "select * from users u " +
+    "         left join employees e on e.user_id = u.user_id " +
+    "where e.is_learner = true and e.organization_id = ? " +
+    "         and u.email not in (select distinct replace(payload->'actor'->>'mbox','mailto:','') as email " +
+    "         from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
+    "         and payload->'context'->>'registration' = ?) " ,
+    [ organizationId, programId + "|" + courseId]);
+
+    let allUsers = await pdAll.then(f => {
+        if (f.rows.length === 0) { return 0 }
+        return f.rows.length;
+    }).catch(err => { throw err; });
 
     let notAttemptedUsers = knex.raw( "select * from users u " +
         "         left join employees e on e.user_id = u.user_id " +
@@ -215,7 +236,7 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
         "         from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
         "         and payload->'context'->>'registration' = ?) " +
         "         order by u.email offset ? limit ? ",
-        [ orgranizationId, programId + "|" + courseId, offset, pageSize])
+        [ organizationId, programId + "|" + courseId, offset, pageSize]);
 
         let notAttempted = await notAttemptedUsers.then(f => {
             if (f.rows.length === 0) {
@@ -243,7 +264,7 @@ async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, orgran
             })
         })
         if(results)
-            results.push({numOfUsers: notAttempted});
+            results.push({numOfUsers: allUsers , numofNotAttempted: notAttempted});
         return results
     })
     .catch(err => {
@@ -265,7 +286,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
     }
 
     console.log("progressDistributionData:", courseId);
-
+    console.log("progressDistributionData:", organizationId);
     let pdAll = knex.raw(
         "select count(*)::integer as a from employees e inner join users u on e.user_id = u.user_id where e.is_learner = true and e.organization_id = ?",
         [organizationId]

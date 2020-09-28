@@ -37,14 +37,14 @@ async function progressDistrubitionData(req, res, next) {
 
 async function findProgressDistrubitionCompletedUserData(req, res, next) {
     data = req.body
-    dashboardService.findProgressDistrubitionCompletedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
+    dashboardService.findProgressDistrubitionCompletedUserData(req.user,data.organizationId, data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
 async function findProgressDistrubitionAttemptedUserData(req, res, next) {
     data = req.body
-    dashboardService.findProgressDistrubitionAttemptedUserData(req.user, data.programId, data.courseId, data.offset, data.pageSize)
+    dashboardService.findProgressDistrubitionAttemptedUserData(req.user, data.organizationId,data.programId, data.courseId, data.offset, data.pageSize)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
