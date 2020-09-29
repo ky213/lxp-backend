@@ -273,13 +273,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
         console.log("not authenticated")
         return;
     }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
-
-    console.log("progressDistributionData:", courseId);
-    console.log("progressDistributionData:", organizationId);
+    
     let pdAll = knex.raw(
         "select count(*)::integer as a from employees e inner join users u on e.user_id = u.user_id where e.is_learner = true and e.organization_id = ?",
         [organizationId]
