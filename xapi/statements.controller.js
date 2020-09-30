@@ -6,7 +6,7 @@ const Role = require('helpers/role');
 
 // routes
 router.get('/experiences', getExperiences)
-router.get('/', getAll); 
+router.get('/', authorize(), getAll); 
 router.post('/', create); 
 router.put('/', create); 
 

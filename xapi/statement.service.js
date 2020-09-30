@@ -15,6 +15,16 @@ module.exports = {
 
 async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take) {
     //console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take)
+    if (!user) {
+        console.log("not authenticated")
+        return;
+    }
+
+    if (!registration) {
+        console.log("You have to select a Program")
+        return;
+    }
+
     let offset = ((page || 1) - 1) * take;
 
     let model = knex.table('statements');
@@ -41,15 +51,17 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
     }
 
     if (agent) {
-        const parsedAgent = JSON.parse(agent).map(n => n.fullName);    
+        const parsedAgent = JSON.parse(agent).map(n => n.email);    
         // then, create a dynamic list of comma-separated question marks
-        let generateNames = ''; 
+        let generateEmails = ''; 
         parsedAgent.map((el, i) => {
-            if (i == parsedAgent.length-1) return generateNames += `'${el}'`;
-            else return generateNames += `'${el}',`;
+            if (i == parsedAgent.length-1) 
+                return generateEmails += `'mailto:${el}'`;
+            else 
+                return generateEmails += `'mailto:${el}',`;
         });
 
-        model.whereRaw(`payload->'actor'->>'name' IN (${generateNames})`);
+        model.whereRaw(`payload->'actor'->>'mbox' IN (${generateEmails})`);
     }
 
     if (verbId) {
