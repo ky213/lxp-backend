@@ -50,7 +50,7 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
     }
 
-    if (agent && agent.count > 0 ) { 
+    if (agent && agent.length > 0 ) { 
         const parsedAgent = JSON.parse(agent).map(n => n.email);    
         // then, create a dynamic list of comma-separated question marks
         let generateEmails = ''; 
