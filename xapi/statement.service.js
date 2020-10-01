@@ -61,7 +61,9 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
                 return generateEmails += `'mailto:${el}',`;
         });
 
-        model.whereRaw(`payload->'actor'->>'mbox' IN (${generateEmails})`);
+        if(generateEmails)
+        {
+            model.whereRaw(`payload->'actor'->>'mbox' IN (${generateEmails})`);}
     }
 
     if (verbId) {
