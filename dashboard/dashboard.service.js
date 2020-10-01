@@ -60,10 +60,12 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser,selectedOr
         "                                             payload -> 'result' ->> 'success' = 'false') THEN 1 " +
         "                                       ELSE 0 END)                                   as response_fail_count, " +
         "                               MAX(CASE " +
-        "                                       WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                                       WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or" +
+        "                                              payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/completed')" +
         "                                           THEN (payload::json -> 'result' -> 'score' ->> 'raw')::numeric " +
         "                                       ELSE 0 END)                                   as final_score_raw, " +
-        "                               bool_or(CASE WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                               bool_or(CASE WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or " +
+        "                                                   payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/completed')" +
         "                                   THEN true ELSE false END) as passed " +
         "                        from statements " +
         "                        where payload -> 'context' ->> 'registration' = ? " +
@@ -151,10 +153,12 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, selectedO
         "                                             payload -> 'result' ->> 'success' = 'false') THEN 1 " +
         "                                       ELSE 0 END)                                   as response_fail_count, " +
         "                               MAX(CASE " +
-        "                                       WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                                       WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or" +
+        "                                             payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/completed')" +
         "                                           THEN (payload::json -> 'result' -> 'score' ->> 'raw')::numeric " +
         "                                       ELSE 0 END)                                   as final_score_raw, " +
-        "                               bool_or(CASE WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                               bool_or(CASE WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or " +
+        "                                                  payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/completed')" +
         "                                   THEN true ELSE false END) as passed " +
         "                        from statements " +
         "                        where payload -> 'context' ->> 'registration' = ? " +
@@ -289,11 +293,13 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
         throw err;
     });
 
-    let completedQuery = knex.raw("select count(*)::integer as a from \"statements\" where " +
-        "payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and " +
-        "(payload::json#>'{result,score,max}') IS NOT NULL " +
+    let completedQuery = knex.raw("select count(distinct payload->'actor'->>'mbox')::integer as a from \"statements\" where " +
+        "((payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and  " +
+        "(payload::json#>'{result,score,max}') IS NOT NULL ) or " +
+        "(payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed' and " +
+        "(payload::json#>'{result,completion}') IS NOT NULL ))" +
         "and payload->'context'->>'registration' = ? " +
-        "group by payload->'actor'->>'mbox', payload->'context'->>'registration'", [programId + "|" + courseId]);
+        "group by payload->'context'->>'registration'", [programId + "|" + courseId]);
 
     let completed = await completedQuery
         .then(f => {
@@ -306,7 +312,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
             console.log(err);
             throw err;
         });
-
+console.log('completed' , completed);
     let inProgressQuery = knex.raw("select count(*)::integer as a from (select count(*)::integer as c " +
         "from \"statements\" where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
         "and payload->'context'->>'registration' = ? " +
@@ -323,7 +329,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
         throw err;
     });
 
-
+    console.log('inProgress' , inProgress);
     return {
         "allUsers": allUsers,
         "completed": completed,
@@ -363,8 +369,10 @@ async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
         "       and payload -> 'context' ->> 'registration' = ? " +
         "       and payload->'actor'->>'mbox' not in (" +
         "           select DISTINCT payload->'actor'->>'mbox' " +
-        "           from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
-        "           and (payload::json->'result'->'score'->>'raw') IS NOT NULL " +
+        "           from statements where ((payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and " +
+		"           (payload::json->'result'->'score'->>'raw') IS NOT NULL ) or " +
+        "           (payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed' and " +
+        "           (payload::json->'result'->'completion') IS NOT NULL ) )" +
         "           and payload->'context'->>'registration' = ? ) " +
         "        group by 1,2,3) as foo " +
         "   group by 1 " +
@@ -400,8 +408,10 @@ async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
         "   and payload -> 'context' ->> 'registration' = ? " +
         "   and payload->'actor'->>'mbox' not in (" +
         "       select DISTINCT payload->'actor'->>'mbox' " +
-        "       from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
-        "       and (payload::json->'result'->'score'->>'raw') IS NOT NULL " +
+        "        from statements where ((payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and " +
+		"           (payload::json->'result'->'score'->>'raw') IS NOT NULL ) or " +
+        "           (payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed' and " +
+        "           (payload::json->'result'->'score'->>'raw') IS NOT NULL ) )" +
         "       and payload->'context'->>'registration' = ? " +
         "       ) " +
         "       group by 1 " +
@@ -468,8 +478,10 @@ async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseI
         "            where payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/answered' " +
         "            and payload -> 'context' ->> 'registration' = ? " +
         "                                                  and payload->'actor'->>'mbox' not in (select DISTINCT payload->'actor'->>'mbox' " +
-        "                                                    from statements where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
-        "                                                    and (payload::json->'result'->'score'->>'raw') IS NOT NULL " +
+        "                                                   from statements where ((payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and " +
+		"                                                   (payload::json->'result'->'score'->>'raw') IS NOT NULL ) or " +
+        "                                                   (payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed' and " +
+        "                                                   (payload::json->'result'->'score'->>'raw') IS NOT NULL ) )" +
         "                                                    and payload->'context'->>'registration' = ? ) " +
         "            group by 1,2,3 " +
         "    ) as st " +
@@ -600,10 +612,12 @@ async function getUserProfile(loggedInUser, choosenUserId) {
         "                                             payload -> 'result' ->> 'success' = 'false') THEN 1 " +
         "                                       ELSE 0 END)                                   as response_fail_count, " +
         "                               MAX(CASE " +
-        "                                       WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                                       WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or " +
+        "                                             payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed') " +
         "                                           THEN (payload::json -> 'result' -> 'score' ->> 'raw')::numeric " +
         "                                       ELSE 0 END)                                   as final_score_raw, " +
-        "                               bool_or(CASE WHEN payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' " +
+        "                               bool_or(CASE WHEN (payload -> 'verb' ->> 'id' = 'http://adlnet.gov/expapi/verbs/passed' or " +
+        "                                       payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed')" +
         "                                   THEN true ELSE false END) as passed " +
         "                        from statements " +
         "                        where " +
