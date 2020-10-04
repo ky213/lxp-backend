@@ -50,7 +50,7 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
     }
 
-    if (agent && agent.length > 0 ) { 
+    if (agent && agent.length > 10 ) { 
         const parsedAgent = JSON.parse(agent).map(n => n.email);    
         // then, create a dynamic list of comma-separated question marks
         let generateEmails = ''; 
@@ -76,11 +76,13 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
     }
 
     if(since) {
-        model.where('generated', '>=', moment(since, 'DDMMYYYY').startOf('day').toDate());
+        since = moment(since).format("YYYY-MM-DD");
+        model.whereRaw(`payload->>'timestamp' >= ?`, [`${since}`]);
     }
 
     if(until) {
-        model.where('generated', '<=', moment(until, 'DDMMYYYY').endOf('day').toDate());
+        until = moment(until).format("YYYY-MM-DD");
+        model.whereRaw(`payload->>'timestamp' <= ?`, [`${until}`]);
     }
 
     if(page && take) {
