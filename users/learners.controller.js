@@ -26,7 +26,7 @@ function getAllActive(req, res, next) {
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
-    isLearner,
+    null,
     false,
     req.query.filterOrganizationId,
     req.query.filterProgramId

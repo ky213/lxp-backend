@@ -279,7 +279,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
     }
     
     let pdAll = knex.raw(
-        "select count(*)::integer as a from employees e inner join users u on e.user_id = u.user_id where e.is_learner = true and e.organization_id = ?",
+        "select count(*)::integer as a from employees e inner join users u on e.user_id = u.user_id where e.organization_id = ?",
         [organizationId]
     )
 
@@ -312,7 +312,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
             console.log(err);
             throw err;
         });
-console.log('completed' , completed);
+
     let inProgressQuery = knex.raw("select count(*)::integer as a from (select count(*)::integer as c " +
         "from \"statements\" where payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/attempted' " +
         "and payload->'context'->>'registration' = ? " +
@@ -329,7 +329,6 @@ console.log('completed' , completed);
         throw err;
     });
 
-    console.log('inProgress' , inProgress);
     return {
         "allUsers": allUsers,
         "completed": completed,
