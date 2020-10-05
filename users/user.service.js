@@ -249,7 +249,7 @@ async function getAllUsers(loggedInUser, organizationId, includeInactive) {
     }});
 }
 
-async function getByEmployeeId(user, employeeId) {
+async function getByEmployeeId(user, employeeId, programId) {
 
     let selectEmployee =  knex.select([
         'users.user_id as userId', 
@@ -301,19 +301,25 @@ async function getByEmployeeId(user, employeeId) {
             groupId: d.groupId
         }));
 
-        const courses = await knex.table('user_courses')
-        .join('courses', 'user_courses.course_id', 'courses.course_id')
-        .andWhere('user_courses.user_id', userData.userId)
-        .select([
-            'courses.course_id as courseId',
-            'courses.name as name',
-            'courses.content_path as contentPath',
-            'courses.image',
-            'courses.description as description',
-            'courses.period_days as periodDays',
-            'courses.starting_date as startingDate',
-            'courses.program_id as programId'
-         ]);
+        let coursesData  = knex.select(['courses.course_id as courseId',
+        'courses.name as name',
+        'courses.content_path as contentPath',
+        'courses.image',
+        'courses.description as description',
+        'courses.period_days as periodDays',
+        'courses.starting_date as startingDate',
+        'courses.program_id as programId'
+        ])
+        .from('user_courses')
+        .join('courses', 'user_courses.course_id', 'courses.course_id');
+
+        if(programId)
+        {
+            coursesData.andWhere('courses.program_id', programId);
+        }
+
+        let courses = await coursesData
+        .where('user_courses.user_id', userData.userId);
 
         userData.joinedCourses = courses.map(d => ({
             name: d.name,

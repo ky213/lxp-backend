@@ -53,7 +53,7 @@ function getAllActiveUsers(req, res, next) {
 
 function getByEmployeeId(req, res, next) {
   userService
-    .getByEmployeeId(req.user, req.params.id)
+    .getByEmployeeId(req.user, req.params.id,req.query.programId)
     .then(user => {
       let _user = user
         ? {
