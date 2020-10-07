@@ -358,7 +358,8 @@ async function sendEmail( email, user )
                 }
             };
         }
-        else{            
+        else
+        {            
             transporterOption = {
                 host: organization.SMTPHost, 
                 port: organization.PortNumber, 
@@ -396,21 +397,42 @@ async function sendTestMailDevEmail(email, user)
     console.log(' email =>  ' , email)
     if(email)
     {
-        const transporter = nodemailer.createTransport({
-            host: 'maildev',
-            port: 25 ,
-            // We add this setting to tell nodemailer the host isn't secure during dev:
-            ignoreTLS: true
-        });
-      
+        let transporterOption = {};
+        
+        if(email.Encryption && email.Encryption !== 'None')
+        {
+            transporterOption = {
+                host: email.host, 
+                port: email.port, 
+                secure: true, // use TLS , SSL
+                auth: {
+                    user: email.ServerId,
+                    pass: email.Password
+                }
+            };
+        } else  {            
+            transporterOption = {
+                host: email.host, 
+                port: email.port, 
+                // We add this setting to tell nodemailer the host isn't secure during dev:
+                ignoreTLS: true
+            };          
+        }
+
+        const transporter = nodemailer.createTransport(transporterOption);
         // Now when your send an email, it will show up in the MailDev interface
+
+        const replacements = { OrgName: email.name , UserName: email.label};
+        const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
+        const body = testBody.replace(/{\w+}/g, placeholder =>
+        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
 
         const message = {
             from: email.Label + ' ' +  email.from, 
             to: email.to , 
             subject: 'Test Email', // Subject line
             text: 'Have a nice day!' ,// Plain text body
-            html: '<br/> <b>Hey there! </b><br> This is our first message sent with Nodemailer'
+            html: body
         };
 
         transporter.sendMail(message, function(err, info) {
@@ -418,6 +440,7 @@ async function sendTestMailDevEmail(email, user)
                 console.log(err)
             } else {
                 console.log(info);
+                return info;
             }
         }); 
     }
