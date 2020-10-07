@@ -385,8 +385,10 @@ async function sendEmail( email, user )
         transporter.sendMail(message, function(err, info) {
             if (err) {
                 console.log(err)
+                return err;
             } else {
                 console.log(info);
+                return info;
             }
         }); 
     }
@@ -399,15 +401,15 @@ async function sendTestMailDevEmail(email, user)
     {
         let transporterOption = {};
         
-        if(email.Encryption && email.Encryption !== 'None')
+        if(email.encryption && email.encryption !== 'None')
         {
             transporterOption = {
                 host: email.host, 
                 port: email.port, 
                 secure: true, // use TLS , SSL
                 auth: {
-                    user: email.ServerId,
-                    pass: email.Password
+                    user: email.serverId,
+                    pass: email.password
                 }
             };
         } else  {            
@@ -438,6 +440,7 @@ async function sendTestMailDevEmail(email, user)
         transporter.sendMail(message, function(err, info) {
             if (err) {
                 console.log(err)
+                return err;
             } else {
                 console.log(info);
                 return info;
