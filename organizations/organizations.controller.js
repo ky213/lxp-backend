@@ -11,6 +11,7 @@ router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]
 router.get('/', authorize([Role.SuperAdmin]), getAll); 
 router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);  
 router.post('/email', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendEmail); 
+router.post('/testEmail', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendTestEmail); 
 
 module.exports = router;
 
@@ -50,7 +51,14 @@ function deleteOrganizations(req, res, next) {
 }
 
 function sendEmail(req, res, next) {
-    organizationService.sendEmail(req.user, req.body)
+    organizationService.sendEmail(req.body, req.user)
         .then(() => res.json(true))
         .catch(err => next(err));
 }
+
+function sendTestEmail(req, res, next) {
+    organizationService.sendTestMailDevEmail(req.body, req.user)
+        .then(() => res.json(true))
+        .catch(err => next(err));
+}
+

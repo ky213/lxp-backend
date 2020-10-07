@@ -14,7 +14,8 @@ module.exports = {
     getByName,
     deleteOrganizations,
     getDefaultGroup,
-    sendEmail
+    sendEmail,
+    sendTestMailDevEmail
 };
 
 async function getAll(user, pageId, recordsPerPage, filter) {
@@ -316,7 +317,7 @@ async function getDefaultGroup(id) {
     return organization;
 }
 
-async function sendEmail(user, email)
+async function sendEmail( email, user )
 {
     console.log('email   => ' , email , user );
 
@@ -378,6 +379,38 @@ async function sendEmail(user, email)
             to: email.to ,   // List of recipients
             subject: organization.Subject, // Subject line
             html: body
+        };
+
+        transporter.sendMail(message, function(err, info) {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log(info);
+            }
+        }); 
+    }
+}
+
+async function sendTestMailDevEmail(email, user)
+{ 
+    console.log(' email =>  ' , email)
+    if(email)
+    {
+        const transporter = nodemailer.createTransport({
+            host: 'maildev',
+            port: 25 ,
+            // We add this setting to tell nodemailer the host isn't secure during dev:
+            ignoreTLS: true
+        });
+      
+        // Now when your send an email, it will show up in the MailDev interface
+
+        const message = {
+            from: email.Label + ' ' +  email.from, 
+            to: email.to , 
+            subject: 'Test Email', // Subject line
+            text: 'Have a nice day!' ,// Plain text body
+            html: '<br/> <b>Hey there! </b><br> This is our first message sent with Nodemailer'
         };
 
         transporter.sendMail(message, function(err, info) {
