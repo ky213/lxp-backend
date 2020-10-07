@@ -351,7 +351,6 @@ async function sendEmail( email, user )
             transporterOption = {
                 host: organization.SMTPHost, 
                 port: organization.PortNumber, 
-                secure: true, // use TLS , SSL
                 auth: {
                     user: organization.ServerId,
                     pass: organization.Password
@@ -406,7 +405,6 @@ async function sendTestMailDevEmail(email, user)
             transporterOption = {
                 host: email.host, 
                 port: email.port, 
-                secure: true, // use TLS , SSL
                 auth: {
                     user: email.serverId,
                     pass: email.password
