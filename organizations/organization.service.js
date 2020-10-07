@@ -1,5 +1,6 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const Role = require('helpers/role');
 const knex = require('../db'); 
 const groupTypeService = require('../group_type/group_type.service');
@@ -12,14 +13,16 @@ module.exports = {
     update,
     getByName,
     deleteOrganizations,
-    getDefaultGroup
+    getDefaultGroup,
+    sendEmail
 };
 
 async function getAll(user, pageId, recordsPerPage, filter) {
     //console.log("Get all organizations:", user, pageId, recordsPerPage, filter)
     let offset = ((pageId || 1) - 1) * recordsPerPage;
 
-    let model = knex.table('organizations');
+    let model = knex.table('organizations')
+    .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
 
     if (filter) {
         model.whereRaw(`LOWER(organizations.name) LIKE ?`, [`%${filter.toLowerCase().trim()}%`]);
@@ -47,15 +50,24 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organizations.modified_at as modifiedAt',
             'organizations.modified_by as modifiedBy',
             'organizations.is_active as isActive',
-            'organizations.default_group_id as defaultGroupId'
+            'organizations.default_group_id as defaultGroupId',
+            'organization_settings.smtp_host as SMTPHost',
+            'organization_settings.port_number as PortNumber',
+            'organization_settings.encryption as Encryption',
+            'organization_settings.email as Email',
+            'organization_settings.label as Label',
+            'organization_settings.server_id as ServerId',
+            'organization_settings.password as Password',
+            'organization_settings.subject as Subject',
+            'organization_settings.body as Body'
         ]);
-
        
     //console.log("Got organizations:", organizations)
     return { organizations, totalNumberOfRecords: totalNumberOfRecords[0].count };
 }
 
 async function getById(id, user) {
+    console.log('get by id ');
     let select =  knex.select([
         'organizations.organization_id as organizationId', 
         'organizations.name', 
@@ -67,9 +79,19 @@ async function getById(id, user) {
         'organizations.modified_at as modifiedAt',
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
-        'organizations.default_group_id as defaultGroupId'
+        'organizations.default_group_id as defaultGroupId',
+        'organization_settings.smtp_host as SMTPHost',
+        'organization_settings.port_number as PortNumber',
+        'organization_settings.encryption as Encryption',
+        'organization_settings.email as Email',
+        'organization_settings.label as Label',
+        'organization_settings.server_id as ServerId',
+        'organization_settings.password as Password',
+        'organization_settings.subject as Subject',
+        'organization_settings.body as Body'
     ])
-    .from('organizations');
+    .from('organizations')
+    .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
 
     let organization = await select
     .where('organizations.organization_id', id)
@@ -108,7 +130,25 @@ async function create(organization, user) {
             modified_by: user.sub,
             is_active: organization.isActive
         }).returning('organization_id');
-                 
+        
+        await knex('organization_settings')
+        .transacting(t)
+        .insert({
+            organization_id: organizationId[0],
+            smtp_host : organization.host,
+            port_number : organization.port,
+            encryption : organization.encryption,
+            email : organization.email,
+            label : organization.label,
+            server_id : organization.serverId,
+            password : organization.password,
+            subject : organization.subject,
+            body: organization.body,
+            created_at: knex.fn.now(),
+            created_by: user.sub,
+            modified_by: user.sub
+            }).returning('settings_id');
+
         let blockType = await knex('program_block_types')
             .where('description', 'Four weeks')
             .select('block_type_id')
@@ -175,19 +215,41 @@ async function create(organization, user) {
 
 async function update(organization, user)
 {
-    console.log("Got update user:", user)
-    return knex('organizations')
-        .where('organization_id', organization.organizationId)
-        .update({
-            name: organization.name,
-            logo: organization.logo,
-            color_code: organization.colorCode,
-            background_color_code: organization.backgroundColorCode,
-            modified_at: knex.fn.now(),
-            modified_by: user.sub,
-            is_active: organization.isActive,
-            default_group_id:  organization.defaultGroupId
-        });
+    return knex.transaction(async function(t) {
+        console.log("Got update user:", user);
+
+        await knex('organizations')
+            .where('organization_id', organization.organizationId)
+            .transacting(t)
+            .update({
+                name: organization.name,
+                logo: organization.logo,
+                color_code: organization.colorCode,
+                background_color_code: organization.backgroundColorCode,
+                modified_at: knex.fn.now(),
+                modified_by: user.sub,
+                is_active: organization.isActive,
+                default_group_id:  organization.defaultGroupId
+            });
+
+        await knex('organization_settings')
+            .where('organization_id', organization.organizationId)
+            .transacting(t)
+            .update({
+                modified_at: knex.fn.now(),
+                modified_by: user.sub,
+                smtp_host : organization.host,
+                port_number : organization.port,
+                encryption : organization.encryption,
+                email : organization.email,
+                label : organization.label,
+                server_id : organization.serverId,
+                password : organization.password,
+                subject : organization.subject,
+                body : organization.body
+            });    
+    })
+    .catch(err => console.log('Update organization error', err));
 }
 
 async function getByName(name, user) {
@@ -202,12 +264,22 @@ async function getByName(name, user) {
         'organizations.modified_at as modifiedAt',
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
-        'organizations.default_group_id as defaultGroupId'
+        'organizations.default_group_id as defaultGroupId',
+        'organization_settings.smtp_host as SMTPHost',
+        'organization_settings.port_number as PortNumber',
+        'organization_settings.encryption as Encryption',
+        'organization_settings.email as Email',
+        'organization_settings.label as Label',
+        'organization_settings.server_id as ServerId',
+        'organization_settings.password as Password',
+        'organization_settings.subject as Subject',
+        'organization_settings.body as Body'
     ])
     .from('organizations')
-        .whereRaw(`LOWER(organizations.name) = ?`, [`${name.toLowerCase().trim()}`])
-        .limit(1)
-        .first();
+    .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id')
+    .whereRaw(`LOWER(organizations.name) = ?`, [`${name.toLowerCase().trim()}`])
+    .limit(1)
+    .first();
 }
 
 async function deleteOrganizations(organizations, user)
@@ -243,3 +315,78 @@ async function getDefaultGroup(id) {
 
     return organization;
 }
+
+async function sendEmail(user, email)
+{
+    console.log('email   => ' , email , user );
+
+    let select =  knex.select([
+        'organizations.organization_id as organizationId', 
+        'organizations.name', 
+        'organization_settings.smtp_host as SMTPHost',
+        'organization_settings.port_number as PortNumber',
+        'organization_settings.encryption as Encryption',
+        'organization_settings.email as Email',
+        'organization_settings.label as Label',
+        'organization_settings.server_id as ServerId',
+        'organization_settings.password as Password',
+        'organization_settings.subject as Subject',
+        'organization_settings.body as Body'
+    ])
+    .from('organizations')
+    .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
+
+    let organization = await select
+    .where('organizations.organization_id', email.organizationId)
+    .limit(1)
+    .first();
+
+    if(organization && organization.Email)
+    {       
+        let transporterOption = {};
+        
+        if(organization.Encryption && organization.Encryption !== 'None')
+        {
+            transporterOption = {
+                host: organization.SMTPHost, 
+                port: organization.PortNumber, 
+                secure: true, // use TLS , SSL
+                auth: {
+                    user: organization.ServerId,
+                    pass: organization.Password
+                }
+            };
+        }
+        else{            
+            transporterOption = {
+                host: organization.SMTPHost, 
+                port: organization.PortNumber, 
+                // We add this setting to tell nodemailer the host isn't secure during dev:
+                ignoreTLS: true
+            };          
+        }
+
+        const transporter = nodemailer.createTransport(transporterOption);
+  
+        const replacements = { OrgName: organization.name , UserName: organization.Label};
+        const body = organization.Body.replace(/{\w+}/g, placeholder =>
+        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
+
+        // Now when your send an email, it will show up in the MailDev interface
+        const message = {
+            from: organization.Label + ' ' +  organization.Email,  // Sender address
+            to: email.to ,   // List of recipients
+            subject: organization.Subject, // Subject line
+            html: body
+        };
+
+        transporter.sendMail(message, function(err, info) {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log(info);
+            }
+        }); 
+    }
+}
+

@@ -10,6 +10,8 @@ router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), 
 router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), deleteOrganizations); 
 router.get('/', authorize([Role.SuperAdmin]), getAll); 
 router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);  
+router.post('/email', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendEmail); 
+
 module.exports = router;
 
 function getAll(req, res, next) {
@@ -43,6 +45,12 @@ function update(req, res, next) {
 
 function deleteOrganizations(req, res, next) {
     organizationService.deleteOrganizations(req.body, req.user)
+        .then(() => res.json(true))
+        .catch(err => next(err));
+}
+
+function sendEmail(req, res, next) {
+    organizationService.sendEmail(req.user, req.body)
         .then(() => res.json(true))
         .catch(err => next(err));
 }
