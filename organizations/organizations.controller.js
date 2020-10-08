@@ -52,13 +52,13 @@ function deleteOrganizations(req, res, next) {
 
 function sendEmail(req, res, next) {
     organizationService.sendEmail(req.body, req.user)
-    .then(data => res.json(data))
-    .catch(error => console.log("Error getAll:", error));
+    .then(data => data && data.isValid == true ? res.json(data)  : res.status(404).json({message: "Not connected"}))
+    .catch(err => next(err));
 }
 
 function sendTestEmail(req, res, next) {
-    organizationService.sendTestMailDevEmail(req.body, req.user)
-    .then(data => res.json(data))
-    .catch(error => console.log("Error getAll:", error));
+    organizationService.sendTestEmail(req.body, req.user)
+    .then(data => data && data.isValid == true ? res.json(data)  : res.status(404).json({message: "Not connected"}))
+    .catch(err => next(err));
 }
 

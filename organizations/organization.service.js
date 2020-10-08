@@ -15,7 +15,7 @@ module.exports = {
     deleteOrganizations,
     getDefaultGroup,
     sendEmail,
-    sendTestMailDevEmail
+    sendTestEmail
 };
 
 async function getAll(user, pageId, recordsPerPage, filter) {
@@ -381,26 +381,25 @@ async function sendEmail( email, user )
             html: body
         };
 
+        let isValid = true;
         transporter.sendMail(message, function(err, info) {
             if (err) {
                 console.log(err)
-                return err;
-            } else {
-                console.log(info);
-                return info;
-            }
+                isValid = false;
+            } 
+            return isValid;
         }); 
     }
 }
 
-async function sendTestMailDevEmail(email, user)
+async function sendTestEmail(email, user)
 { 
     console.log(' email =>  ' , email)
     if(email)
     {
         let transporterOption = {};
         
-        if(email.Encryption && email.Encryption !== 'None')
+        if(email.Encryption)
         {
             transporterOption = {
                 host: email.SMTPHost, 
@@ -422,7 +421,7 @@ async function sendTestMailDevEmail(email, user)
         const transporter = nodemailer.createTransport(transporterOption);
         // Now when your send an email, it will show up in the MailDev interface
 
-        const replacements = { OrgName: email.name , UserName: email.Label};
+        const replacements = { OrgName: email.OrgName , UserName: email.Label};
         const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
         const body = testBody.replace(/{\w+}/g, placeholder =>
         replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
@@ -434,15 +433,13 @@ async function sendTestMailDevEmail(email, user)
             html: email.Body || body
         };
 
+        let isValid = true;
         transporter.sendMail(message, function(err, info) {
             if (err) {
                 console.log(err)
-                let errorObj = {isValid: false, status: "error", code: err.code, message : err.message};
-                return errorObj;
-            } else {
-                console.log(info);
-                return info;
-            }
+                isValid = false;
+            } 
+            return isValid;
         }); 
     }
 }
