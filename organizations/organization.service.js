@@ -344,51 +344,55 @@ async function sendEmail( email, user )
 
     if(organization && organization.Email)
     {       
-        let transporterOption = {};
-        
-        if(organization.Encryption && organization.Encryption !== 'None')
-        {
-            transporterOption = {
-                host: organization.SMTPHost, 
-                port: organization.PortNumber, 
-                auth: {
-                    user: organization.ServerId,
-                    pass: organization.Password
-                }
+        return new Promise((resolve,reject)=>{
+            let transporterOption = {};
+            
+            if(organization.Encryption)
+            {
+                transporterOption = {
+                    host: organization.SMTPHost, 
+                    port: organization.PortNumber, 
+                    auth: {
+                        user: organization.ServerId,
+                        pass: organization.Password
+                    }
+                };
+            }
+            else
+            {            
+                transporterOption = {
+                    host: organization.SMTPHost, 
+                    port: organization.PortNumber, 
+                    // We add this setting to tell nodemailer the host isn't secure during dev:
+                    ignoreTLS: true
+                };          
+            }
+
+            const transporter = nodemailer.createTransport(transporterOption);
+    
+            const replacements = { OrgName: organization.name , UserName: organization.Label};
+            const body = organization.Body.replace(/{\w+}/g, placeholder =>
+            replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
+
+            // Now when your send an email, it will show up in the MailDev interface
+            const message = {
+                from: organization.Label + ' ' +  organization.Email,  // Sender address
+                to: email.To ,   // List of recipients
+                subject: organization.Subject, // Subject line
+                html: body
             };
-        }
-        else
-        {            
-            transporterOption = {
-                host: organization.SMTPHost, 
-                port: organization.PortNumber, 
-                // We add this setting to tell nodemailer the host isn't secure during dev:
-                ignoreTLS: true
-            };          
-        }
 
-        const transporter = nodemailer.createTransport(transporterOption);
-  
-        const replacements = { OrgName: organization.name , UserName: organization.Label};
-        const body = organization.Body.replace(/{\w+}/g, placeholder =>
-        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
-
-        // Now when your send an email, it will show up in the MailDev interface
-        const message = {
-            from: organization.Label + ' ' +  organization.Email,  // Sender address
-            to: email.to ,   // List of recipients
-            subject: organization.Subject, // Subject line
-            html: body
-        };
-
-        let isValid = true;
-        transporter.sendMail(message, function(err, info) {
-            if (err) {
-                console.log(err)
-                isValid = false;
-            } 
-            return isValid;
-        }); 
+            transporter.sendMail(message, function(err, info) {
+                if (err) {
+                    console.log('Error' , err);
+                    resolve(false);
+                }  
+                else  {
+                    console.log('Info' , info)
+                    resolve(true);
+                }             
+            }); 
+        })
     }
 }
 
@@ -397,50 +401,54 @@ async function sendTestEmail(email, user)
     console.log(' email =>  ' , email)
     if(email)
     {
-        let transporterOption = {};
-        
-        if(email.Encryption)
-        {
-            transporterOption = {
-                host: email.SMTPHost, 
-                port: email.PortNumber, 
-                auth: {
-                    user: email.ServerId,
-                    pass: email.Password
-                }
+        return new Promise((resolve,reject)=>{
+            let transporterOption = {};
+
+            if(email.Encryption)
+            {
+                transporterOption = {
+                    host: email.SMTPHost, 
+                    port: email.PortNumber, 
+                    auth: {
+                        user: email.ServerId,
+                        pass: email.Password
+                    }
+                };
+            } else  {            
+                transporterOption = {
+                    host: email.SMTPHost, 
+                    port: email.PortNumber, 
+                    // We add this setting to tell nodemailer the host isn't secure during dev:
+                    ignoreTLS: true
+                };          
+            }
+
+            const transporter = nodemailer.createTransport(transporterOption);
+            // Now when your send an email, it will show up in the MailDev interface
+
+            const replacements = { OrgName: email.OrgName , UserName: email.Label};
+            const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
+            const body = testBody.replace(/{\w+}/g, placeholder =>
+            replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
+
+            const message = {
+                from: email.Label + ' ' +  email.Email, 
+                to: email.Email , 
+                subject: email.Subject || 'Test Email', // Subject line
+                html: email.Body || body
             };
-        } else  {            
-            transporterOption = {
-                host: email.SMTPHost, 
-                port: email.PortNumber, 
-                // We add this setting to tell nodemailer the host isn't secure during dev:
-                ignoreTLS: true
-            };          
-        }
 
-        const transporter = nodemailer.createTransport(transporterOption);
-        // Now when your send an email, it will show up in the MailDev interface
-
-        const replacements = { OrgName: email.OrgName , UserName: email.Label};
-        const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
-        const body = testBody.replace(/{\w+}/g, placeholder =>
-        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
-
-        const message = {
-            from: email.Label + ' ' +  email.Email, 
-            to: email.Email , 
-            subject: email.Subject || 'Test Email', // Subject line
-            html: email.Body || body
-        };
-
-        let isValid = true;
-        transporter.sendMail(message, function(err, info) {
-            if (err) {
-                console.log(err)
-                isValid = false;
-            } 
-            return isValid;
-        }); 
+            transporter.sendMail(message, function(err, info) {
+                if (err) {
+                    console.log('Error' , err);
+                    resolve(false);
+                }  
+                else  {
+                    console.log('Info' , info)
+                    resolve(true);
+                }             
+            }); 
+        })
     }
 }
 
