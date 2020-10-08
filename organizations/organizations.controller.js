@@ -53,12 +53,12 @@ function deleteOrganizations(req, res, next) {
 function sendEmail(req, res, next) {
     organizationService.sendEmail(req.body, req.user)
     .then(data => res.json(data))
-    .catch(err => next(err));
+    .catch(error => console.log("Error getAll:", error));
 }
 
 function sendTestEmail(req, res, next) {
     organizationService.sendTestMailDevEmail(req.body, req.user)
     .then(data => res.json(data))
-    .catch(err => res.json(err));
+    .catch(error => console.log("Error getAll:", error));
 }
 

@@ -136,15 +136,15 @@ async function create(organization, user) {
         .transacting(t)
         .insert({
             organization_id: organizationId[0],
-            smtp_host : organization.host,
-            port_number : organization.port,
-            encryption : organization.encryption,
-            email : organization.email,
-            label : organization.label,
-            server_id : organization.serverId,
-            password : organization.password,
-            subject : organization.subject,
-            body: organization.body,
+            smtp_host : organization.SMTPHost,
+            port_number : organization.PortNumber,
+            encryption : organization.Encryption,
+            email : organization.Email,
+            label : organization.Label,
+            server_id : organization.ServerId,
+            password : organization.Password,
+            subject : organization.Subject,
+            body: organization.Body,
             created_at: knex.fn.now(),
             created_by: user.sub,
             modified_by: user.sub
@@ -239,15 +239,15 @@ async function update(organization, user)
             .update({
                 modified_at: knex.fn.now(),
                 modified_by: user.sub,
-                smtp_host : organization.host,
-                port_number : organization.port,
-                encryption : organization.encryption,
-                email : organization.email,
-                label : organization.label,
-                server_id : organization.serverId,
-                password : organization.password,
-                subject : organization.subject,
-                body : organization.body
+                smtp_host : organization.SMTPHost,
+                port_number : organization.PortNumber,
+                encryption : organization.Encryption,
+                email : organization.Email,
+                label : organization.Label,
+                server_id : organization.ServerId,
+                password : organization.Password,
+                subject : organization.Subject,
+                body: organization.Body
             });    
     })
     .catch(err => console.log('Update organization error', err));
@@ -400,20 +400,20 @@ async function sendTestMailDevEmail(email, user)
     {
         let transporterOption = {};
         
-        if(email.encryption && email.encryption !== 'None')
+        if(email.Encryption && email.Encryption !== 'None')
         {
             transporterOption = {
-                host: email.host, 
-                port: email.port, 
+                host: email.SMTPHost, 
+                port: email.PortNumber, 
                 auth: {
-                    user: email.serverId,
-                    pass: email.password
+                    user: email.ServerId,
+                    pass: email.Password
                 }
             };
         } else  {            
             transporterOption = {
-                host: email.host, 
-                port: email.port, 
+                host: email.SMTPHost, 
+                port: email.PortNumber, 
                 // We add this setting to tell nodemailer the host isn't secure during dev:
                 ignoreTLS: true
             };          
@@ -422,23 +422,23 @@ async function sendTestMailDevEmail(email, user)
         const transporter = nodemailer.createTransport(transporterOption);
         // Now when your send an email, it will show up in the MailDev interface
 
-        const replacements = { OrgName: email.name , UserName: email.label};
+        const replacements = { OrgName: email.name , UserName: email.Label};
         const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
         const body = testBody.replace(/{\w+}/g, placeholder =>
         replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
 
         const message = {
-            from: email.Label + ' ' +  email.from, 
-            to: email.to , 
-            subject: 'Test Email', // Subject line
-            text: 'Have a nice day!' ,// Plain text body
-            html: body
+            from: email.Label + ' ' +  email.Email, 
+            to: email.Email , 
+            subject: email.Subject || 'Test Email', // Subject line
+            html: email.Body || body
         };
 
         transporter.sendMail(message, function(err, info) {
             if (err) {
                 console.log(err)
-                return err;
+                let errorObj = {isValid: false, status: "error", code: err.code, message : err.message};
+                return errorObj;
             } else {
                 console.log(info);
                 return info;
