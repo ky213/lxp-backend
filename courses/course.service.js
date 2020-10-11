@@ -106,9 +106,26 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
         let courses = await Promise.all(tempCourse);
    
+        let totalNumber = knex.raw(
+            " select count(*) as total_number_of_courses " +
+            " from courses " + 
+            " where courses.organization_id = ? " , organizationId);
+             
+        let totalNumberOfCourses = await totalNumber.then(f => {
+            if (f.rows.length === 0) {
+                    return 0;
+                }    
+                console.log(f.rows);   
+                return f.rows[0].total_number_of_courses;
+            }).catch(err => {
+                console.log(err);
+                throw err;
+            });
+
     return {
         courses,
-        totalNumberOfRecords
+        totalNumberOfRecords,
+        totalNumberOfCourses
     }
 }
 
