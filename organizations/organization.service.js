@@ -235,10 +235,10 @@ async function update(organization, user)
                 default_group_id:  organization.defaultGroupId
             });
 
-        if (organization.settingsId)
+        if (organization.SettingsId)
         {
             await knex('organization_settings')
-                .where('settings_id', organization.settingsId)
+                .where('settings_id', organization.SettingsId)
                 .transacting(t)
                 .update({
                     modified_at: knex.fn.now(),
