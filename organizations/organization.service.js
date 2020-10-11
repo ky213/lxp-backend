@@ -52,6 +52,7 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organizations.modified_by as modifiedBy',
             'organizations.is_active as isActive',
             'organizations.default_group_id as defaultGroupId',
+            'organization_settings.settings_id as SettingsId',
             'organization_settings.smtp_host as SMTPHost',
             'organization_settings.port_number as PortNumber',
             'organization_settings.encryption as Encryption',
@@ -81,6 +82,7 @@ async function getById(id, user) {
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
         'organizations.default_group_id as defaultGroupId',
+        'organization_settings.settings_id as SettingsId',
         'organization_settings.smtp_host as SMTPHost',
         'organization_settings.port_number as PortNumber',
         'organization_settings.encryption as Encryption',
@@ -233,12 +235,31 @@ async function update(organization, user)
                 default_group_id:  organization.defaultGroupId
             });
 
-        await knex('organization_settings')
-            .where('organization_id', organization.organizationId)
+        if (organization.settingsId)
+        {
+            await knex('organization_settings')
+                .where('settings_id', organization.settingsId)
+                .transacting(t)
+                .update({
+                    modified_at: knex.fn.now(),
+                    modified_by: user.sub,
+                    smtp_host : organization.SMTPHost,
+                    port_number : organization.PortNumber,
+                    encryption : organization.Encryption,
+                    email : organization.Email,
+                    label : organization.Label,
+                    server_id : organization.ServerId,
+                    password : organization.Password,
+                    subject : organization.Subject,
+                    body: organization.Body
+                });  
+        }
+        else
+        {    
+            await knex('organization_settings')
             .transacting(t)
-            .update({
-                modified_at: knex.fn.now(),
-                modified_by: user.sub,
+            .insert({
+                organization_id: organization.organizationId,
                 smtp_host : organization.SMTPHost,
                 port_number : organization.PortNumber,
                 encryption : organization.Encryption,
@@ -247,8 +268,12 @@ async function update(organization, user)
                 server_id : organization.ServerId,
                 password : organization.Password,
                 subject : organization.Subject,
-                body: organization.Body
-            });    
+                body: organization.Body,
+                created_at: knex.fn.now(),
+                created_by: user.sub,
+                modified_by: user.sub
+                }).returning('settings_id');
+        }  
     })
     .catch(err => console.log('Update organization error', err));
 }
