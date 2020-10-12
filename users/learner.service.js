@@ -103,6 +103,10 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
+            var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+                UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
+            organizationService.sendEmail(email, loggedInUser);
+
             return {
                 isValid: true
             };
@@ -139,7 +143,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
     async function InsertLearnerAsync(t, userData) {
 
-        usersIds = await t.into("users")
+        let usersIds = await t.into("users")
             .insert({
                 name: userData.name.trim(),
                 surname: userData.surname.trim(),
@@ -318,6 +322,10 @@ async function addBulk(loggedInUser, data, organizationId) {
                 });
 
         }
+
+        var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+            UserName: userData.name.trim(), organizationId: organizationId};
+        organizationService.sendEmail(email, loggedInUser);
 
         output.push({...userData, status: "ok"});
 

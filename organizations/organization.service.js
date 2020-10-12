@@ -348,7 +348,7 @@ async function sendEmail( email, user )
 
     let select =  knex.select([
         'organizations.organization_id as organizationId', 
-        'organizations.name', 
+        'organizations.name as Name', 
         'organization_settings.smtp_host as SMTPHost',
         'organization_settings.port_number as PortNumber',
         'organization_settings.encryption as Encryption',
@@ -394,15 +394,16 @@ async function sendEmail( email, user )
             }
 
             const transporter = nodemailer.createTransport(transporterOption);
-    
-            const replacements = { OrgName: organization.name , UserName: organization.Label};
+
+            const replacements = { OrgName: organization.Name , UserName: email.UserName,
+                UserLogin: email.UserEmail, UserPass: email.UserPass};
             const body = organization.Body.replace(/{\w+}/g, placeholder =>
             replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address
-                to: email.To ,   // List of recipients
+                to: email.UserEmail ,   // List of recipients
                 subject: organization.Subject, // Subject line
                 html: body
             };
