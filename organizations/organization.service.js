@@ -52,6 +52,7 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organizations.modified_by as modifiedBy',
             'organizations.is_active as isActive',
             'organizations.default_group_id as defaultGroupId',
+            'organizations.domain', 
             'organization_settings.settings_id as SettingsId',
             'organization_settings.smtp_host as SMTPHost',
             'organization_settings.port_number as PortNumber',
@@ -82,6 +83,7 @@ async function getById(id, user) {
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
         'organizations.default_group_id as defaultGroupId',
+        'organizations.domain', 
         'organization_settings.settings_id as SettingsId',
         'organization_settings.smtp_host as SMTPHost',
         'organization_settings.port_number as PortNumber',
@@ -131,7 +133,8 @@ async function create(organization, user) {
             background_color_code: organization.backgroundColorCode,
             created_by: user.sub,
             modified_by: user.sub,
-            is_active: organization.isActive
+            is_active: organization.isActive,
+            domain : organization.domain
         }).returning('organization_id');
 
         let blockType = await knex('program_block_types')
@@ -214,7 +217,8 @@ async function update(organization, user)
                 modified_at: knex.fn.now(),
                 modified_by: user.sub,
                 is_active: organization.isActive,
-                default_group_id:  organization.defaultGroupId
+                default_group_id:  organization.defaultGroupId,
+                domain : organization.domain
             });
 
         if (organization.SettingsId) {
@@ -270,6 +274,7 @@ async function getByName(name, user) {
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
         'organizations.default_group_id as defaultGroupId',
+        'organizations.domain', 
         'organization_settings.smtp_host as SMTPHost',
         'organization_settings.port_number as PortNumber',
         'organization_settings.encryption as Encryption',
@@ -309,7 +314,8 @@ async function getDefaultGroup(id) {
         'organizations.modified_at as modifiedAt',
         'organizations.modified_by as modifiedBy',
         'organizations.is_active as isActive',
-        'organizations.default_group_id as defaultGroupId'
+        'organizations.default_group_id as defaultGroupId',
+        'organizations.domain'
     ])
     .from('organizations');
     

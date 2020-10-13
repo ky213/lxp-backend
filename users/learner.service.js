@@ -423,6 +423,14 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
     }));
 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    
+    let domain;
+    let organization = await organizationService.getById(organizationId);
+
+    if(organization && organization.domain)
+    {
+        domain = "@" + organization.domain;
+    }
 
     let output = {
         hasErrors: false,
@@ -480,7 +488,13 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             addError(user, "The format of the email address isn't correct");
             continue;
         }
-
+    
+        let userEmailDomain = user.email.substring(user.email.indexOf('@'));
+        if(domain && userEmailDomain.toLowerCase() !== domain.toLowerCase() ){
+            addError(user, "The domain of the email address isn't correct");
+            continue;
+        }
+        
         emails.push(user.email);
 
         let emailExists = await checkIfEmailExists(user.email, user.userId);
