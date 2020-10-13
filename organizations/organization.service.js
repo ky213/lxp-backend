@@ -133,24 +133,6 @@ async function create(organization, user) {
             modified_by: user.sub,
             is_active: organization.isActive
         }).returning('organization_id');
-        
-        await knex('organization_settings')
-        .transacting(t)
-        .insert({
-            organization_id: organizationId[0],
-            smtp_host : organization.SMTPHost,
-            port_number : organization.PortNumber,
-            encryption : organization.Encryption,
-            email : organization.Email,
-            label : organization.Label,
-            server_id : organization.ServerId,
-            password : organization.Password,
-            subject : organization.Subject,
-            body: organization.Body,
-            created_at: knex.fn.now(),
-            created_by: user.sub,
-            modified_by: user.sub
-            }).returning('settings_id');
 
         let blockType = await knex('program_block_types')
             .where('description', 'Four weeks')
@@ -235,8 +217,7 @@ async function update(organization, user)
                 default_group_id:  organization.defaultGroupId
             });
 
-        if (organization.SettingsId)
-        {
+        if (organization.SettingsId) {
             await knex('organization_settings')
                 .where('settings_id', organization.SettingsId)
                 .transacting(t)
@@ -252,10 +233,8 @@ async function update(organization, user)
                     password : organization.Password,
                     subject : organization.Subject,
                     body: organization.Body
-                });  
-        }
-        else
-        {    
+                });}
+        else if(organization.SettingsId == null && organization.ServerId) {
             await knex('organization_settings')
             .transacting(t)
             .insert({
@@ -272,8 +251,8 @@ async function update(organization, user)
                 created_at: knex.fn.now(),
                 created_by: user.sub,
                 modified_by: user.sub
-                }).returning('settings_id');
-        }  
+            }).returning('settings_id');
+        }
     })
     .catch(err => console.log('Update organization error', err));
 }
@@ -344,7 +323,11 @@ async function getDefaultGroup(id) {
 
 async function sendEmail( email, user )
 {
+    if (!user)
+        return;
+
     console.log('email   => ' , email , user );
+    let organizationId = email.organizationId || user.organization;
 
     let select =  knex.select([
         'organizations.organization_id as organizationId', 
@@ -363,9 +346,30 @@ async function sendEmail( email, user )
     .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
 
     let organization = await select
-    .where('organizations.organization_id', email.organizationId)
+    .where('organizations.organization_id', organizationId)
     .limit(1)
     .first();
+
+    let courses = [];
+    if(email.CourseId)
+    {
+        let model = knex('courses')
+        .join('user_courses', 'user_courses.course_id', 'courses.course_id')
+        .join('programs', 'programs.program_id', 'courses.program_id')
+        .join('users', 'user_courses.user_id', 'users.user_id')
+        .where('user_courses.user_id', user.userId)
+        .andWhere('user_courses.course_id', email.CourseId)
+        .andWhere('user_courses.is_able_to_join', true);    
+
+        courses = await model.clone()
+        .select([
+            'courses.name as Name',
+            'users.email as Email',
+            'users.name as UserName',
+            'programs.subject as Subject',
+            'programs.body as Body',
+        ]);
+    }
 
     if(organization && organization.Email)
     {       
@@ -395,16 +399,32 @@ async function sendEmail( email, user )
 
             const transporter = nodemailer.createTransport(transporterOption);
 
-            const replacements = { OrgName: organization.Name , UserName: email.UserName,
-                UserLogin: email.UserEmail, UserPass: email.UserPass};
-            const body = organization.Body.replace(/{\w+}/g, placeholder =>
+            let userEmail = email.UserEmail;     
+            let userName = email.UserName;    
+            let emailBody =  organization.Body;
+            let emailSubject =  organization.Subject;
+            let courseName;
+
+            if (courses && courses[0])
+            {   
+                emailBody =  courses[0].Body;
+                emailSubject =  courses[0].Subject;
+                userEmail = courses[0].Email;
+                userName = courses[0].UserName;
+                courseName = courses[0].Name;
+            }
+
+            const replacements = { OrgName: organization.Name , UserName: userName,
+                UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
+
+            const body = emailBody.replace(/{\w+}/g, placeholder =>
             replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address
-                to: email.UserEmail ,   // List of recipients
-                subject: organization.Subject, // Subject line
+                to: userEmail ,   // List of recipients
+                subject: emailSubject, // Subject line
                 html: body
             };
 
@@ -452,7 +472,9 @@ async function sendTestEmail(email, user)
             const transporter = nodemailer.createTransport(transporterOption);
             // Now when your send an email, it will show up in the MailDev interface
 
-            const replacements = { OrgName: email.OrgName , UserName: email.Label};
+            const replacements = { OrgName: email.OrgName , UserName: email.UserName,
+                UserLogin: email.UserEmail, UserPass: email.UserPass};
+                
             const testBody = '<br/> <b>Hey there! {UserName} </b><br> This is our first message sent with Nodemailer from {OrgName}'
             const body = testBody.replace(/{\w+}/g, placeholder =>
             replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );

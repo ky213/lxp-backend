@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const {Storage} = require('@google-cloud/storage');
 const dashboardService = require('../dashboard/dashboard.service.js');
+const organizationService = require('../organizations/organization.service');
 
 module.exports = {
     getAll,
@@ -287,11 +288,16 @@ async function requestToJoinCourse(loggedInUser, courseId) {
     if (!loggedInUser)
         return;
 
-    return knex('user_courses')
+    let course = await knex('user_courses')
         .insert({
             user_id: loggedInUser.userId,
             course_id: courseId,
             is_able_to_join: true,
             joining_date: knex.fn.now()
         });
+
+    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization  };
+    organizationService.sendEmail(email, loggedInUser);  
+    
+    return course;
 }
