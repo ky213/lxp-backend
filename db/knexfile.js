@@ -22,7 +22,7 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 50
     },
     migrations: {
       directory: "./migrations",
@@ -44,7 +44,7 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 50
     },
     migrations: {
       directory: "./migrations",
@@ -70,7 +70,7 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 50
     },
     migrations: {
       directory: "./migrations",

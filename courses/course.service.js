@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const {Storage} = require('@google-cloud/storage');
 const dashboardService = require('../dashboard/dashboard.service.js');
+const organizationService = require('../organizations/organization.service');
 
 module.exports = {
     getAll,
@@ -106,9 +107,26 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
         let courses = await Promise.all(tempCourse);
    
+        let totalNumber = knex.raw(
+            " select count(*) as total_number_of_courses " +
+            " from courses " + 
+            " where courses.organization_id = ? " , organizationId);
+             
+        let totalNumberOfCourses = await totalNumber.then(f => {
+            if (f.rows.length === 0) {
+                    return 0;
+                }    
+                console.log(f.rows);   
+                return f.rows[0].total_number_of_courses;
+            }).catch(err => {
+                console.log(err);
+                throw err;
+            });
+
     return {
         courses,
-        totalNumberOfRecords
+        totalNumberOfRecords,
+        totalNumberOfCourses
     }
 }
 
@@ -270,11 +288,16 @@ async function requestToJoinCourse(loggedInUser, courseId) {
     if (!loggedInUser)
         return;
 
-    return knex('user_courses')
+    let course = await knex('user_courses')
         .insert({
             user_id: loggedInUser.userId,
             course_id: courseId,
             is_able_to_join: true,
             joining_date: knex.fn.now()
         });
+
+    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization  };
+    organizationService.sendEmail(email, loggedInUser);  
+    
+    return course;
 }

@@ -70,7 +70,9 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
-        'programs.is_active as isActive'
+        'programs.is_active as isActive',
+        'programs.subject ',
+        'programs.body '
     ]);
 
     const allProgramDirectors =
@@ -120,6 +122,8 @@ async function getById(id, user, selectedorganizationId) {
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
+        'programs.subject ',
+        'programs.body '
     ])
     .from('programs');
 
@@ -187,6 +191,8 @@ async function getDefaultProgram(user, selectedorganizationId) {
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
+        'programs.subject ',
+        'programs.body '
     ])
     .from('programs');
 
@@ -222,7 +228,9 @@ async function create(program, user) {
                 organization_id: program.organizationId,
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub,
-                block_type_id: program.blockTypeId || blockType.block_type_id
+                block_type_id: program.blockTypeId || blockType.block_type_id,
+                subject: program.subject,
+                body: program.body
             }).returning('program_id');
 
     const insertProgramDirectors = program.programDirectors.map(pd => {
@@ -254,7 +262,9 @@ async function update(program, user) {
             block_type_id: program.blockTypeId,
             min_experience_level: program.minExperienceLevel,
             max_experience_level: program.maxExperienceLevel,
-            senior_learners_start_level: program.seniorLearnersStartLevel
+            senior_learners_start_level: program.seniorLearnersStartLevel,
+            subject: program.subject,
+            body: program.body
         });
 
     if (program.programDirectors) {
@@ -316,7 +326,9 @@ async function getByCurrentUser(user, organizationId) {
         'programs.block_type_id as blockTypeId',
         'programs.min_experience_level as minExperienceLevel',
         'programs.max_experience_level as maxExperienceLevel',
-        'programs.senior_learners_start_level as seniorLearnersStartLevel'
+        'programs.senior_learners_start_level as seniorLearnersStartLevel',
+        'programs.subject ',
+        'programs.body '
     ]);   
 
     for(let i = 0; i < programs.length; i++) {

@@ -103,6 +103,10 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
+            var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+                UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
+            organizationService.sendEmail(email, loggedInUser);
+
             return {
                 isValid: true
             };
@@ -139,7 +143,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
     async function InsertLearnerAsync(t, userData) {
 
-        usersIds = await t.into("users")
+        let usersIds = await t.into("users")
             .insert({
                 name: userData.name.trim(),
                 surname: userData.surname.trim(),
@@ -319,6 +323,10 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         }
 
+        var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+            UserName: userData.name.trim(), organizationId: organizationId};
+        organizationService.sendEmail(email, loggedInUser);
+
         output.push({...userData, status: "ok"});
 
     }
@@ -415,6 +423,14 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
     }));
 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    
+    let domain;
+    let organization = await organizationService.getById(organizationId);
+
+    if(organization && organization.domain)
+    {
+        domain = "@" + organization.domain;
+    }
 
     let output = {
         hasErrors: false,
@@ -472,7 +488,13 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             addError(user, "The format of the email address isn't correct");
             continue;
         }
-
+    
+        let userEmailDomain = user.email.substring(user.email.indexOf('@'));
+        if(domain && userEmailDomain.toLowerCase() !== domain.toLowerCase() ){
+            addError(user, "The domain of the email address isn't correct");
+            continue;
+        }
+        
         emails.push(user.email);
 
         let emailExists = await checkIfEmailExists(user.email, user.userId);
