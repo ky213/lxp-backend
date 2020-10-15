@@ -3,7 +3,6 @@ function create_container {
     docker run -d --name $CONTAINER_NAME \
     -e POSTGRES_USER=$POSTGRES_USER \
     -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-    -e POSTGRES_HOST_AUTH_METHOD=true \
     -e POSTGRES_DB=$POSTGRES_DB \
     -p $PORT:5432 postgres
 
