@@ -103,7 +103,7 @@ async function add(loggedInUser, userData, organizationId) {
 
             var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
                 UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
-            organizationService.sendEmail(email, loggedInUser);
+            await organizationService.sendEmail(email, loggedInUser);
 
             return {
                 isValid: true
@@ -289,7 +289,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
              UserName: userData.name.trim(), organizationId: organizationId};
-        organizationService.sendEmail(email, loggedInUser);
+        await organizationService.sendEmail(email, loggedInUser);
 
 
         output.push({...userData, status: "ok"});
@@ -415,6 +415,14 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
 
     organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
+    let domain;
+    let organization = await organizationService.getById(organizationId);
+
+    if(organization && organization.domain)
+    {
+        domain = "@" + organization.domain;
+    }
+
     let output = {
         hasErrors: false,
         numOfRecordsInvalid: 0,
@@ -473,6 +481,12 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
+        let userEmailDomain = user.email.substring(user.email.indexOf('@'));
+        if(domain && userEmailDomain.toLowerCase() !== domain.toLowerCase() ){
+            addError(user, "The domain of the email address isn't correct");
+            continue;
+        }
+        
         emails.push(user.email);
 
         let emailExist = await checkIfEmailExists(user.email, user.userId);
