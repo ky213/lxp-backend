@@ -363,7 +363,7 @@ async function sendEmail( email, user )
         .join('user_courses', 'user_courses.course_id', 'courses.course_id')
         .join('programs', 'programs.program_id', 'courses.program_id')
         .join('users', 'user_courses.user_id', 'users.user_id')
-        .where('user_courses.user_id', user.userId)
+        .where('user_courses.user_id', email.userId)
         .andWhere('user_courses.course_id', email.CourseId)
         .andWhere('user_courses.is_able_to_join', true);    
 
@@ -418,6 +418,11 @@ async function sendEmail( email, user )
                 userEmail = courses[0].Email;
                 userName = courses[0].UserName;
                 courseName = courses[0].Name;
+            }
+            else if (email.isReset == 'TRUE')
+            {
+                emailBody =  email.Body;
+                emailSubject =  email.Subject;
             }
 
             const replacements = { OrgName: organization.Name , UserName: userName,

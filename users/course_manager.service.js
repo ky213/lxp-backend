@@ -5,10 +5,9 @@ const {checkIfEmailExists} = require("./user.service");
 const {getCmRoles} = require("../roles/role.service");
 const organizationService = require("../organizations/organization.service");
 const programService = require('../programs/program.service');
-
+var generator = require('generate-password');
 const Role = require("helpers/role");
 
-let defaultPassword = "admin";
 let cmRolesP = async function () {
     return await getCmRoles().then(r => {
         cmRoles = r;
@@ -47,6 +46,8 @@ async function add(loggedInUser, userData, organizationId) {
         };
     }
 
+    var password = generator.generate({length: 10, numbers: true});
+
     return knex
         .transaction(async function (t) {
 
@@ -58,7 +59,7 @@ async function add(loggedInUser, userData, organizationId) {
                     email: userData.email.trim(),
                     gender: userData.gender,
                     start_date: userData.startDate,
-                    password: bcrypt.hashSync(defaultPassword, 10)
+                    password: bcrypt.hashSync(password, 10)
                 })
                 .returning("user_id");
 
@@ -101,7 +102,7 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
-            var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+            var email = {UserEmail: userData.email.trim() , UserPass:  password, 
                 UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
             await organizationService.sendEmail(email, loggedInUser);
 
@@ -144,7 +145,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
 
     async function InsertUserAsync(t, userData) {
-
+        var password = generator.generate({length: 10, numbers: true});
         usersIds = await t.into("users")
             .insert({
                 name: userData.name,
@@ -152,7 +153,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 email: userData.email,
                 gender: userData.gender,
                 start_date: userData.startDate,
-                password: bcrypt.hashSync(defaultPassword, 10)
+                password: bcrypt.hashSync(password, 10)
             })
             .returning("user_id")
             .then(userIds => {
@@ -287,7 +288,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         }
 
-        var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+        var email = {UserEmail: userData.email.trim() , UserPass:  password, 
              UserName: userData.name.trim(), organizationId: organizationId};
         await organizationService.sendEmail(email, loggedInUser);
 
@@ -486,7 +487,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             addError(user, "The domain of the email address isn't correct");
             continue;
         }
-        
+
         emails.push(user.email);
 
         let emailExist = await checkIfEmailExists(user.email, user.userId);

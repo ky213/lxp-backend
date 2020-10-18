@@ -5,8 +5,7 @@ const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
 const programService = require('../programs/program.service');
 const organizationService = require('../organizations/organization.service');
-
-let defaultPassword = "admin";
+var generator = require('generate-password');
 
 module.exports = {
     add,
@@ -31,6 +30,8 @@ async function add(loggedInUser, userData, organizationId) {
         };
     }
 
+    var password = generator.generate({length: 10, numbers: true});
+
     return knex
         .transaction(async function (t) {
 
@@ -42,7 +43,7 @@ async function add(loggedInUser, userData, organizationId) {
                     email: userData.email.trim(),
                     gender: userData.gender,
                     start_date: userData.startDate,
-                    password: bcrypt.hashSync(defaultPassword, 10)
+                    password: bcrypt.hashSync(password, 10)
                 })
                 .returning("user_id");
 
@@ -84,6 +85,11 @@ async function add(loggedInUser, userData, organizationId) {
                             errorDetails: err
                         };
                     });
+                 
+                userData.joinedCourses.forEach(course => {
+                    var email = {  CourseId : course,  organizationId: organizationId , UserId : userIds[0]  };
+                    organizationService.sendEmail(email, loggedInUser);
+                });   
             }
 
             await knex("employee_roles")
@@ -103,9 +109,9 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
-            var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+            var email = {UserEmail: userData.email.trim() , UserPass:  password, 
                 UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
-            organizationService.sendEmail(email, loggedInUser);
+            await organizationService.sendEmail(email, loggedInUser);
 
             return {
                 isValid: true
@@ -142,7 +148,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
 
     async function InsertLearnerAsync(t, userData) {
-
+        var password = generator.generate({length: 10, numbers: true});
         let usersIds = await t.into("users")
             .insert({
                 name: userData.name.trim(),
@@ -150,7 +156,7 @@ async function addBulk(loggedInUser, data, organizationId) {
                 email: userData.email.trim(),
                 gender: userData.gender,
                 start_date: userData.startDate,
-                password: bcrypt.hashSync(defaultPassword, 10)
+                password: bcrypt.hashSync(password, 10)
             })
             .returning("user_id")
             .then(userIds => {
@@ -321,16 +327,19 @@ async function addBulk(loggedInUser, data, organizationId) {
                     throw err;
                 });
 
+                userData.joinedCourses.forEach(course => {
+                    var email = {  CourseId : course,  organizationId: organizationId , UserId : usersIds[0]  };
+                    organizationService.sendEmail(email, loggedInUser);
+                });
         }
 
-        var email = {UserEmail: userData.email.trim() , UserPass:  defaultPassword, 
+        var email = {UserEmail: userData.email.trim() , UserPass:  password, 
             UserName: userData.name.trim(), organizationId: organizationId};
-        organizationService.sendEmail(email, loggedInUser);
+        await organizationService.sendEmail(email, loggedInUser);
 
         output.push({...userData, status: "ok"});
 
     }
-
 
     return await knex
         .transaction(async t => {
@@ -373,14 +382,16 @@ async function update(loggedInUser, user, organizationId) {
                 gender: user.gender,
                 start_date: user.startDate,
                 email: user.email.trim()
-            });
+            })
+            .catch(error => console.log(error));
 
         await knex("employees")
             .transacting(t)
             .where("user_id", user.userId)
             .update({
                 is_active: user.isActive,
-            });
+            })
+            .catch(error => console.log(error));
 
         if (user.groupIds) {
             const insertgroupIds = user.groupIds.map(group => {
@@ -390,9 +401,10 @@ async function update(loggedInUser, user, organizationId) {
                 }
             });
 
-            await knex('groups_employee').where('employee_id', user.employeeId).del();
+            await knex('groups_employee').where('employee_id', user.employeeId).del().catch(error => console.log(error));;
             await knex('groups_employee')
-                .insert(insertgroupIds);
+                .insert(insertgroupIds)
+                .catch(error => console.log(error));
         }
 
         if (user.joinedCourses) {
@@ -405,9 +417,16 @@ async function update(loggedInUser, user, organizationId) {
                 }
             });
 
-            await knex('user_courses').where('user_id', user.userId).del();
+            await knex('user_courses').where('user_id', user.userId).del().catch(error => console.log(error));
             await knex('user_courses')
-                .insert(insertcourseIds);
+                .insert(insertcourseIds)
+                .catch(error => console.log(error));
+
+                user.joinedCourses.forEach(course => {
+                var email = {  CourseId : course,  organizationId: organizationId , UserId : user.userId  };
+                organizationService.sendEmail(email, loggedInUser);
+            });
+
         }
 
         return {

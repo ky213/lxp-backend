@@ -297,7 +297,7 @@ async function requestToJoinCourse(loggedInUser, courseId) {
         });
 
     var email = {  CourseId : courseId,  organizationId: loggedInUser.organization  };
-    organizationService.sendEmail(email, loggedInUser);  
+    await organizationService.sendEmail(email, loggedInUser);  
     
     return course;
 }

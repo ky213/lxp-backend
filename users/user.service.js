@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const bcrypt = require('bcrypt');
 const knex = require('../db'); 
+const { listenerCount } = require('nodemailer/lib/mailer');
+const organizationService = require('../organizations/organization.service');
 
 module.exports = {
     authenticate,
@@ -16,6 +18,9 @@ module.exports = {
     deleteEmployees,
     updateProfileData,
     updateBulk,
+    forgotPassword,
+    resetPassword,
+    findResetPasswordToken
 };
 
 async function authenticate({ email, password }) {
@@ -539,6 +544,12 @@ async function changePassword({oldPassword, newPassword}, user) {
               return resolve();
             }); 
           }); 
+
+            /*userData.joinedCourses.forEach(course => {
+                var email = {  CourseId : course,  organizationId: organizationId , UserId : userData.userId };
+                organizationService.sendEmail(email, loggedInUser);
+            });*/
+
         }
   
         if(userData.groupIds && userData.groupIds.length > 0)
@@ -597,3 +608,115 @@ async function changePassword({oldPassword, newPassword}, user) {
         };
       });
   }
+
+  async function forgotPassword(userData, host, resetPasswordToken , resetPasswordExpires ) {
+    try{
+        console.log('forgotPassword => ' , userData , host , resetPasswordToken, resetPasswordExpires);
+
+        const user = await knex('users')
+            .join('employees', 'employees.user_id', 'users.user_id')
+            .where('users.email', userData.email.toLowerCase())
+            .select([
+                'users.user_id as userId',
+                'users.email',
+                'users.name', 
+                'employees.organization_id as organizationId'
+                ])
+            .first();
+            
+        let updateUser = await knex('users')
+        .where("user_id", user.userId)
+        .update({
+            reset_password_token: resetPasswordToken,
+            reset_password_expires: resetPasswordExpires
+        })
+        .catch(error => console.log('forgotPassword => ' , error));
+
+        var bodyString = 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+        'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+        'http://' + host + '/reset/' + resetPasswordToken + '\n\n' +
+        'If you did not request this, please ignore this email and your password will remain unchanged.\n';
+
+        let email = { UserEmail: user.email , UserName: user.name , organizationId: user.organizationId , isReset : 'TRUE',
+            Subject: 'Password Reset',  Body: bodyString };
+
+        await organizationService.sendEmail(email, user);
+
+        return {isValid: true}
+    }
+    catch(error)
+    {
+        console.log('forgotPassword => ' , error);
+        return { isValid: false, errorDetails: error };
+    }
+
+}
+
+async function resetPassword(userData) {
+    try{        
+        console.log('resetPassword  => ' , userData );
+        const user = await knex('users')
+            .join('employees', 'employees.user_id', 'users.user_id')
+            .where('users.email', userData.email.toLowerCase())
+            .select([
+                'users.user_id as userId',
+                'users.email',
+                'users.name', 
+                'employees.organization_id as organizationId'
+                ])
+            .first();
+
+        let updateUser = await knex('users')
+            .where("user_id", user.userId)
+            .update({
+                password: bcrypt.hashSync(userData.newPassword, 10),
+                reset_password_token: null,
+                reset_password_expires: null
+            })
+            .catch(error => console.log('resetPassword => ' , error));
+ 
+        var email = {UserEmail: user.email , UserName: user.name , organizationId: user.organizationId,
+            isReset : 'TRUE', Subject: 'Your password has been changed',
+            Body: 'Hello,\n\n' +
+            'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
+        };
+
+        await organizationService.sendEmail(email, user);
+        return {isValid: true}
+    }
+    catch(error)
+    {
+        console.log('resetPassword => ' , error);
+        return { isValid: false, errorDetails: error };
+    }
+}
+
+async function findResetPasswordToken(userData){
+
+    let user = await knex('users')
+    .where('users.email', userData.email.toLowerCase())
+    .select([
+        'users.user_id as userId',
+        'reset_password_token as ResetPasswordToken',
+        'reset_password_expires as ResetPasswordExpires'
+        ])
+    .first();
+
+    console.log('user' ,  user);
+    if(user && user.ResetPasswordToken)
+    {
+        const currentTime = new Date();
+        let validDate = user.ResetPasswordExpires.getTime() >= currentTime.getTime()  ? true  : false;
+        
+        console.log('validDate => ' , validDate , user.ResetPasswordExpires.getTime() , currentTime.getTime() );
+        if(validDate == true)
+            return user;
+        else
+            return false;
+    }
+    else
+    {
+        return false;
+    }
+
+}

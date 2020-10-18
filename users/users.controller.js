@@ -4,6 +4,8 @@ const userService = require("./user.service");
 const authorize = require("helpers/authorize");
 const converter = require("helpers/converter");
 const Role = require("helpers/role");
+const crypto = require('crypto');
+var async = require('async');
 
 router.get("/getAllActive", authorize(), getAllActiveUsers);
 router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
@@ -14,6 +16,9 @@ router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
 router.put("/updateProfileData", authorize(), updateProfileData);
 router.delete("/deleteEmployees", authorize(), deleteEmployees);
 router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
+
+router.post("/forgot", forgotPassowrd); // public route
+router.post("/reset/:token", resetPassowrd); // public route
 
 module.exports = router;
 
@@ -131,4 +136,45 @@ function updateBulk(req, res, next) {
     .updateBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
+}
+
+ 
+async function forgotPassowrd(req, res, next) {
+  let userToken = await userService.findResetPasswordToken(req.body);
+  console.log('userToken  ', userToken);
+  if (userToken && userToken.ResetPasswordToken) {
+    res.status(500).json({ error:  'Password reset link is already sent to your email.'});
+  } else {
+    async.waterfall([
+      function(done) {
+        crypto.randomBytes(20, function(err, buf) {
+          var token = buf.toString('hex');
+          done(err, token);
+          console.log('done 1 '  );
+        });
+      },
+      function(token, done) {
+        const expireDate = new Date();
+        expireDate.setDate(expireDate.getDate() + 1); 
+
+        userService.forgotPassword(req.body , req.headers.host,  token ,  expireDate)
+        .then(user => { res.json(user);})
+        .catch(err => { next(err); });
+      }], function(err) {
+        res.status(500).json({ error: err})
+    });
+  }    
+}
+
+async function resetPassowrd(req, res, next) {
+  let userToken = await userService.findResetPasswordToken(req.body);
+  let token = req.params.token;
+  console.log('resetPassowrd() => user_token => ' , userToken);
+  if (userToken && userToken.ResetPasswordToken == token) {
+    userService.resetPassword(req.body)
+    .then(user => { res.json(user);})
+    .catch(err => { next(err); });
+  } else {
+    res.status(500).json({ error:  'Password reset token is invalid or has expired.'});
+  }
 }
