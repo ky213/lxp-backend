@@ -431,16 +431,18 @@ async function changePassword({oldPassword, newPassword}, user) {
     console.log("Delete employees service: ", employees); 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
-    let employeeIds = await knex('employees')
+    let employeeIdList = await knex('employees')
         .whereIn('employee_id', employees)
         .andWhere('organization_id', organizationId)
-        .select('employee_id')
-        .map(t => t.employee_id);
+        .select(['employee_id']);
 
-    let userIds = await knex('employees')
-        .whereIn('employee_id', employeeIds)
-        .select(['user_id'])
-        .map(t => t.user_id);
+    let employeeIds = employeeIdList.map(t => t.employee_id);
+
+    let userIdsList = await knex('employees')
+        .whereIn('employee_id', employees)
+        .select(['user_id']);
+    
+    let userIds = userIdsList.map(t => t.user_id);   
         
     return knex
     .transaction(async function(t) {
@@ -632,7 +634,7 @@ async function changePassword({oldPassword, newPassword}, user) {
         })
         .catch(error => console.log('forgotPassword => ' , error));
 
-        var bodyString = 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+        var bodyString = 'Hello, {UserName}\n\n,  You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
         'http://' + host + '/reset/' + resetPasswordToken + '\n\n' +
         'If you did not request this, please ignore this email and your password will remain unchanged.\n';
@@ -677,7 +679,7 @@ async function resetPassword(userData) {
  
         var email = {UserEmail: user.email , UserName: user.name , organizationId: user.organizationId,
             isReset : 'TRUE', Subject: 'Your password has been changed',
-            Body: 'Hello,\n\n' +
+            Body: 'Hello, {UserName}\n\n' +
             'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
         };
 
