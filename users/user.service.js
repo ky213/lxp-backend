@@ -711,12 +711,19 @@ async function findResetPasswordToken(userData){
         console.log('validDate => ' , validDate , user.ResetPasswordExpires.getTime() , currentTime.getTime() );
         if(validDate == true)
             return user;
-        else
+        else {
+            await knex('users')
+            .where('users.email', userData.email.toLowerCase())
+            .update({
+                reset_password_token: null,
+                reset_password_expires: null
+            })
+            .catch(error => console.log('resetPassword => ' , error));
+
             return false;
+        }
     }
-    else
-    {
+    else{
         return false;
     }
-
 }
