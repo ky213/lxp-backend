@@ -6,13 +6,22 @@ const {checkIfEmailExists} = require("./user.service");
 const programService = require('../programs/program.service');
 const organizationService = require('../organizations/organization.service');
 var generator = require('generate-password');
+var _ = require('lodash');
 
 module.exports = {
     add,
     addBulk,
     update,
-    validateBulk
+    validateBulk,
+    sendEmailForCourse
 };
+
+async function sendEmailForCourse(loggedInUser, courses, userId, organizationId) {
+    await courses.forEach(course => { 
+        var email = {  CourseId : course.courseId,  organizationId: organizationId , UserId : userId  };
+        organizationService.sendEmail(email, loggedInUser);
+    });
+}
 
 async function add(loggedInUser, userData, organizationId) {
     userData = {
@@ -34,7 +43,6 @@ async function add(loggedInUser, userData, organizationId) {
 
     return knex
         .transaction(async function (t) {
-
             let userIds = await knex("users")
                 .transacting(t)
                 .insert({
@@ -78,19 +86,9 @@ async function add(loggedInUser, userData, organizationId) {
                 await knex('user_courses')
                     .transacting(t)
                     .insert(insertcourseIds)
-                    .catch(err => {
-                        return {
-                            isValid: false,
-                            status: "error",
-                            errorDetails: err
-                        };
-                    });
-                 
-                userData.joinedCourses.forEach(course => {
-                    var email = {  CourseId : course,  organizationId: organizationId , UserId : userIds[0]  };
-                    organizationService.sendEmail(email, loggedInUser);
-                });   
-            }
+                    .catch(err => { return { isValid: false, status: "error", errorDetails: err };
+                    });   
+             }
 
             await knex("employee_roles")
                 .transacting(t)
@@ -113,7 +111,8 @@ async function add(loggedInUser, userData, organizationId) {
                 UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
             await organizationService.sendEmail(email, loggedInUser);
 
-            return {
+            return { userId: userIds[0],
+                courses: userData.joinedCourses,
                 isValid: true
             };
         })
@@ -282,11 +281,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
                     });
             }
-
-        }
-
-
-        // end if groups
+        }// end if groups
 
         if (userData.joinedCourses && userData.joinedCourses.length > 0) {
 
@@ -298,7 +293,6 @@ async function addBulk(loggedInUser, data, organizationId) {
                     course_id: course,
                     joining_date: knex.fn.now()
                 }));
-
 
                 var insert = (userCourse) => {
                     t.into("user_courses")
@@ -325,11 +319,6 @@ async function addBulk(loggedInUser, data, organizationId) {
                     console.log('Rollback. Because:', err);
                     t.rollback(output);
                     throw err;
-                });
-
-                userData.joinedCourses.forEach(course => {
-                    var email = {  CourseId : course,  organizationId: organizationId , UserId : usersIds[0]  };
-                    organizationService.sendEmail(email, loggedInUser);
                 });
         }
 
@@ -422,11 +411,10 @@ async function update(loggedInUser, user, organizationId) {
                 .insert(insertcourseIds)
                 .catch(error => console.log(error));
 
-                user.joinedCourses.forEach(course => {
-                var email = {  CourseId : course,  organizationId: organizationId , UserId : user.userId  };
+            await user.joinedCourses.forEach(course => { 
+                var email = {  CourseId : course.courseId,  organizationId: organizationId , UserId : user.userId  };
                 organizationService.sendEmail(email, loggedInUser);
             });
-
         }
 
         return {

@@ -363,7 +363,7 @@ async function sendEmail( email, user )
         .join('user_courses', 'user_courses.course_id', 'courses.course_id')
         .join('programs', 'programs.program_id', 'courses.program_id')
         .join('users', 'user_courses.user_id', 'users.user_id')
-        .where('user_courses.user_id', email.userId)
+        .where('user_courses.user_id', email.UserId)
         .andWhere('user_courses.course_id', email.CourseId)
         .andWhere('user_courses.is_able_to_join', true);    
 
@@ -375,6 +375,8 @@ async function sendEmail( email, user )
             'programs.subject as Subject',
             'programs.body as Body',
         ]);
+
+        console.log('email => courses => ' , courses);
     }
 
     if(organization && organization.Email)

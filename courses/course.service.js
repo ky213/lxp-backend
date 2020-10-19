@@ -296,7 +296,7 @@ async function requestToJoinCourse(loggedInUser, courseId) {
             joining_date: knex.fn.now()
         });
 
-    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization  };
+    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization , UserId : loggedInUser.userId };
     await organizationService.sendEmail(email, loggedInUser);  
     
     return course;

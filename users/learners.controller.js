@@ -89,7 +89,10 @@ function getAllLearners(loggedInUser, pageId, recordsPerPage, filterName, isLear
 function add(req, res, next) {
   learnerService
     .add(req.user, req.body.user, req.body.organizationId)
-    .then(data => res.json(data))
+    .then(data => { 
+      learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId);
+      res.json(data)
+    })
     .catch(err => next(err));
 }
 
