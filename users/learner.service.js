@@ -252,8 +252,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             Promise.all(inserts)
                 .then(() => {
-                    console.log('Committing employee groups.');
-                    return t.commit(output);
+                    console.log('Employee groups will be persisted with commit.');
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
@@ -312,8 +311,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             Promise.all(inserts)
                 .then(() => {
-                    console.log('Committing user courses.');
-                    return t.commit(output);
+                    console.log('user courses will be persisted with commit');
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
