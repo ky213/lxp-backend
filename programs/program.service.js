@@ -72,7 +72,9 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.is_active as isActive',
         'programs.subject ',
-        'programs.body '
+        'programs.body ',
+        'programs.certifcate_subject as certifcateSubject',
+        'programs.certifcate_body as certifcateBody '
     ]);
 
     const allProgramDirectors =
@@ -123,7 +125,9 @@ async function getById(id, user, selectedorganizationId) {
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
-        'programs.body '
+        'programs.body ',
+        'programs.certifcate_subject as certifcateSubject',
+        'programs.certifcate_body as certifcateBody '
     ])
     .from('programs');
 
@@ -192,7 +196,9 @@ async function getDefaultProgram(user, selectedorganizationId) {
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
-        'programs.body '
+        'programs.body ',
+        'programs.certifcate_subject as certifcateSubject',
+        'programs.certifcate_body as certifcateBody '
     ])
     .from('programs');
 
@@ -230,7 +236,9 @@ async function create(program, user) {
                 modified_by: user.employeeId || user.sub,
                 block_type_id: program.blockTypeId || blockType.block_type_id,
                 subject: program.subject,
-                body: program.body
+                body: program.body,
+                certifcate_subject: program.certifcateSubject,
+                certifcate_body:  program.certifcateBody
             }).returning('program_id');
 
     const insertProgramDirectors = program.programDirectors.map(pd => {
@@ -264,7 +272,9 @@ async function update(program, user) {
             max_experience_level: program.maxExperienceLevel,
             senior_learners_start_level: program.seniorLearnersStartLevel,
             subject: program.subject,
-            body: program.body
+            body: program.body,
+            certifcate_subject: program.certifcateSubject,
+            certifcate_body:  program.certifcateBody
         });
 
     if (program.programDirectors) {
@@ -328,7 +338,9 @@ async function getByCurrentUser(user, organizationId) {
         'programs.max_experience_level as maxExperienceLevel',
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
-        'programs.body '
+        'programs.body ',
+        'programs.certifcate_subject as certifcateSubject',
+        'programs.certifcate_body as certifcateBody '
     ]);   
 
     for(let i = 0; i < programs.length; i++) {
