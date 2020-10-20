@@ -290,12 +290,12 @@ async function addBulk(loggedInUser, data, organizationId) {
                 let insertUserCourse = usersIds.map(userId => ({
                     user_id: userId,
                     is_able_to_join: true,
-                    course_id: course,
+                    course_id: course.courseId,
                     joining_date: knex.fn.now()
                 }));
 
-                var insert = (userCourse) => {
-                    t.into("user_courses")
+                var insert = async (userCourse) => {
+                    await t.into("user_courses")
                         .insert(userCourse)
                         .then(r => {
                             console.log("user_courses created")
