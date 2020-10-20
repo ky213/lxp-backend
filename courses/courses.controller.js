@@ -136,6 +136,11 @@ async function uploadFile(file, contentPath) {
 
 async function requestToJoinCourse(req, res, next) {
     courseService.requestToJoinCourse(req.user, req.query.courseId)
-        .then(data => res.json(data))
+        .then(data => { 
+            if(data.isValid == true){
+                courseService.sendEmailForCourse(req.user, req.query.courseId);
+            }
+            res.json(data);
+        })
         .catch(err => next(err));
 }

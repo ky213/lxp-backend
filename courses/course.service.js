@@ -16,7 +16,8 @@ module.exports = {
     deleteCourses,
     getAllJoinedCourses,
     requestToJoinCourse,
-    genetateCloudStorageUploadURL
+    genetateCloudStorageUploadURL,
+    sendEmailForCourse
 };
 
 var Readable = require('stream').Readable;
@@ -288,16 +289,20 @@ async function requestToJoinCourse(loggedInUser, courseId) {
     if (!loggedInUser)
         return;
 
-    let course = await knex('user_courses')
+    await knex('user_courses')
         .insert({
             user_id: loggedInUser.userId,
             course_id: courseId,
             is_able_to_join: true,
             joining_date: knex.fn.now()
-        });
+        })
+        .catch(err => { return { isValid: false, status: "error", errorDetails: err } });
 
-    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization , UserId : loggedInUser.userId };
-    await organizationService.sendEmail(email, loggedInUser);  
-    
-    return course;
+    return {isValid: true};
 }
+
+async function sendEmailForCourse(loggedInUser, courseId) {
+    var email = {  CourseId : courseId,  organizationId: loggedInUser.organization , UserId : loggedInUser.userId };
+    await organizationService.sendEmail(email, loggedInUser);
+}
+
