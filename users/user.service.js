@@ -636,7 +636,7 @@ async function changePassword({oldPassword, newPassword}, user) {
 
         var bodyString = 'Hello, {UserName}\n\n,  You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-        'http://' + host + '/reset/' + resetPasswordToken + '\n\n' +
+        'http://' + host + '/pages/password-reset/' + resetPasswordToken + '\n\n' +
         'If you did not request this, please ignore this email and your password will remain unchanged.\n';
 
         let email = { UserEmail: user.email , UserName: user.name , organizationId: user.organizationId , isReset : 'TRUE',
