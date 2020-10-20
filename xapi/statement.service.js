@@ -4,6 +4,7 @@ const Role = require('helpers/role');
 const knex = require('../db'); 
 const moment = require('moment');
 require('moment-timezone');
+const organizationService = require('../organizations/organization.service');
 
 module.exports = {
     getAll,
@@ -158,7 +159,52 @@ async function getById(id, user) {
     });
 }
 
+async function sendCertificateEmail(registration,actorEmail) {
+    console.log('sendCertificateEmail =>  ' , registration , actorEmail);
+
+    let courseId = registration.substring(registration.indexOf('|') + 1);
+    let programId = registration.substring(0, registration.indexOf('|'));
+    let userEmail = actorEmail.substring(actorEmail.indexOf(':') + 1);
+
+    let program = await knex('programs')
+    .where('programs.program_id', programId)
+    .select([ 'programs.organization_id as organizationId' ,
+    'programs.certifcate_subject as subject',
+    'programs.certifcate_body as body'
+     ])
+    .first();
+
+    let user = await knex('users')
+    .where('users.email', userEmail.toLowerCase())
+    .select(['users.user_id as userId' , 'users.name as UserName'  ])
+    .first();
+
+    let course = await knex('courses')
+    .where('courses.course_id', courseId)
+    .select(['courses.name as Name' ])
+    .first();
+
+    user.organization = program.organizationId;
+
+    if(program.body)
+    {
+        console.log('sendCertificateEmail => program.body ' , program.body);
+
+        var email = {  UserName: user.UserName , CourseName : course.Name ,  organizationId: program.organizationId , UserId : user.userId ,
+            isCertificate : 'TRUE'  , UserEmail : userEmail , Body: program.body , Subject: program.subject };
+        await organizationService.sendEmail(email, user);
+    }
+}
+
 async function create(statement, statementId) {
+
+    if(statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed' || 
+    statement.verb.id == 'http://adlnet.gov/expapi/verbs/passed'){    
+        console.log('statement.verb.id ', statement.verb.id);
+        await sendCertificateEmail(statement.context.registration ,statement.actor.mbox);
+    }
+    
+    console.log('create =>  ' );
     return knex.transaction(async function(t) {
 
         await knex('statements')

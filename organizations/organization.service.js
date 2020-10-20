@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const Role = require('helpers/role');
 const knex = require('../db'); 
+const PDFDocument = require('pdfkit')
+const getStream = require('get-stream')
 const groupTypeService = require('../group_type/group_type.service');
 const groupsService = require('../groups/groups.service');
 
@@ -357,7 +359,7 @@ async function sendEmail( email, user )
     .first();
 
     let courses = [];
-    if(email.CourseId)
+    if(email.CourseId && email.isCertificate !== 'TRUE')
     {
         let model = knex('courses')
         .join('user_courses', 'user_courses.course_id', 'courses.course_id')
@@ -378,7 +380,7 @@ async function sendEmail( email, user )
 
         console.log('email => courses => ' , courses);
     }
-
+      
     if(organization && organization.Email)
     {       
         return new Promise((resolve,reject)=>{
@@ -413,7 +415,15 @@ async function sendEmail( email, user )
             let emailSubject =  organization.Subject;
             let courseName;
 
-            if (courses && courses[0])
+            if (email.isCertificate == 'TRUE')
+            {
+                emailBody = email.Body;
+                emailSubject = email.Subject;
+                userEmail = email.UserEmail;
+                userName = email.UserName;
+                courseName = email.CourseName;                
+            }
+            else if (courses && courses[0])
             {   
                 emailBody =  courses[0].Body;
                 emailSubject =  courses[0].Subject;
@@ -425,14 +435,14 @@ async function sendEmail( email, user )
             {
                 emailBody =  email.Body;
                 emailSubject =  email.Subject;
-            }
+            }          
 
             const replacements = { OrgName: organization.Name , UserName: userName,
                 UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
 
             const body = emailBody.replace(/{\w+}/g, placeholder =>
             replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
-
+ 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address
