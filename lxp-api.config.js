@@ -14,12 +14,12 @@ module.exports = {
         },
         env_staging: {
             NODE_ENV: "staging",
-            FRONTEND_URL: "http://localhost:4101",
+            FRONTEND_URL: "https://staging.lxpia.com/lxp",
             STORAGE_BUCKET: "lxp-uploads-staging"
         },
         env_production: {
             NODE_ENV: "production",
-            FRONTEND_URL: "http://eventcode.hr",
+            FRONTEND_URL: "https://lxpia.com/lxp",
             STORAGE_BUCKET: "lxp-uploads-production"
         }
     }]
