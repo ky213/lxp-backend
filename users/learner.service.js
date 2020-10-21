@@ -5,6 +5,8 @@ const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
 const programService = require('../programs/program.service');
 const organizationService = require('../organizations/organization.service');
+const groupsvc = require("../groups/groups.service");
+const coursessvc = require("../courses/course.service");
 var generator = require('generate-password');
 var _ = require('lodash');
 
@@ -17,8 +19,8 @@ module.exports = {
 };
 
 async function sendEmailForCourse(loggedInUser, courses, userId, organizationId) {
-    await courses.forEach(course => { 
-        var email = {  CourseId : course.courseId,  organizationId: organizationId , UserId : userId  };
+    await courses.forEach(course => {
+        var email = {CourseId: course.courseId, organizationId: organizationId, UserId: userId};
         organizationService.sendEmail(email, loggedInUser);
     });
 }
@@ -86,9 +88,10 @@ async function add(loggedInUser, userData, organizationId) {
                 await knex('user_courses')
                     .transacting(t)
                     .insert(insertcourseIds)
-                    .catch(err => { return { isValid: false, status: "error", errorDetails: err };
-                    });   
-             }
+                    .catch(err => {
+                        return {isValid: false, status: "error", errorDetails: err};
+                    });
+            }
 
             await knex("employee_roles")
                 .transacting(t)
@@ -107,11 +110,14 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
-            var email = {UserEmail: userData.email.trim() , UserPass:  password, 
-                UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
+            var email = {
+                UserEmail: userData.email.trim(), UserPass: password,
+                UserId: userIds[0], UserName: userData.name.trim(), organizationId: organizationId
+            };
             await organizationService.sendEmail(email, loggedInUser);
 
-            return { userId: userIds[0],
+            return {
+                userId: userIds[0],
                 courses: userData.joinedCourses,
                 isValid: true
             };
@@ -231,7 +237,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             userData.groupIds.forEach(group => {
                 let employeeGroups = employeesIds.map(employeeId => ({
                     employee_id: employeeId,
-                    group_id: group
+                    group_id: group.groupId
                 }));
 
                 var insert = (emplGroups) => {
@@ -256,7 +262,6 @@ async function addBulk(loggedInUser, data, organizationId) {
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
-                    t.rollback(output);
                     throw err;
                 });
 
@@ -315,13 +320,14 @@ async function addBulk(loggedInUser, data, organizationId) {
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
-                    t.rollback(output);
                     throw err;
                 });
         }
 
-        var email = {UserEmail: userData.email.trim() , UserPass:  password, 
-            UserName: userData.name.trim(), organizationId: organizationId};
+        var email = {
+            UserEmail: userData.email.trim(), UserPass: password,
+            UserName: userData.name.trim(), organizationId: organizationId
+        };
         await organizationService.sendEmail(email, loggedInUser);
 
         output.push({...userData, status: "ok"});
@@ -388,7 +394,8 @@ async function update(loggedInUser, user, organizationId) {
                 }
             });
 
-            await knex('groups_employee').where('employee_id', user.employeeId).del().catch(error => console.log(error));;
+            await knex('groups_employee').where('employee_id', user.employeeId).del().catch(error => console.log(error));
+            ;
             await knex('groups_employee')
                 .insert(insertgroupIds)
                 .catch(error => console.log(error));
@@ -409,8 +416,8 @@ async function update(loggedInUser, user, organizationId) {
                 .insert(insertcourseIds)
                 .catch(error => console.log(error));
 
-            await user.joinedCourses.forEach(course => { 
-                var email = {  CourseId : course.courseId,  organizationId: organizationId , UserId : user.userId  };
+            await user.joinedCourses.forEach(course => {
+                var email = {CourseId: course.courseId, organizationId: organizationId, UserId: user.userId};
                 organizationService.sendEmail(email, loggedInUser);
             });
         }
@@ -428,12 +435,19 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
     }));
 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-    
+
+    let groups = await groupsvc.getAllGroupsIds(organizationId).then(r => {
+        return r;
+    });
+
+    let courses = await coursessvc.getAllCoursesIds(organizationId).then(r => {
+        return r;
+    });
+
     let domain;
     let organization = await organizationService.getById(organizationId);
 
-    if(organization && organization.domain)
-    {
+    if (organization && organization.domain) {
         domain = "@" + organization.domain;
     }
 
@@ -488,18 +502,17 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
-        if (!validator.validate(user.email))
-        {
+        if (!validator.validate(user.email)) {
             addError(user, "The format of the email address isn't correct");
             continue;
         }
-    
+
         let userEmailDomain = user.email.substring(user.email.indexOf('@'));
-        if(domain && userEmailDomain.toLowerCase() !== domain.toLowerCase() ){
+        if (domain && userEmailDomain.toLowerCase() !== domain.toLowerCase()) {
             addError(user, "The domain of the email address isn't correct");
             continue;
         }
-        
+
         emails.push(user.email);
 
         let emailExists = await checkIfEmailExists(user.email, user.userId);
@@ -508,6 +521,95 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
+        if (user.groupNames && user.groupNames.length > 0) {
+
+            if (!groups || groups.length === 0) {
+                addError(user, "Groups '" + user.groupNames + "' are not valid");
+                continue;
+            }
+
+            let valid = true; //holds validation state for all groups
+
+            let validatedGroups = []
+            let invalidGroupsNames = []
+
+            await user.groupNames.forEach(userGroupName => {
+
+                let validatedGroup = {}
+
+                let validLocal = false //helper variable, holds validatoin status for single group
+
+                for (let group of groups) {
+                    if (group.name.trim() === userGroupName.trim()) {
+                        validatedGroup.groupId = group.groupId
+                        validatedGroup.name = group.name
+                        validLocal = true
+                        break
+                    }
+                }
+
+
+                valid = validLocal && valid
+
+                if (!validLocal) {
+                    invalidGroupsNames.push(userGroupName)
+                }else{
+                    validatedGroups.push(validatedGroup)
+                }
+            })
+
+            usersData[i].groupIds = validatedGroups
+
+            if (!valid) {
+                addError(user, "Groups '" + invalidGroupsNames + "' are not valid");
+                continue
+            }
+
+        }
+
+        if (user.courseNames && user.courseNames.length > 0) {
+
+            if (!courses || courses.length === 0) {
+                addError(user, "Courses '" + user.courseNames + "' are not valid");
+                continue;
+            }
+
+            let valid = true; //holds validation state for all groups
+
+            let validatedCourses = []
+            let invalidCoursesNames = []
+
+            await user.courseNames.forEach(courseName => {
+
+                let validatedCourse = {}
+
+                let validLocal = false //helper variable, holds validatoin status for single group
+
+                for (let course of courses) {
+                    if (course.name.trim() === courseName.trim()) {
+                        validatedCourse.courseId = course.courseId
+                        validatedCourse.name = course.name
+                        validLocal = true
+                        break
+                    }
+                }
+
+                validatedCourses.push(validatedCourse)
+                valid = validLocal && valid
+
+                if (!validLocal) {
+                    invalidCoursesNames.push(courseName)
+                }
+            })
+
+            usersData[i].joinedCourses = validatedCourses
+
+            if (!valid) {
+                addError(user, "Groups '" + invalidCoursesNames + "' are not valid");
+                continue
+            }
+
+        }
         output.data.push({...user, status: "ok"});
     }
 
