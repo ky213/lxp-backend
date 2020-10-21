@@ -13,16 +13,14 @@ module.exports = {
     getAllGroupsIds
 };
 
-async function getAllGroupsIds(user, organizationId) {
+async function getAllGroupsIds(organizationId) {
 
 
     let model = knex.table('groups')
-        .join('organizations', 'organizations.organization_id', 'groups.organization_id')
-        .join('group_types', 'group_types.group_type_id', 'groups.group_type_id');
-
 
     const groups = await model.clone()
         .orderBy('groups.name', 'asc')
+        .where('groups.organization_id', organizationId)
         .select([
             'groups.group_id as groupId',
             'groups.name',

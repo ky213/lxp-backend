@@ -419,7 +419,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
     organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
 
-    let groups = await groupsvc.getAllGroupsIds(loggedInUser, organizationId).then(r => {
+    let groups = await groupsvc.getAllGroupsIds(organizationId).then(r => {
         return r;
     });
 
