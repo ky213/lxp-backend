@@ -160,7 +160,6 @@ async function getById(id, user) {
 }
 
 async function sendCertificateEmail(registration,actorEmail) {
-    console.log('sendCertificateEmail =>  ' , registration , actorEmail);
 
     let courseId = registration.substring(registration.indexOf('|') + 1);
     let programId = registration.substring(0, registration.indexOf('|'));
@@ -188,8 +187,6 @@ async function sendCertificateEmail(registration,actorEmail) {
 
     if(program.body)
     {
-        console.log('sendCertificateEmail => program.body ' , program.body);
-
         var email = {  UserName: user.UserName , CourseName : course.Name ,  organizationId: program.organizationId , UserId : user.userId ,
             isCertificate : 'TRUE'  , UserEmail : userEmail , Body: program.body , Subject: program.subject };
         await organizationService.sendEmail(email, user);

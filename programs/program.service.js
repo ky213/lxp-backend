@@ -73,8 +73,8 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         'programs.is_active as isActive',
         'programs.subject ',
         'programs.body ',
-        'programs.certifcate_subject as certifcateSubject',
-        'programs.certifcate_body as certifcateBody '
+        'programs.certifcate_subject as certificateSubject',
+        'programs.certifcate_body as certificateBody '
     ]);
 
     const allProgramDirectors =
@@ -126,8 +126,8 @@ async function getById(id, user, selectedorganizationId) {
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
         'programs.body ',
-        'programs.certifcate_subject as certifcateSubject',
-        'programs.certifcate_body as certifcateBody '
+        'programs.certifcate_subject as certificateSubject',
+        'programs.certifcate_body as certificateBody '
     ])
     .from('programs');
 
@@ -197,8 +197,8 @@ async function getDefaultProgram(user, selectedorganizationId) {
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
         'programs.body ',
-        'programs.certifcate_subject as certifcateSubject',
-        'programs.certifcate_body as certifcateBody '
+        'programs.certifcate_subject as certificateSubject',
+        'programs.certifcate_body as certificateBody '
     ])
     .from('programs');
 
@@ -237,8 +237,8 @@ async function create(program, user) {
                 block_type_id: program.blockTypeId || blockType.block_type_id,
                 subject: program.subject,
                 body: program.body,
-                certifcate_subject: program.certifcateSubject,
-                certifcate_body:  program.certifcateBody
+                certifcate_subject: program.certificateSubject,
+                certifcate_body:  program.certificateBody
             }).returning('program_id');
 
     const insertProgramDirectors = program.programDirectors.map(pd => {
@@ -273,8 +273,8 @@ async function update(program, user) {
             senior_learners_start_level: program.seniorLearnersStartLevel,
             subject: program.subject,
             body: program.body,
-            certifcate_subject: program.certifcateSubject,
-            certifcate_body:  program.certifcateBody
+            certifcate_subject: program.certificateSubject,
+            certifcate_body:  program.certificateBody
         });
 
     if (program.programDirectors) {
@@ -339,8 +339,8 @@ async function getByCurrentUser(user, organizationId) {
         'programs.senior_learners_start_level as seniorLearnersStartLevel',
         'programs.subject ',
         'programs.body ',
-        'programs.certifcate_subject as certifcateSubject',
-        'programs.certifcate_body as certifcateBody '
+        'programs.certifcate_subject as certificateSubject',
+        'programs.certifcate_body as certificateBody '
     ]);   
 
     for(let i = 0; i < programs.length; i++) {

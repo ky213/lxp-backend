@@ -3,8 +3,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const Role = require('helpers/role');
 const knex = require('../db'); 
-const PDFDocument = require('pdfkit')
-const getStream = require('get-stream')
+const htmlPdf  = require('html-pdf');
 const groupTypeService = require('../group_type/group_type.service');
 const groupsService = require('../groups/groups.service');
 
@@ -380,7 +379,51 @@ async function sendEmail( email, user )
 
         console.log('email => courses => ' , courses);
     }
-      
+
+    let userEmail = email.UserEmail;     
+    let userName = email.UserName;    
+    let emailBody =  organization.Body;
+    let emailSubject =  organization.Subject;
+    let courseName;
+    let certificateAttachment;
+    let body;
+    if(organization && organization.Email)
+    {
+        if (email.isCertificate == 'TRUE')
+        {
+            emailBody = email.Body;
+            emailSubject = email.Subject;
+            userEmail = email.UserEmail;
+            userName = email.UserName;
+            courseName = email.CourseName;                
+        }
+        else if (courses && courses[0])
+        {   
+            emailBody =  courses[0].Body;
+            emailSubject =  courses[0].Subject;
+            userEmail = courses[0].Email;
+            userName = courses[0].UserName;
+            courseName = courses[0].Name;
+        }
+        else if (email.isReset == 'TRUE')
+        {
+            emailBody =  email.Body;
+            emailSubject =  email.Subject;
+        }          
+
+        const replacements = { OrgName: organization.Name , UserName: userName,
+            UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
+
+        body = emailBody.replace(/{\w+}/g, placeholder =>
+        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
+            
+        if(body && email.isCertificate == 'TRUE')
+        {
+            const htmlPDF = await htmlToPdfBuffer(body);
+            certificateAttachment  = { filename: "Certificate.pdf", content: htmlPDF , contentType: 'application/pdf' }
+        } 
+    }
+
     if(organization && organization.Email)
     {       
         return new Promise((resolve,reject)=>{
@@ -409,46 +452,13 @@ async function sendEmail( email, user )
 
             const transporter = nodemailer.createTransport(transporterOption);
 
-            let userEmail = email.UserEmail;     
-            let userName = email.UserName;    
-            let emailBody =  organization.Body;
-            let emailSubject =  organization.Subject;
-            let courseName;
-
-            if (email.isCertificate == 'TRUE')
-            {
-                emailBody = email.Body;
-                emailSubject = email.Subject;
-                userEmail = email.UserEmail;
-                userName = email.UserName;
-                courseName = email.CourseName;                
-            }
-            else if (courses && courses[0])
-            {   
-                emailBody =  courses[0].Body;
-                emailSubject =  courses[0].Subject;
-                userEmail = courses[0].Email;
-                userName = courses[0].UserName;
-                courseName = courses[0].Name;
-            }
-            else if (email.isReset == 'TRUE')
-            {
-                emailBody =  email.Body;
-                emailSubject =  email.Subject;
-            }          
-
-            const replacements = { OrgName: organization.Name , UserName: userName,
-                UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
-
-            const body = emailBody.replace(/{\w+}/g, placeholder =>
-            replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
- 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address
                 to: userEmail ,   // List of recipients
                 subject: emailSubject, // Subject line
-                html: body
+                html: body,
+                attachments: certificateAttachment || null
             };
 
             transporter.sendMail(message, function(err, info) {
@@ -523,3 +533,15 @@ async function sendTestEmail(email, user)
     }
 }
 
+async function htmlToPdfBuffer(body) {
+    const html = body;
+    return new Promise((resolve, reject) => {
+      htmlPdf.create(html).toBuffer((err, buffer) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(buffer);
+        }
+      });
+    });
+  }
