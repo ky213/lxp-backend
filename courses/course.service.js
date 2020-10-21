@@ -17,13 +17,30 @@ module.exports = {
     getAllJoinedCourses,
     requestToJoinCourse,
     genetateCloudStorageUploadURL,
-    sendEmailForCourse
+    sendEmailForCourse,
+    getAllCoursesIds
 };
 
 var Readable = require('stream').Readable;
 var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
 
+async function getAllCoursesIds(organizationId) {
+
+
+    let model = knex.table('courses')
+
+    const groups = await model.clone()
+        .orderBy('courses.name', 'asc')
+        .where('courses.organization_id', organizationId)
+        .select([
+            'courses.course_id as courseId',
+            'courses.name',
+        ]);
+
+
+    return groups;
+}
 async function genetateCloudStorageUploadURL(dirPath, filename) {
 
     const options = {
