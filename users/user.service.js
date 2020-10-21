@@ -490,17 +490,15 @@ async function changePassword({oldPassword, newPassword}, user) {
             await knex("employees")
             .transacting(t)
             .whereIn("employee_id", employeeIds)
-            .del();
+            .del()
+            .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related groups'}))});
 
             await knex("users")
             .transacting(t)
             .whereIn("user_id", userIds)
-            .del();
+            .del()
+            .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) });
 
-            await knex("user_courses")
-            .transacting(t)
-            .whereIn("user_id", userIds)
-            .del();
         });        
     });
   }
@@ -649,7 +647,7 @@ async function changePassword({oldPassword, newPassword}, user) {
     catch(error)
     {
         console.log('forgotPassword => ' , error);
-        return { isValid: false, errorDetails: error };
+        return { isValid: false, status: "error", message: error };
     }
 
 }
@@ -689,7 +687,7 @@ async function resetPassword(userData) {
     catch(error)
     {
         console.log('resetPassword => ' , error);
-        return { isValid: false, errorDetails: error };
+        return { isValid: false, status: "error", message: error };
     }
 }
 

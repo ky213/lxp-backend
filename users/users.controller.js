@@ -118,7 +118,7 @@ async function deleteEmployees(req, res, next) {
   console.log("deleteEmployees", req.body);
   userService
     .deleteEmployees(req.user, req.body.organizationId, req.body.employees)
-    .then(() => res.json(true))
+    .then(data => { res.json(true)})
     .catch(err => next(err));
 }
 
@@ -143,7 +143,7 @@ async function forgotPassowrd(req, res, next) {
   let userToken = await userService.findResetPasswordToken(req.body);
   console.log('userToken  ', userToken);
   if (userToken && userToken.ResetPasswordToken) {
-    res.status(500).json({ error:  'Password reset link is already sent to your email.'});
+    res.status(500).json({ isValid: false, status: "error", message:  'Password reset link is already sent to your email.'});
   } else {
     async.waterfall([
       function(done) {
@@ -175,6 +175,6 @@ async function resetPassowrd(req, res, next) {
     .then(user => { res.json(user);})
     .catch(err => { next(err); });
   } else {
-    res.status(500).json({ error:  'Password reset token is invalid or has expired.'});
+    res.status(500).json({ isValid: false, status: "error", message:  'Password reset token is invalid or has expired.'});
   }
 }
