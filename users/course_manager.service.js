@@ -526,7 +526,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
         if (user.groupNames && user.groupNames.length > 0) {
 
             if (!groups || groups.length === 0) {
-                addError(user, "Groups'", user.groupNames, " are not valid");
+                addError(user, "Groups '" + user.groupNames + "' are not valid");
                 continue;
             }
 
@@ -535,13 +535,13 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             let validatedGroups = []
             let invalidGroupsNames = []
 
-            await user.groupNames.forEach( userGroupName => {
+            await user.groupNames.forEach(userGroupName => {
 
                 let validatedGroup = {}
 
                 let validLocal = false //helper variable, holds validatoin status for single group
 
-                for (let group of groups){
+                for (let group of groups) {
                     if (group.name === userGroupName) {
                         validatedGroup.groupId = group.groupId
                         validatedGroup.name = group.name
@@ -553,15 +553,15 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 validatedGroups.push(validatedGroup)
                 valid = validLocal && valid
 
-                if(!validLocal){
+                if (!validLocal) {
                     invalidGroupsNames.push(userGroupName)
                 }
             })
 
             usersData[i].groupIds = validatedGroups
 
-            if(!valid){
-                addError(user, "Groups '"+invalidGroupsNames+"' are not valid");
+            if (!valid) {
+                addError(user, "Groups '" + invalidGroupsNames + "' are not valid");
                 continue
             }
 
