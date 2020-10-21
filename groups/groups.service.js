@@ -9,8 +9,28 @@ module.exports = {
     create,
     update,
     getByName,
-    deleteGroups
+    deleteGroups,
+    getAllGroupsIds
 };
+
+async function getAllGroupsIds(user, organizationId) {
+
+
+    let model = knex.table('groups')
+        .join('organizations', 'organizations.organization_id', 'groups.organization_id')
+        .join('group_types', 'group_types.group_type_id', 'groups.group_type_id');
+
+
+    const groups = await model.clone()
+        .orderBy('groups.name', 'asc')
+        .select([
+            'groups.group_id as groupId',
+            'groups.name',
+        ]);
+
+
+    return groups;
+}
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
 

@@ -3,6 +3,7 @@ const knex = require("../db");
 const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
 const {getCmRoles} = require("../roles/role.service");
+const groupsvc = require("../groups/groups.service");
 const organizationService = require("../organizations/organization.service");
 const programService = require('../programs/program.service');
 var generator = require('generate-password');
@@ -13,6 +14,7 @@ let cmRolesP = async function () {
         cmRoles = r;
     });
 }()
+
 var cmRoles = []
 
 module.exports = {
@@ -102,8 +104,10 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
-            var email = {UserEmail: userData.email.trim() , UserPass:  password, 
-                UserId: userIds[0] , UserName: userData.name.trim(), organizationId: organizationId};
+            var email = {
+                UserEmail: userData.email.trim(), UserPass: password,
+                UserId: userIds[0], UserName: userData.name.trim(), organizationId: organizationId
+            };
             await organizationService.sendEmail(email, loggedInUser);
 
             return {
@@ -157,7 +161,7 @@ async function addBulk(loggedInUser, data, organizationId) {
             })
             .returning("user_id")
             .then(userIds => {
-                console.log("user created: ",userIds)
+                console.log("user created: ", userIds)
                 return userIds;
             })
             .catch(err => {
@@ -196,7 +200,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         await t.into("employee_roles")
             .insert(employeeRoles)
-            .then(r=>{
+            .then(r => {
                 console.log("employee_roles created")
             })
             .catch(err => {
@@ -215,7 +219,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             await t.into("employee_programs")
                 .insert(employeePrograms)
-                .then(r=>{
+                .then(r => {
                     console.log("employee_programs created")
                 })
                 .catch(err => {
@@ -234,13 +238,13 @@ async function addBulk(loggedInUser, data, organizationId) {
 
                 let employeeGroups = employeesIds.map(employeeId => ({
                     employee_id: employeeId,
-                    group_id: group
+                    group_id: group.groupId
                 }));
 
                 var insertEmployeeGroups = (emplGroups) => {
                     t.into("groups_employee")
                         .insert(emplGroups)
-                        .then(r=>{
+                        .then(r => {
                             console.log("groups_employee created")
                         })
                         .catch(err => {
@@ -256,12 +260,10 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             Promise.all(inserts)
                 .then(() => {
-                    console.log('Committing employee groups.');
-                    return t.commit(output);
+                    console.log('Employee groups will be persisted while commit.');
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
-                    t.rollback(output);
                     throw err;
                 });
 
@@ -276,7 +278,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
                 await t.into("groups_employee")
                     .insert(employeeGroups)
-                    .then(r=>{
+                    .then(r => {
                         console.log("groups_employee created")
                     })
                     .catch(err => {
@@ -288,8 +290,10 @@ async function addBulk(loggedInUser, data, organizationId) {
 
         }
 
-        var email = {UserEmail: userData.email.trim() , UserPass:  password, 
-             UserName: userData.name.trim(), organizationId: organizationId};
+        var email = {
+            UserEmail: userData.email.trim(), UserPass: password,
+            UserName: userData.name.trim(), organizationId: organizationId
+        };
         await organizationService.sendEmail(email, loggedInUser);
 
 
@@ -299,10 +303,8 @@ async function addBulk(loggedInUser, data, organizationId) {
 
     return await knex
         .transaction(async t => {
-
             try {
-
-                for(let i=0;i<data.length;i++){
+                for (let i = 0; i < data.length; i++) {
                     let user = data[i]
                     await InsertUserAsync(t, user);
                 }
@@ -416,11 +418,16 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
 
     organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
 
+
+    let groups = await groupsvc.getAllGroupsIds(loggedInUser, organizationId).then(r => {
+        return r;
+    });
+
+
     let domain;
     let organization = await organizationService.getById(organizationId);
 
-    if(organization && organization.domain)
-    {
+    if (organization && organization.domain) {
         domain = "@" + organization.domain;
     }
 
@@ -476,14 +483,13 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
-        if (!validator.validate(user.email))
-        {
+        if (!validator.validate(user.email)) {
             addError(user, "The format of the email address isn't correct");
             continue;
         }
 
         let userEmailDomain = user.email.substring(user.email.indexOf('@'));
-        if(domain && userEmailDomain.toLowerCase() !== domain.toLowerCase() ){
+        if (domain && userEmailDomain.toLowerCase() !== domain.toLowerCase()) {
             addError(user, "The domain of the email address isn't correct");
             continue;
         }
@@ -515,6 +521,50 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 addError(user, "Role is not valid");
                 continue;
             }
+        }
+
+        if (user.groupNames && user.groupNames.length > 0) {
+
+            if (!groups || groups.length === 0) {
+                addError(user, "Groups'", user.groupNames, " are not valid");
+                continue;
+            }
+
+            let valid = true; //holds validation state for all groups
+
+            let validatedGroups = []
+            let invalidGroupsNames = []
+
+            await user.groupNames.forEach( userGroupName => {
+
+                let validatedGroup = {}
+
+                let validLocal = false //helper variable, holds validatoin status for single group
+
+                for (let group of groups){
+                    if (group.name === userGroupName) {
+                        validatedGroup.groupId = group.groupId
+                        validatedGroup.name = group.name
+                        validLocal = true
+                        break
+                    }
+                }
+
+                validatedGroups.push(validatedGroup)
+                valid = validLocal && valid
+
+                if(!validLocal){
+                    invalidGroupsNames.push(userGroupName)
+                }
+            })
+
+            usersData[i].groupIds = validatedGroups
+
+            if(!valid){
+                addError(user, "Groups '"+invalidGroupsNames+"' are not valid");
+                continue
+            }
+
         }
 
 
