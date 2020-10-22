@@ -414,8 +414,8 @@ async function sendEmail( email, user )
         const replacements = { OrgName: organization.Name , UserName: userName,
             UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
 
-        body = emailBody.replace(/{\w+}/g, placeholder =>
-        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, );
+        body = emailBody ? emailBody.replace(/{\w+}/g, placeholder =>
+        replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, ) : null ;
             
         if(body && email.isCertificate == 'TRUE')
         {
@@ -451,6 +451,9 @@ async function sendEmail( email, user )
             }
 
             const transporter = nodemailer.createTransport(transporterOption);
+
+            if(body == null)
+                return;
 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
