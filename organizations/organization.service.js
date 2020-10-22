@@ -376,8 +376,6 @@ async function sendEmail( email, user )
             'programs.subject as Subject',
             'programs.body as Body',
         ]);
-
-        console.log('email => courses => ' , courses);
     }
 
     let userEmail = email.UserEmail;     
@@ -387,6 +385,7 @@ async function sendEmail( email, user )
     let courseName;
     let certificateAttachment;
     let body;
+
     if(organization && organization.Email)
     {
         if (email.isCertificate == 'TRUE')
@@ -455,6 +454,9 @@ async function sendEmail( email, user )
             if(body == null)
                 return;
 
+            if(userEmail == null)
+                return;
+                    
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address

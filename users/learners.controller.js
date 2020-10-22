@@ -106,7 +106,15 @@ function addBulk(req, res, next) {
 function update(req, res, next) {
   learnerService
     .update(req.user, req.body.user, req.body.organizationId)
-    .then(data => res.json(data))
+    .then(d => { 
+      learnerService.updateUserCourse( d.courses, d.userId )
+      .then(data => { 
+        learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId);
+        res.json(data)})
+        .catch(err => {
+          console.log("errror", err);
+        });
+    })
     .catch(err => {
       console.log("errror", err);
     });

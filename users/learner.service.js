@@ -15,7 +15,8 @@ module.exports = {
     addBulk,
     update,
     validateBulk,
-    sendEmailForCourse
+    sendEmailForCourse,
+    updateUserCourse
 };
 
 async function sendEmailForCourse(loggedInUser, courses, userId, organizationId) {
@@ -23,6 +24,26 @@ async function sendEmailForCourse(loggedInUser, courses, userId, organizationId)
         var email = {CourseId: course.courseId, organizationId: organizationId, UserId: userId};
         organizationService.sendEmail(email, loggedInUser);
     });
+}
+
+async function updateUserCourse(courses, userId) {
+    if (courses) {
+        const insertcourseIds = courses.map(course => {
+            return {
+                user_id: userId,
+                is_able_to_join: true,
+                course_id: course.courseId,
+                joining_date: knex.fn.now()
+            }
+        });
+
+        await knex('user_courses').where('user_id', userId).del().catch(error => console.log(error));
+        await knex('user_courses')
+            .insert(insertcourseIds)
+            .catch(error => console.log(error));
+
+        return { userId: userId, courses: courses,  isValid: true };     
+    }
 }
 
 async function add(loggedInUser, userData, organizationId) {
@@ -356,8 +377,8 @@ async function update(loggedInUser, user, organizationId) {
     };
 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-
     let validationOutput = await validateBulk(loggedInUser, [user], organizationId);
+
     if (validationOutput.hasErrors) {
         return {
             isValid: false,
@@ -395,34 +416,14 @@ async function update(loggedInUser, user, organizationId) {
             });
 
             await knex('groups_employee').where('employee_id', user.employeeId).del().catch(error => console.log(error));
-            ;
             await knex('groups_employee')
                 .insert(insertgroupIds)
                 .catch(error => console.log(error));
         }
 
-        if (user.joinedCourses) {
-            const insertcourseIds = user.joinedCourses.map(course => {
-                return {
-                    user_id: user.userId,
-                    is_able_to_join: true,
-                    course_id: course.courseId,
-                    joining_date: knex.fn.now()
-                }
-            });
-
-            await knex('user_courses').where('user_id', user.userId).del().catch(error => console.log(error));
-            await knex('user_courses')
-                .insert(insertcourseIds)
-                .catch(error => console.log(error));
-
-            await user.joinedCourses.forEach(course => {
-                var email = {CourseId: course.courseId, organizationId: organizationId, UserId: user.userId};
-                organizationService.sendEmail(email, loggedInUser);
-            });
-        }
-
         return {
+            userId: user.userId,
+            courses: user.joinedCourses,
             isValid: true
         };
     });
