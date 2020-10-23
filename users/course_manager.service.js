@@ -105,7 +105,7 @@ async function add(loggedInUser, userData, organizationId) {
             }
 
             var email = {
-                UserEmail: userData.email.trim(), UserPass: password,
+                UserEmail: userData.email.trim(), UserPass: password, UserLastName: userData.surname.trim(),
                 UserId: userIds[0], UserName: userData.name.trim(), organizationId: organizationId
             };
             await organizationService.sendEmail(email, loggedInUser);
@@ -291,7 +291,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         }
 
         var email = {
-            UserEmail: userData.email.trim(), UserPass: password,
+            UserEmail: userData.email.trim(), UserPass: password, UserLastName: userData.surname.trim(),
             UserName: userData.name.trim(), organizationId: organizationId
         };
         await organizationService.sendEmail(email, loggedInUser);

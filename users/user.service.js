@@ -544,12 +544,6 @@ async function changePassword({oldPassword, newPassword}, user) {
               return resolve();
             }); 
           }); 
-
-            /*userData.joinedCourses.forEach(course => {
-                var email = {  CourseId : course,  organizationId: organizationId , UserId : userData.userId };
-                organizationService.sendEmail(email, loggedInUser);
-            });*/
-
         }
   
         if(userData.groupIds && userData.groupIds.length > 0)
@@ -619,7 +613,8 @@ async function changePassword({oldPassword, newPassword}, user) {
             .select([
                 'users.user_id as userId',
                 'users.email',
-                'users.name', 
+                'users.name',
+                'users.surname', 
                 'employees.organization_id as organizationId'
                 ])
             .first();
@@ -632,13 +627,14 @@ async function changePassword({oldPassword, newPassword}, user) {
         })
         .catch(error => console.log('forgotPassword => ' , error));
 
-        var bodyString = 'Hello, {UserName} </br> \n\n You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+        var bodyString = 'Hello, {UserName} {UserLastName} </br> \n\n You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
         '<a href=' + process.env.FRONTEND_URL + '/pages/password-reset/' + resetPasswordToken + '>Click here</a>' + ' </br> \n\n' +
-        'If you did not request this, please ignore this email and your password will remain unchanged.\n';
+        'If you did not request this, please ignore this email and your password will remain unchanged. </br> \n\n' +
+        'Best Wishes, </br> {OrgName} \n\n';
 
         let email = { UserEmail: user.email , UserName: user.name , organizationId: user.organizationId , isReset : 'TRUE',
-            Subject: 'Password Reset',  Body: bodyString };
+            Subject: 'Password Reset',  Body: bodyString , UserLastName: user.surname.trim()};
 
         await organizationService.sendEmail(email, user);
 
@@ -662,6 +658,7 @@ async function resetPassword(userData) {
                 'users.user_id as userId',
                 'users.email',
                 'users.name', 
+                'users.surname', 
                 'employees.organization_id as organizationId'
                 ])
             .first();
@@ -676,9 +673,10 @@ async function resetPassword(userData) {
             .catch(error => console.log('resetPassword => ' , error));
  
         var email = {UserEmail: user.email , UserName: user.name , organizationId: user.organizationId,
-            isReset : 'TRUE', Subject: 'Your password has been changed',
-            Body: 'Hello, {UserName}\n\n' +
-            'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
+            isReset : 'TRUE', Subject: 'Your password has been changed', UserLastName: user.surname ,
+            Body: 'Hello, {UserName} {UserLastName} </br> \n\n' +
+            'This is a confirmation that the password for your account ' + user.email + ' has just been changed. </br> \n' +
+            'Best Wishes, </br> {OrgName} \n\n'
         };
 
         await organizationService.sendEmail(email, user);

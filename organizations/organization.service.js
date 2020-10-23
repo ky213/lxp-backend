@@ -373,6 +373,7 @@ async function sendEmail( email, user )
             'courses.name as Name',
             'users.email as Email',
             'users.name as UserName',
+            'users.surname as UserLastName',
             'programs.subject as Subject',
             'programs.body as Body',
         ]);
@@ -380,6 +381,7 @@ async function sendEmail( email, user )
 
     let userEmail = email.UserEmail;     
     let userName = email.UserName;    
+    let userLastName = email.UserLastName;  
     let emailBody =  organization.Body;
     let emailSubject =  organization.Subject;
     let courseName;
@@ -392,8 +394,6 @@ async function sendEmail( email, user )
         {
             emailBody = email.Body;
             emailSubject = email.Subject;
-            userEmail = email.UserEmail;
-            userName = email.UserName;
             courseName = email.CourseName;                
         }
         else if (courses && courses[0])
@@ -402,6 +402,7 @@ async function sendEmail( email, user )
             emailSubject =  courses[0].Subject;
             userEmail = courses[0].Email;
             userName = courses[0].UserName;
+            userLastName = courses[0].UserLastName;
             courseName = courses[0].Name;
         }
         else if (email.isReset == 'TRUE')
@@ -410,7 +411,7 @@ async function sendEmail( email, user )
             emailSubject =  email.Subject;
         }          
 
-        const replacements = { OrgName: organization.Name , UserName: userName,
+        const replacements = { OrgName: organization.Name , UserName: userName, UserLastName: userLastName,
             UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
 
         body = emailBody ? emailBody.replace(/{\w+}/g, placeholder =>
@@ -456,7 +457,7 @@ async function sendEmail( email, user )
 
             if(userEmail == null)
                 return;
-                    
+
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
                 from: organization.Label + ' ' +  organization.Email,  // Sender address

@@ -175,7 +175,7 @@ async function sendCertificateEmail(registration,actorEmail) {
 
     let user = await knex('users')
     .where('users.email', userEmail.toLowerCase())
-    .select(['users.user_id as userId' , 'users.name as UserName'  ])
+    .select(['users.user_id as userId' , 'users.name as UserName' , 'users.surname as UserLastName' ])
     .first();
 
     let course = await knex('courses')
@@ -188,7 +188,7 @@ async function sendCertificateEmail(registration,actorEmail) {
     if(program.body)
     {
         var email = {  UserName: user.UserName , CourseName : course.Name ,  organizationId: program.organizationId , UserId : user.userId ,
-            isCertificate : 'TRUE'  , UserEmail : userEmail , Body: program.body , Subject: program.subject };
+            isCertificate : 'TRUE'  , UserEmail : userEmail , Body: program.body , Subject: program.subject , UserLastName: user.UserLastName };
         await organizationService.sendEmail(email, user);
     }
 }
