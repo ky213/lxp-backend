@@ -393,10 +393,11 @@ async function sendEmail( email, user )
         if (email.isCertificate == 'TRUE')
         {
             //emailBody = email.Body;
-            emailBody = '<img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="left" />' + 
-            '</br></br></br></br> \n\n <p style="text-align: center;">This certifies that ' +
-			'</br><strong>{UserName} {UserLastName}</strong> ' +
-            '</br>has fulfilled Phase I of the Item Author Certification Program </p>' + 
+            emailBody = '<img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="left" /> </br>' + 
+            '</br></br></br></br></br>' +
+            '<p style="text-align: center;">This certifies that </br>' +
+			'<strong>{UserName} {UserLastName}</strong> </br>' +
+            'has fulfilled Phase I of the Item Author Certification Program </p>' + 
             '<p>A message will be sent to your e-mail within a week to access the Item Development System (IDS) for Phase II. After you receive the email from IDS, log in details are:' + 
             '</br>Username: Email Address </br> Password: Abcd1234</p>' + 
             '<p><sup>*Note: Please change the password after the first login</sup></p>' + 
