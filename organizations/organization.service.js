@@ -393,21 +393,21 @@ async function sendEmail( email, user )
         if (email.isCertificate == 'TRUE')
         {
             //emailBody = email.Body;
-            emailBody = '<img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="left" /> </br>' + 
+            emailBody = '<p style="text-align: center;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="left" /> </p> </br>' + 
             '</br></br></br></br></br>' +
-            '<p style="text-align: center;">This certifies that </br>' +
+            '<p style="text-align: center;font-family:arial;font-size:14px;">This certifies that </br>' +
 			'<strong>{UserName} {UserLastName}</strong> </br>' +
             'has fulfilled Phase I of the Item Author Certification Program </p>' + 
-            '<p>A message will be sent to your e-mail within a week to access the Item Development System (IDS) for Phase II. After you receive the email from IDS, log in details are:' + 
+            '<p style="font-family:arial;font-size:14px;">A message will be sent to your e-mail within a week to access the Item Development System (IDS) for Phase II. After you receive the email from IDS, log in details are:' + 
             '</br>Username: Email Address </br> Password: Abcd1234</p>' + 
-            '<p><sup>*Note: Please change the password after the first login</sup></p>' + 
-            '<p><strong>Phase II Details:</strong></p>' + 
-            '<p>You are requested to submit 5 MCQ’s based on what you have learned in Phase I. Items can be written in any field but must comply with SCFHS guidelines.' + 
+            '<p style="font-family:arial;font-size:9px;"><sup>*Note: Please change the password after the first login</sup></p>' + 
+            '<p style="font-family:arial;font-size:14px;"><strong>Phase II Details:</strong></p>' + 
+            '<p style="font-family:arial;font-size:14px;">You are requested to submit 5 MCQ’s based on what you have learned in Phase I. Items can be written in any field but must comply with SCFHS guidelines.' + 
             '</br>After submission, items will be reviewed by the Editorial Team. The reviewed task will appear in your account in the tab “Reviewed Tasks” and you must review and accept to fulfill IAC Phase II.</p>' + 
-            '<p><strong>Certification Criteria:</strong></p>' + 
-            '<p>*4-5 accepted items = Certified' + 
+            '<p style="font-family:arial;font-size:14px;"><strong>Certification Criteria:</strong></p>' + 
+            '<p style="font-family:arial;font-size:14px;">*4-5 accepted items = Certified' + 
             '</br>*2-5 rejected items = Review feedback and request a make-up task to redo and re-submit.</p>' + 
-            '<p><sup>*For any inquiries, contact us: <a href=“mailto:IAC@scfhs.org”>IAC@scfhs.org</a></sup></p>'
+            '<p style="font-family:arial;font-size:9px;"><sup>*For any inquiries, contact us: <a href=“mailto:IAC@scfhs.org”>IAC@scfhs.org</a></sup></p>'
             emailSubject = email.Subject;
             courseName = email.CourseName;                
         }
@@ -556,8 +556,9 @@ async function sendTestEmail(email, user)
 
 async function htmlToPdfBuffer(body) {
     const html = body;
+    var options = { orientation: 'landscape' };
     return new Promise((resolve, reject) => {
-      htmlPdf.create(html).toBuffer((err, buffer) => {
+      htmlPdf.create(html,options).toBuffer((err, buffer) => {
         if (err) {
           reject(err);
         } else {
