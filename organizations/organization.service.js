@@ -393,8 +393,8 @@ async function sendEmail( email, user )
         if (email.isCertificate == 'TRUE')
         {
             //emailBody = email.Body;
-            emailBody = '<p style="text-align: left;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="left" /> </p> </br>' + 
-            '</br></br></br></br>' +
+            emailBody = '<p style="text-align: center;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="center" /> </p>' + 
+            '</br></br>' +
             '<p style="text-align: center;font-family:arial;font-size:14px;">This certifies that </br>' +
 			'<strong>{UserName} {UserLastName}</strong> </br>' +
             'has fulfilled Phase I of the Item Author Certification Program </p>' + 
