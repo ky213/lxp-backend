@@ -16,19 +16,34 @@ router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
 router.put("/updateProfileData", authorize(), updateProfileData);
 router.delete("/deleteEmployees", authorize(), deleteEmployees);
 router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
-
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
 
 module.exports = router;
 
+// returns an object with the cookies' name as keys
+const getAppCookies = (req) => {
+ // We extract the raw cookies from the request headers
+ const rawCookies = req.headers.cookie.split('; ');
+ // rawCookies = ['myapp=secretcookie, 'analytics_cookie=beacon;']
+ const parsedCookies = {};
+ rawCookies.forEach(rawCookie=>{
+ const parsedCookie = rawCookie.split('=');
+ // parsedCookie = ['myapp', 'secretcookie'], ['analytics_cookie', 'beacon']
+  parsedCookies[parsedCookie[0]] = parsedCookie[1];
+ });
+ return parsedCookies;
+}
+
 function authenticate(req, res, next) {
+  let token = req.query.token;
+  let existToken = getAppCookies(req, res)['sessionToken'];
   userService
-    .authenticate(req.body)
+    .authenticate(req.body, token , existToken)
     .then(user => {
       if (user) {
         try {
-          res.cookie("sessionToken", user.token, {
+          res.cookie("sessionToken", user.tokened, {
             maxAge: 900000,
             httpOnly: true
           });
@@ -178,3 +193,4 @@ async function resetPassowrd(req, res, next) {
     res.status(500).json({ isValid: false, status: "error", message:  'Password reset token is invalid or has expired.'});
   }
 }
+

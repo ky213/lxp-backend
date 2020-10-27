@@ -23,8 +23,7 @@ module.exports = {
     findResetPasswordToken
 };
 
-async function authenticate({ email, password }) {
-
+async function authenticate({ email, password }, token , existToken) {
     const user = await knex('users')
         .where('users.email', email.toLowerCase())
         .select(['users.user_id',
@@ -42,6 +41,12 @@ async function authenticate({ email, password }) {
     console.log("Got user:", user)
     if (user)
     {
+        let tokened;
+        if(token && token == existToken)
+        {
+            tokened = token;
+        }
+       
         const passIsValid = await bcrypt.compare(password, user.password);
         if (passIsValid)
         {
@@ -54,16 +59,17 @@ async function authenticate({ email, password }) {
             }
 
             if(user.is_super_admin) {
-                // necu mijenjati sub s user_id pa sam dodao userId
-                const token = jwt.sign({ sub: user.user_id, userId: user.user_id, role: Role.SuperAdmin
-                }, config.secret);
+                if(tokened == null || 'undefined')
+                {// necu mijenjati sub s user_id pa sam dodao userId
+                    tokened = jwt.sign({ sub: user.user_id, userId: user.user_id, role: Role.SuperAdmin}, config.secret);
+                }
 
                 user.role = 'SuperAdmin';
                 user.roleDescription = 'Super Admin';
     
                 const { password, is_super_admin, ...userWithoutPassword } = user;
                 //const { password, ...userWithoutPassword } = user; // we shouldnt need super admin flag
-                return {user: userWithoutPassword, token};
+                return {user: userWithoutPassword, tokened};
             }
             else
             {
@@ -97,14 +103,16 @@ async function authenticate({ email, password }) {
                     employee.fullName = `${user.firstName} ${user.lastName}`;
                 }                
 
-                // necu mijenjati sub s user_id pa sam dodao userId
-                const token = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, role: employee.role, 
+                if(tokened == null || 'undefined')
+                {
+                    // necu mijenjati sub s user_id pa sam dodao userId
+                    tokened = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, role: employee.role, 
                     organization: employee.organizationId, programId: employee.programId, experienceLevelId: employee.experienceLevelId
-                }, config.secret);
-    
+                    }, config.secret);
+                }
                 const { password, is_super_admin, directorProgramId, ...userWithoutPassword } = employee;
                 //const { password, ...userWithoutPassword } = user; // we shouldnt need super admin flag
-                return {user: userWithoutPassword, token};
+                return {user: userWithoutPassword, tokened};
             }            
         }
     }
