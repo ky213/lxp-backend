@@ -1,6 +1,6 @@
 {
     "name": "lxp-module-api",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "description": "LXP API",
     "license": "MIT",
     "scripts": {
