@@ -20,7 +20,8 @@ module.exports = {
     updateBulk,
     forgotPassword,
     resetPassword,
-    findResetPasswordToken
+    findResetPasswordToken,
+    authToken
 };
 
 async function authenticate({ email, password }) {
@@ -725,4 +726,86 @@ async function findResetPasswordToken(userData){
     else{
         return false;
     }
+}
+
+async function authToken(token) {
+
+    var decoded = jwt.verify(token, config.secret);
+
+    if(!decoded)
+        return;
+
+    let userId = decoded.userId;
+
+    console.log(userId , 'userId')
+    const user = await knex('users')
+            .where('users.user_id', userId)
+            .select(['users.user_id',
+                'user_id as userId',
+                'email',
+                'name', 
+                'name as firstName',
+                'surname as lastName', 
+                'is_super_admin',
+                'password',
+                'profile_photo as profilePhoto'            
+                ]
+            )
+            .first();
+        
+        if (user)
+        {  
+            if (user.profilePhoto) {
+                user.profilePhoto = Buffer.from(user.profilePhoto).toString();
+            }
+
+            if(user.firstName && user.lastName) {
+                user.fullName = `${user.firstName} ${user.lastName}`;
+            }
+
+            if(user.is_super_admin) {
+
+                user.role = 'SuperAdmin';
+                user.roleDescription = 'Super Admin';
+    
+                const { password, is_super_admin, ...userWithoutPassword } = user;
+                //const { password, ...userWithoutPassword } = user; // we shouldnt need super admin flag
+                return {user: userWithoutPassword, token};
+            }
+            else
+            {
+                const [employee] = await knex('users')
+                    .join('employees', 'employees.user_id', 'users.user_id')
+                    .join('organizations', 'organizations.organization_id', 'employees.organization_id')
+                    .leftJoin('employee_roles', 'employee_roles.employee_id', 'employees.employee_id')
+                    .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')                    
+                    .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
+                    .leftJoin('program_directors', 'program_directors.employee_id', 'employees.employee_id')
+                .where('employees.user_id', user.userId)
+                    .andWhere('organizations.is_active', true)
+                .limit(1)
+                .select(['users.user_id',
+                    'users.user_id as userId', 'employees.employee_id as employeeId', 'email', 'users.name', 
+                    'users.name as firstName', 'surname as lastName', 
+                    'is_super_admin', 'password', 
+                    'users.profile_photo as profilePhoto',
+                    'employees.organization_id as organizationId', 'organizations.name as organizationName', 'roles.role_id as role', 
+                    'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
+                    'organizations.background_color_code as organizationBackgroundColor', 'employee_programs.program_id as programId',
+                    'program_directors.program_id as directorProgramId', 'employees.exp_level_id as experienceLevelId',
+                    'organizations.logo as organizationLogo']
+                );
+
+                if(!employee.programId) {
+                    employee.programId = user.directorProgramId;
+                }
+
+                if(employee.firstName && employee.lastName) {
+                    employee.fullName = `${user.firstName} ${user.lastName}`;
+                }                
+
+                const { password, is_super_admin, directorProgramId, ...userWithoutPassword } = employee;
+                return {user: userWithoutPassword, token};
+            }        
+        }
 }

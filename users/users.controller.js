@@ -18,25 +18,8 @@ router.delete("/deleteEmployees", authorize(), deleteEmployees);
 router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
-
+router.post("/authToken", authToken); // public route
 module.exports = router;
-
-// returns an object with the cookies' name as keys
-const getAppCookies = (req) => {
-  if(req.headers.cookie)
-  {
-    // We extract the raw cookies from the request headers
-    const rawCookies = req.headers.cookie.split('; ');
-    // rawCookies = ['myapp=secretcookie, 'analytics_cookie=beacon;']
-    const parsedCookies = {};
-    rawCookies.forEach(rawCookie=>{
-    const parsedCookie = rawCookie.split('=');
-    // parsedCookie = ['myapp', 'secretcookie'], ['analytics_cookie', 'beacon']
-      parsedCookies[parsedCookie[0]] = parsedCookie[1];
-    });
-    return parsedCookies;
- }
-}
 
 function authenticate(req, res, next) {
   userService
@@ -195,3 +178,27 @@ async function resetPassowrd(req, res, next) {
   }
 }
 
+function authToken(req, res, next) {
+  userService
+    .authToken(req.query.token)
+    .then(user => {
+      if (user) {
+        try {
+          res.cookie("sessionToken", user.token, {
+            maxAge: 900000,
+            httpOnly: true
+          });
+          console.log("Got to set cookie");
+        } catch (exc) {
+          console.log("Error while setting session cookie:", exc);
+        }
+
+        res.json(user);
+      } else {
+        res.status(400).json({ message: "Email or password is incorrect" });
+      }
+    })
+    .catch(err => {
+      next(err);
+    })
+}
