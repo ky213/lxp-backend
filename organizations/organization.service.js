@@ -418,8 +418,8 @@ async function sendEmail( email, user )
     {
         if (email.isCertificate == 'TRUE')
         {
-            //emailBody = email.Body;
-            emailBody = '<p style="text-align: center;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="center" /> </p>' + 
+            emailBody = email.Body;
+            /*emailBody = '<p style="text-align: center;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="center" /> </p>' + 
             '</br></br>' +
             '<p style="text-align: center;font-family:arial;font-size:14px;">This certifies that </br>' +
 			'<strong>{UserName} {UserLastName}</strong> </br>' +
@@ -433,7 +433,7 @@ async function sendEmail( email, user )
             '<p style="font-family:arial;font-size:14px;"><strong>Certification Criteria:</strong></p>' + 
             '<p style="font-family:arial;font-size:14px;">*4-5 accepted items = Certified' + 
             '</br>*2-5 rejected items = Review feedback and request a make-up task to redo and re-submit.</p>' + 
-            '<p style="font-family:arial;font-size:9px;"><sup>*For any inquiries, contact us: <a href=“mailto:IAC@scfhs.org”>IAC@scfhs.org</a></sup></p>'
+            '<p style="font-family:arial;font-size:9px;"><sup>*For any inquiries, contact us: <a href=“mailto:IAC@scfhs.org”>IAC@scfhs.org</a></sup></p>'*/
             emailSubject = email.Subject;
             courseName = email.CourseName;                
         }
