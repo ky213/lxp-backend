@@ -15,7 +15,6 @@ module.exports = {
 };
 
 async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take) {
-    //console.log("Get all statements:", statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take)
     if (!user) {
         console.log("not authenticated")
         return;
@@ -77,12 +76,16 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
     }
 
     if(since) {
-        since = moment(since).format("YYYY-MM-DD");
+        var strToDate = new Date(since);
+        since = moment(strToDate).format("YYYY-MM-DD");
+        console.log(since);
         model.whereRaw(`payload->>'timestamp' >= ?`, [`${since}`]);
     }
 
     if(until) {
-        until = moment(until).format("YYYY-MM-DD");
+        var strToDate = new Date(until);
+        until = moment(strToDate).format("YYYY-MM-DD");
+        console.log(until);
         model.whereRaw(`payload->>'timestamp' <= ?`, [`${until}`]);
     }
 
