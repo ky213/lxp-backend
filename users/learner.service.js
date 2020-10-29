@@ -399,7 +399,7 @@ async function update(loggedInUser, user, organizationId) {
             })
             .catch(error => console.log(error));
 
-        if(user.password.trim()) {
+        if(user.password && user.password.trim()) { 
             await knex("users")
             .transacting(t)
             .where("user_id", user.userId)
