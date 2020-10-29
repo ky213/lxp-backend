@@ -9,9 +9,10 @@ router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]),
 router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), update); 
 router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), deleteOrganizations); 
 router.get('/', authorize([Role.SuperAdmin]), getAll); 
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);  
+router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);
 router.post('/email', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendEmail); 
-router.post('/testEmail', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendTestEmail); 
+router.post('/testEmail', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendTestEmail);
+router.get('/:id/assetsDomain', authorize(), getOrganizationAssetsDomain);
 
 module.exports = router;
 
@@ -25,6 +26,24 @@ function getAll(req, res, next) {
     .then(organizations => organizations && organizations.totalNumberOfRecords > 0 ? res.json(organizations): res.status(404).json({message: "Not found"}))
     .catch(err => next(err));
 }
+
+function getOrganizationAssetsDomain(req, res, next) {
+    organizationService.getOrganizationSettingsByOrgId(req.params.id)
+        .then(settings => {
+            console.log("---")
+            console.log(settings)
+            console.log("---")
+            settings && settings.assetsDomain
+                ? res.json({assetsDomain: settings.assetsDomain})
+                : res.json({assetsDomain: process.env.UPLOADS_URL})
+            }
+        )
+        .catch(err => {
+            console.log("ERROR: ",err);
+            res.status(500).json({"message": "internal error"})
+        });
+}
+
 
 function getById(req, res, next) {
     organizationService.getById(req.params.id, req.user)

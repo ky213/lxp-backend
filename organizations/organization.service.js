@@ -16,7 +16,8 @@ module.exports = {
     deleteOrganizations,
     getDefaultGroup,
     sendEmail,
-    sendTestEmail
+    sendTestEmail,
+    getOrganizationSettingsByOrgId
 };
 
 async function getAll(user, pageId, recordsPerPage, filter) {
@@ -70,8 +71,33 @@ async function getAll(user, pageId, recordsPerPage, filter) {
     return { organizations, totalNumberOfRecords: totalNumberOfRecords[0].count };
 }
 
+async function getOrganizationSettingsByOrgId(id) {
+
+    let select =  knex.select([
+        'organization_settings.settings_id as SettingsId',
+        'organization_settings.smtp_host as SMTPHost',
+        'organization_settings.port_number as PortNumber',
+        'organization_settings.encryption as Encryption',
+        'organization_settings.email as Email',
+        'organization_settings.label as Label',
+        'organization_settings.server_id as ServerId',
+        'organization_settings.password as Password',
+        'organization_settings.subject as Subject',
+        'organization_settings.body as Body',
+        'organization_settings.assetsDomain as assetsDomain',
+    ])
+        .from('organization_settings');
+
+    let organizationSettings = await select
+        .where('organization_settings.organization_id', id)
+        .limit(1)
+        .first();
+
+    return organizationSettings;
+}
+
 async function getById(id, user) {
-    console.log('get by id ');
+    console.log('get by id');
     let select =  knex.select([
         'organizations.organization_id as organizationId', 
         'organizations.name', 
