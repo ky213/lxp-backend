@@ -1,6 +1,6 @@
 [
     {
-      "origin": ["https://staging.lxpia.com/"],
+      "origin": ["https://staging.lxpia.com/","https://staging.lxp.extremedevteam.pl/"],
       "method": ["GET", "HEAD","OPTIONS","PUT"],
       "responseHeader": ["Content-Type"],
       "maxAgeSeconds": 300
