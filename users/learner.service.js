@@ -399,6 +399,16 @@ async function update(loggedInUser, user, organizationId) {
             })
             .catch(error => console.log(error));
 
+        if(user.password.trim()) {
+            await knex("users")
+            .transacting(t)
+            .where("user_id", user.userId)
+            .update({
+                password: bcrypt.hashSync(user.password.trim(), 10)
+            })
+            .catch(error => console.log(error));
+        }
+
         await knex("employees")
             .transacting(t)
             .where("user_id", user.userId)

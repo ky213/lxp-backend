@@ -380,6 +380,16 @@ async function update(loggedInUser, user, organizationId) {
                     email: user.email.trim()
                 });
 
+            if(user.password.trim()) {
+                await knex("users")
+                .transacting(t)
+                .where("user_id", user.userId)
+                .update({
+                    password: bcrypt.hashSync(user.password.trim(), 10)
+                })
+                .catch(error => console.log(error));
+            }    
+
             return knex("employees")
                 .transacting(t)
                 .where("employee_id", user.employeeId)
