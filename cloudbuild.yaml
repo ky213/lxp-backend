@@ -104,4 +104,5 @@ steps:
         --update-env-vars="DATABASE_PASSWORD=$_DBPASS" \
         --update-env-vars="FRONTEND_URL=$_FRONTENDURL" \
         --update-env-vars="STORAGE_BUCKET=$_STORAGE_BUCKET" \
+        --update-env-vars="UPLOADS_URL=$_UPLOADS_URL" \
 
