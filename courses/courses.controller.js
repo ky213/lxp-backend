@@ -65,7 +65,7 @@ async function create(req, res, next) {
     }
 
     courseService.create(req.user, req.body.selectedOrganization, req.body.programId,
-        req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath)
+        req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath, req.body.courseCode)
         .then(data => {
             data.uploadUrl = cloudFileURL;
             res.json(data);
@@ -81,7 +81,7 @@ async function update(req, res) {
     }
 
     courseService.update(req.user, req.body.selectedOrganization, req.body.courseId, req.body.programId,
-        req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo)
+        req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, req.body.courseCode)
         .then(data => {
             data = {
                 uploadUrl: cloudFileURL,

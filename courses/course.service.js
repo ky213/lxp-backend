@@ -27,20 +27,21 @@ var bucket = process.env.STORAGE_BUCKET;
 
 async function getAllCoursesIds(organizationId) {
 
-
     let model = knex.table('courses')
 
-    const groups = await model.clone()
+    const courses = await model.clone()
         .orderBy('courses.name', 'asc')
         .where('courses.organization_id', organizationId)
         .select([
             'courses.course_id as courseId',
             'courses.name',
+            'courses.course_code as courseCode'
         ]);
 
 
-    return groups;
+    return courses;
 }
+
 async function genetateCloudStorageUploadURL(dirPath, filename) {
 
     const options = {
@@ -112,6 +113,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
             'courses.starting_date as startingDate',
             'courses.period_days as periodDays',
             'courses.content_path as contentPath',
+            'courses.course_code as courseCode',
             'programs.program_id as programId',
             'programs.name as programName',
         ]);
@@ -166,6 +168,7 @@ async function getById(loggedInUser, courseId, selectedOrganizationId) {
             'courses.starting_date as startingDate',
             'courses.program_id as programId',
             'courses.content_path as contentPath',
+            'courses.course_code as courseCode',
             'programs.name as programName',
         ])
         .limit(1)
@@ -197,7 +200,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
         .where('course_id', courseId);
 }
 
-async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath) {
+async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath, courseCode) {
     if (!loggedInUser)
         return;
 
@@ -213,11 +216,12 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
             image: logo,
             period_days: periodDays,
             starting_date: startingDate && moment(startingDate).format() || null,
-            generated: knex.fn.now()
+            generated: knex.fn.now(),
+            course_code:  courseCode
         });
 }
 
-async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo) {
+async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo, courseCode) {
     if (!loggedInUser)
         return;
 
@@ -232,7 +236,8 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
             image: logo,
             period_days: periodDays,
             starting_date: startingDate && moment(new Date(startingDate)).format() || null,
-            generated: knex.fn.now()
+            generated: knex.fn.now(),
+            course_code: courseCode
         });
 }
 
@@ -292,6 +297,7 @@ async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, program
             'courses.period_days as periodDays',
             'courses.content_path as contentPath',
             'user_courses.joining_date as JoiningDate',
+            'courses.course_code as courseCode',
             'programs.program_id as programId',
             'programs.name as programName',
         ]);

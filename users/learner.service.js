@@ -532,7 +532,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
-        if (user.groupNames && user.groupNames.length > 0) {
+        if (user.groupNames && user.groupNames.length > 1) {
 
             if (!groups || groups.length === 0) {
                 addError(user, "Groups '" + user.groupNames + "' are not valid");
@@ -578,7 +578,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
 
         }
 
-        if (user.courseNames && user.courseNames.length > 0) {
+        if (user.courseNames && user.courseNames.length > 1) {
 
             if (!courses || courses.length === 0) {
                 addError(user, "Courses '" + user.courseNames + "' are not valid");
@@ -616,11 +616,57 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             usersData[i].joinedCourses = validatedCourses
 
             if (!valid) {
-                addError(user, "Groups '" + invalidCoursesNames + "' are not valid");
+                addError(user, "Courses '" + invalidCoursesNames + "' are not valid");
                 continue
             }
 
         }
+
+        if (user.courseCodes && user.courseCodes.length > 1) {
+
+            if (!courses || courses.length === 0) {
+                addError(user, "Courses '" + user.courseCodes + "' are not valid");
+                continue;
+            }
+
+            let valid = true; //holds validation state for all groups
+
+            let validatedCourses = []
+            let invalidCoursesCodes = []
+
+            await user.courseCodes.forEach(courseCode => {
+
+                let validatedCourse = {}
+
+                let validLocal = false //helper variable, holds validatoin status for single group
+
+                for (let course of courses) {
+                    if (course.courseCode.trim() === courseCode.trim()) {
+                        validatedCourse.courseId = course.courseId;
+                        validatedCourse.name = course.name;
+                        validatedCourse.courseCode = course.courseCode;
+                        validLocal = true;
+                        break
+                    }
+                }
+
+                validatedCourses.push(validatedCourse)
+                valid = validLocal && valid
+
+                if (!validLocal) {
+                    invalidCoursesCodes.push(courseCode)
+                }
+            })
+
+            usersData[i].joinedCourses = validatedCourses
+
+            if (!valid) {
+                addError(user, "Courses '" + invalidCoursesCodes + "' are not valid");
+                continue
+            }
+
+        }
+
         output.data.push({...user, status: "ok"});
     }
 
