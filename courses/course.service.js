@@ -18,7 +18,8 @@ module.exports = {
     requestToJoinCourse,
     genetateCloudStorageUploadURL,
     sendEmailForCourse,
-    getAllCoursesIds
+    getAllCoursesIds,
+    checkIfCourseExists
 };
 
 var Readable = require('stream').Readable;
@@ -329,3 +330,13 @@ async function sendEmailForCourse(loggedInUser, courseId) {
     await organizationService.sendEmail(email, loggedInUser);
 }
 
+async function checkIfCourseExists(courseId, userId) {
+    let model = knex("user_courses")
+      .where('user_courses.user_id', userId)
+      .andWhere('user_courses.course_id', courseId);
+
+    let x = await model.count().first();
+
+    if (x.count == 0) return true;
+    else return false;
+  }

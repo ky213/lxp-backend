@@ -98,7 +98,7 @@ function add(req, res, next) {
 
 function addBulk(req, res, next) {
   learnerService
-    .addBulk(req.user, req.body.users, req.body.organizationId)
+    .addBulk(req.user, req.body.users, req.body.existUsers, req.body.organizationId)
     .then(() => res.json(true))
     .catch(err => next(err));
 }

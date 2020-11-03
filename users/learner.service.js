@@ -7,6 +7,7 @@ const programService = require('../programs/program.service');
 const organizationService = require('../organizations/organization.service');
 const groupsvc = require("../groups/groups.service");
 const coursessvc = require("../courses/course.service");
+const userService = require("../users/user.service");
 var generator = require('generate-password');
 var _ = require('lodash');
 
@@ -146,7 +147,7 @@ async function add(loggedInUser, userData, organizationId) {
         .catch(err => console.log("err", err));
 }
 
-async function addBulk(loggedInUser, data, organizationId) {
+async function addBulk(loggedInUser, data, exitData, organizationId) {
 
     data = data.map(d => ({
         ...d,
@@ -154,11 +155,11 @@ async function addBulk(loggedInUser, data, organizationId) {
     }));
 
     organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-
-    let inserts = [];
-    let output = [];
     let validationOutput = await validateBulk(loggedInUser, data, organizationId);
 
+    let output = [];
+    let update = [];
+    
     if (validationOutput.hasErrors) {
         return {
             status: "error",
@@ -167,11 +168,119 @@ async function addBulk(loggedInUser, data, organizationId) {
                 .map(t => t.error)
                 .join(",")
         };
-    }
+    }        
 
     const userProgram = await programService.getDefaultProgram(loggedInUser, organizationId);
     const defaultGroup = await organizationService.getDefaultGroup(organizationId);
 
+    async function UpdateLearnerAsync(t, userData) {
+        const user = await userService.getByUserEmail(userData.email.toLowerCase());
+
+        let tempCourse = userData.joinedCourses.map(async (course) => { 
+            let courseExists = await coursessvc.checkIfCourseExists(course.courseId , user.userId);
+            if(courseExists){
+                return course;
+            }
+        });
+
+        let newCourses = await Promise.all(tempCourse); 
+
+        let tempGroups = userData.groupIds.map(async(group) => { 
+            let groupExists = await groupsvc.checkIfGroupExists(group.groupId , user.employeeId);
+            if(groupExists){
+                return group;
+            }
+        });
+
+        let newGroups = await Promise.all(tempGroups);
+
+        let insertsGroups = [];
+        if (newGroups && (newGroups.length > 0 && newGroups[0])) {            
+            newGroups.forEach(group => {
+                    let employeeGroups = {
+                        employee_id: user.employeeId,
+                        group_id: group.groupId
+                    };
+                
+                    var insert = (emplGroups) => {
+                    t.into("groups_employee")
+                        .insert(emplGroups)
+                        .then(r => {
+                            console.log("groups_employee created")
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            output.push({...userData, isValid: false, status: "error", errorDetails: err});
+                            throw  err;
+                        });
+                    }                    
+                    insertsGroups.push(insert(employeeGroups))              
+            });  
+            
+            if(insertsGroups && insertsGroups.length > 0){ 
+                 Promise.all(insertsGroups)
+                    .then(() => {
+                        console.log('Employee groups will be persisted with commit.');
+                    })
+                    .catch(err => {
+                        console.log('Rollback. Because:', err);
+                        throw err;
+                    });
+            }
+        } 
+
+        let insertsCourses = [];
+        if (newCourses && (newCourses.length > 0 && newCourses[0])) {            
+            newCourses.forEach( course => {
+                    let insertUserCourse = {
+                        user_id: user.userId,
+                        is_able_to_join: true,
+                        course_id: course.courseId,
+                        joining_date: knex.fn.now()
+                    };
+
+                    var insert = async (userCourse) => {
+                        await t.into("user_courses")
+                            .insert(userCourse)
+                            .then(r => {
+                                console.log("user_courses created");                                
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                output.push({...userData, isValid: false, status: "error", errorDetails: err});
+                                throw  err;
+                            });
+                    }
+                    insertsCourses.push(insert(insertUserCourse));              
+            }); 
+
+            if(insertsCourses && insertsCourses.length > 0){
+                Promise.all(insertsCourses)
+                .then(() => {
+                    console.log('user courses will be persisted with commit'); 
+                    newCourses.forEach(async(course) => { 
+                        var email = {isCourse: 'TRUES', CourseId: course.courseId, organizationId: organizationId, UserId: user.userId};
+                        await organizationService.sendEmail(email, loggedInUser);
+                    });                   
+                })
+                .catch(err => {
+                    console.log('Rollback. Because:', err);
+                    throw err;
+                });                
+            }
+        }
+
+        var email = {
+            UserEmail: userData.email.trim(), UserLastName: userData.surname.trim(),
+            UserName: userData.name.trim(), organizationId: organizationId , isUpdate :'TRUE'
+        };
+
+        console.log('Send email'); 
+        await organizationService.sendEmail(email, loggedInUser);       
+
+        update.push({...userData, status: "ok"});
+
+    }
 
     async function InsertLearnerAsync(t, userData) {
         var password = generator.generate({length: 10, numbers: true});
@@ -221,7 +330,6 @@ async function addBulk(loggedInUser, data, organizationId) {
             employee_id: employeeId,
             role_id: Role.Learner
         }));
-
 
         await t.into("employee_roles")
             .insert(employeeRoles)
@@ -279,7 +387,7 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             Promise.all(inserts)
                 .then(() => {
-                    console.log('Employee groups will be persisted with commit.');
+                    console.log('Employee groups will be persisted with commit.');                    
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
@@ -337,14 +445,14 @@ async function addBulk(loggedInUser, data, organizationId) {
 
             Promise.all(inserts)
                 .then(() => {
-                    console.log('user courses will be persisted with commit');
+                    console.log('user courses will be persisted with commit');           
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
                     throw err;
                 });
         }
-
+        
         var email = {
             UserEmail: userData.email.trim(), UserPass: password, UserLastName: userData.surname.trim(),
             UserName: userData.name.trim(), organizationId: organizationId
@@ -355,14 +463,47 @@ async function addBulk(loggedInUser, data, organizationId) {
 
     }
 
+    async function sendUserCoursesEmail(existUsers , users) {
+        if(users){
+            for (let i = 0; i < users.length; i++) {
+                let user = users[i];
+                const userData = await userService.getByUserEmail(user.email.toLowerCase());
+                user.joinedCourses.forEach(async(course) => { 
+                    var email = { CourseId: course.courseId, organizationId: organizationId, UserId: userData.userId};
+                    await organizationService.sendEmail(email, loggedInUser);
+                });
+            }
+        }
+        if(existUsers){
+            for (let i = 0; i < existUsers.length; i++) {
+                let user = existUsers[i];
+                const userData = await userService.getByUserEmail(user.email.toLowerCase());
+                user.joinedCourses.forEach(async(course) => { 
+                    var email = { CourseId: course.courseId, organizationId: organizationId, UserId: userData.userId};
+                    await organizationService.sendEmail(email, loggedInUser);
+                });
+            }
+        }
+    }
+
     return await knex
         .transaction(async t => {
             try {
-                for (let i = 0; i < data.length; i++) {
-                    let user = data[i]
-                    await InsertLearnerAsync(t, user);
+                if(data){
+                    for (let i = 0; i < data.length; i++) {
+                        let user = data[i]
+                        await InsertLearnerAsync(t, user);
+                    }                    
                 }
-                await t.commit(output)
+                if(exitData){
+                    for (let i = 0; i < exitData.length; i++) {
+                        let user = exitData[i]
+                        await UpdateLearnerAsync(t, user);
+                    }                    
+                }  
+                await t.commit(output);   
+                await t.commit(update);   
+                await sendUserCoursesEmail(exitData, data);     
             } catch (err) {
                 console.log(err)
                 await t.rollback(err)
@@ -532,7 +673,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
-        if (user.groupNames && user.groupNames.length > 1) {
+        if (user.groupNames && (user.groupNames.length > 0 && user.groupNames[0] )) {
 
             if (!groups || groups.length === 0) {
                 addError(user, "Groups '" + user.groupNames + "' are not valid");
@@ -559,7 +700,6 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                     }
                 }
 
-
                 valid = validLocal && valid
 
                 if (!validLocal) {
@@ -578,7 +718,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
 
         }
 
-        if (user.courseNames && user.courseNames.length > 1) {
+        if (user.courseNames && (user.courseNames.length > 0 && user.courseNames[0]) ) {
 
             if (!courses || courses.length === 0) {
                 addError(user, "Courses '" + user.courseNames + "' are not valid");

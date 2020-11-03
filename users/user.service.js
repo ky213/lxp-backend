@@ -21,7 +21,8 @@ module.exports = {
     forgotPassword,
     resetPassword,
     findResetPasswordToken,
-    authToken
+    authToken,
+    getByUserEmail
 };
 
 async function authenticate({ email, password }) {
@@ -370,7 +371,8 @@ async function getByUserId(user, userId) {
             .andWhere('employees.user_id', userId)
             .select([
             'groups.group_id as groupId',
-            'groups.name as name'
+            'groups.name as name',
+            'employees.employee_id as employeeId'
             ]);
 
             userData.groupIds = groups.map(d => ({
@@ -387,7 +389,7 @@ async function checkIfEmailExists(email, userId) {
     .whereRaw('lower(email) = ?', email.toLowerCase());
 
   if (userId) model.whereNot("user_id", userId);
-
+  console.log(model)
   let x = await model.count().first();
 
   if (x.count > 0) return true;
@@ -808,4 +810,25 @@ async function authToken(token) {
                 return {user: userWithoutPassword, token};
             }        
         }
+}
+
+async function getByUserEmail(email) {
+
+    let select =  knex.select([
+            'users.user_id as userId', 
+            'users.email', 
+            'users.name',
+            'users.surname',
+            'users.start_date as startDate',
+            'employees.employee_id as employeeId'
+        ])
+        .from('users')
+        .join('employees', 'employees.user_id', 'users.user_id');
+
+        let userData = await select
+        .where('email', email.toLowerCase())
+        .limit(1)
+        .first();
+        
+        return userData
 }

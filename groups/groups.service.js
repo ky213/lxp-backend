@@ -10,12 +10,11 @@ module.exports = {
     update,
     getByName,
     deleteGroups,
-    getAllGroupsIds
+    getAllGroupsIds,
+    checkIfGroupExists
 };
 
 async function getAllGroupsIds(organizationId) {
-
-
     let model = knex.table('groups')
 
     const groups = await model.clone()
@@ -25,7 +24,6 @@ async function getAllGroupsIds(organizationId) {
             'groups.group_id as groupId',
             'groups.name',
         ]);
-
 
     return groups;
 }
@@ -185,3 +183,14 @@ async function deleteGroups(groups, user)
         throw new Error(JSON.stringify(errorObj));
     }
 }
+
+async function checkIfGroupExists(groupId, employeeId) {
+    let model = knex("groups_employee")
+      .where('groups_employee.employee_id', employeeId)
+      .andWhere('groups_employee.group_id', groupId);
+
+    let x = await model.count().first();
+
+    if (x.count == 0) return true;
+    else return false;
+  }

@@ -64,7 +64,9 @@ async function getAll(user, pageId, recordsPerPage, filter) {
             'organization_settings.server_id as ServerId',
             'organization_settings.password as Password',
             'organization_settings.subject as Subject',
-            'organization_settings.body as Body'
+            'organization_settings.body as Body',
+            'organization_settings.update_subject as UpdateSubject',
+            'organization_settings.update_body as UpdateBody'
         ]);
        
     //console.log("Got organizations:", organizations)
@@ -85,6 +87,8 @@ async function getOrganizationSettingsByOrgId(id) {
         'organization_settings.subject as Subject',
         'organization_settings.body as Body',
         'organization_settings.assetsDomain as assetsDomain',
+        'organization_settings.update_subject as UpdateSubject',
+        'organization_settings.update_body as UpdateBody'
     ])
         .from('organization_settings');
 
@@ -97,7 +101,6 @@ async function getOrganizationSettingsByOrgId(id) {
 }
 
 async function getById(id, user) {
-    console.log('get by id');
     let select =  knex.select([
         'organizations.organization_id as organizationId', 
         'organizations.name', 
@@ -120,7 +123,9 @@ async function getById(id, user) {
         'organization_settings.server_id as ServerId',
         'organization_settings.password as Password',
         'organization_settings.subject as Subject',
-        'organization_settings.body as Body'
+        'organization_settings.body as Body',
+        'organization_settings.update_subject as UpdateSubject',
+        'organization_settings.update_body as UpdateBody'
     ])
     .from('organizations')
     .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
@@ -263,7 +268,9 @@ async function update(organization, user)
                     server_id : organization.ServerId,
                     password : organization.Password,
                     subject : organization.Subject,
-                    body: organization.Body
+                    body: organization.Body,
+                    update_subject : organization.UpdateSubject,
+                    update_body : organization.UpdateBody
                 });}
         else if(organization.SettingsId == null && organization.ServerId) {
             await knex('organization_settings')
@@ -281,7 +288,9 @@ async function update(organization, user)
                 body: organization.Body,
                 created_at: knex.fn.now(),
                 created_by: user.sub,
-                modified_by: user.sub
+                modified_by: user.sub,
+                update_subject : organization.UpdateSubject,
+                update_body : organization.UpdateBody
             }).returning('settings_id');
         }
     })
@@ -310,7 +319,9 @@ async function getByName(name, user) {
         'organization_settings.server_id as ServerId',
         'organization_settings.password as Password',
         'organization_settings.subject as Subject',
-        'organization_settings.body as Body'
+        'organization_settings.body as Body',
+        'organization_settings.update_subject as UpdateSubject',
+        'organization_settings.update_body as UpdateBody'
     ])
     .from('organizations')
     .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id')
@@ -373,7 +384,9 @@ async function sendEmail( email, user )
         'organization_settings.server_id as ServerId',
         'organization_settings.password as Password',
         'organization_settings.subject as Subject',
-        'organization_settings.body as Body'
+        'organization_settings.body as Body',
+        'organization_settings.update_subject as UpdateSubject',
+        'organization_settings.update_body as UpdateBody'
     ])
     .from('organizations')
     .leftJoin('organization_settings', 'organization_settings.organization_id', 'organizations.organization_id');
@@ -402,7 +415,7 @@ async function sendEmail( email, user )
             'users.surname as UserLastName',
             'programs.subject as Subject',
             'programs.body as Body',
-        ]);
+        ]); 
     }
 
     let userEmail = email.UserEmail;     
@@ -419,21 +432,6 @@ async function sendEmail( email, user )
         if (email.isCertificate == 'TRUE')
         {
             emailBody = email.Body;
-            /*emailBody = '<p style="text-align: center;font-family:arial;font-size:14px;"><img class="wp-image-12 alignnone" src="https://mcqauthor.com/wp-content/uploads/2020/02/logo2_250-300x129.png" alt="" width="193" height="83" align="center" /> </p>' + 
-            '</br></br>' +
-            '<p style="text-align: center;font-family:arial;font-size:14px;">This certifies that </br>' +
-			'<strong>{UserName} {UserLastName}</strong> </br>' +
-            'has fulfilled Phase I of the Item Author Certification Program </p>' + 
-            '<p style="font-family:arial;font-size:14px;">A message will be sent to your e-mail within a week to access the Item Development System (IDS) for Phase II. After you receive the email from IDS, log in details are:' + 
-            '</br>Username: Email Address </br> Password: Abcd1234</p>' + 
-            '<p style="font-family:arial;font-size:9px;"><sup>*Note: Please change the password after the first login</sup></p>' + 
-            '<p style="font-family:arial;font-size:14px;"><strong>Phase II Details:</strong></p>' + 
-            '<p style="font-family:arial;font-size:14px;">You are requested to submit 5 MCQ’s based on what you have learned in Phase I. Items can be written in any field but must comply with SCFHS guidelines.' + 
-            '</br>After submission, items will be reviewed by the Editorial Team. The reviewed task will appear in your account in the tab “Reviewed Tasks” and you must review and accept to fulfill IAC Phase II.</p>' + 
-            '<p style="font-family:arial;font-size:14px;"><strong>Certification Criteria:</strong></p>' + 
-            '<p style="font-family:arial;font-size:14px;">*4-5 accepted items = Certified' + 
-            '</br>*2-5 rejected items = Review feedback and request a make-up task to redo and re-submit.</p>' + 
-            '<p style="font-family:arial;font-size:9px;"><sup>*For any inquiries, contact us: <a href=“mailto:IAC@scfhs.org”>IAC@scfhs.org</a></sup></p>'*/
             emailSubject = email.Subject;
             courseName = email.CourseName;                
         }
@@ -451,6 +449,11 @@ async function sendEmail( email, user )
             emailBody =  email.Body;
             emailSubject =  email.Subject;
         }          
+        else if (email.isUpdate == 'TRUE')
+        {
+            emailBody =  organization.UpdateBody;
+            emailSubject = organization.UpdateSubject;
+        }
 
         const replacements = { OrgName: organization.Name , UserName: userName, UserLastName: userLastName,
             UserLogin: userEmail, UserPass: email.UserPass , UserCourse : courseName};
@@ -494,10 +497,9 @@ async function sendEmail( email, user )
             const transporter = nodemailer.createTransport(transporterOption);
 
             if(body == null)
-                return;
-
+                return resolve(false);
             if(userEmail == null)
-                return;
+                return resolve(false);
 
             // Now when your send an email, it will show up in the MailDev interface
             const message = {
