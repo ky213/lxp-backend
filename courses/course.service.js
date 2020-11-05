@@ -223,7 +223,7 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
         })
         .catch(error => { 
             if (error && error.code == '23505')
-                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code should be unique' })) 
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code already taken, it should be unique' })) 
             else
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
@@ -249,7 +249,7 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
         })
         .catch(error => { 
             if (error && error.code == '23505')
-                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code should be unique' })) 
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code already taken, it should be unique' })) 
             else
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
