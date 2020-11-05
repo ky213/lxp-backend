@@ -14,12 +14,13 @@ module.exports = {
     update,
     addFile,
     deleteCourses,
-    getAllJoinedCourses,
     requestToJoinCourse,
     genetateCloudStorageUploadURL,
     sendEmailForCourse,
     getAllCoursesIds,
-    checkIfCourseExists
+    checkIfCourseExists,
+    getAllCourseUsers,
+    requestToUnJoinCourse
 };
 
 var Readable = require('stream').Readable;
@@ -219,7 +220,13 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
             starting_date: startingDate && moment(startingDate).format() || null,
             generated: knex.fn.now(),
             course_code:  courseCode
-        });
+        })
+        .catch(error => { 
+            if (error && error.code == '23505')
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code should be unique' })) 
+            else
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  '' })) 
+            });
 }
 
 async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo, courseCode) {
@@ -262,53 +269,6 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
           });
 }
 
-async function getAllJoinedCourses(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
-    if (!loggedInUser) {
-        return;
-    }
-
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
-
-    console.log('getAllJoinedCourses =>  ', selectedOrganizationId, loggedInUser, pageId, recordsPerPage);
-
-    let model = knex('courses')
-        .join('user_courses', 'user_courses.course_id', 'courses.course_id')
-        .join('programs', 'programs.program_id', 'courses.program_id')
-        .where('courses.organization_id', organizationId)
-        .andWhere('user_courses.user_id', loggedInUser.userId)
-        .andWhere('user_courses.is_able_to_join', true);
-
-    if (programId)
-        model.andWhere('courses.program_id', programId);
-
-    var totalNumberOfRecords = (await model.clone().count().first()).count;
-
-    let offset = (pageId - 1) * recordsPerPage;
-
-    var courses = await model.clone()
-        .orderBy('name', 'asc')
-        .offset(offset)
-        .limit(recordsPerPage)
-        .select([
-            'courses.course_id as courseId',
-            'courses.name',
-            'courses.description',
-            'courses.image',
-            'courses.starting_date as startingDate',
-            'courses.period_days as periodDays',
-            'courses.content_path as contentPath',
-            'user_courses.joining_date as JoiningDate',
-            'courses.course_code as courseCode',
-            'programs.program_id as programId',
-            'programs.name as programName',
-        ]);
-
-    return {
-        courses,
-        totalNumberOfRecords
-    }
-}
-
 async function requestToJoinCourse(loggedInUser, courseId) {
     if (!loggedInUser)
         return;
@@ -340,3 +300,77 @@ async function checkIfCourseExists(courseId, userId) {
     if (x.count == 0) return true;
     else return false;
   }
+
+  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize){
+    if (!loggedInUser)
+        return;
+
+    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let model = knex.table('user_courses')
+    .join('users', 'users.user_id', 'user_courses.user_id')
+    .where('user_courses.course_id', courseId)
+
+    var totalNumberOfRecords = (await model.clone().count().first()).count;
+
+    const allUsersForCourse = await model.clone()
+        .orderBy('users.name', 'asc')
+        .offset(offset)
+        .limit(pageSize)
+        .select([
+            'user_courses.course_id as courseId',
+            'user_courses.joining_date as joiningDate',
+            'user_courses.user_id as userId',
+            'users.email',
+            'users.name', 
+            'users.name as firstName',
+            'users.surname as lastName'
+        ])
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
+
+        let tempCourse = allUsersForCourse.map(async (user) => {
+            let notAttempted = await dashboardService.findProgressDistrubitionNotAttemptedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
+            let attempted = await dashboardService.findProgressDistrubitionAttemptedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
+            let completed = await dashboardService.findProgressDistrubitionCompletedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
+            
+            if(completed.nnumofCompleted > 0){
+                completed.users.map(async (u) => {
+                    if (u.userId == user.userId)
+                        user.status = 'Completed';
+                    }); }
+            if(attempted.numofAttempted > 0){
+                attempted.users.map(async (u) => {
+                if (u.userId == user.userId)
+                    user.status = 'In Progress';
+                }); }
+            if(notAttempted.numofNotAttempted > 0){
+                notAttempted.users.map(async (u) => {
+                if (u.userId == user.userId)
+                    user.status = 'Not Started';
+                }); }
+
+            return user;
+        });
+
+    let courseUsers = await Promise.all(tempCourse);          
+
+    return {
+        courseUsers,
+        totalNumberOfRecords
+    }
+        
+  }
+
+  async function requestToUnJoinCourse(loggedInUser, courseId, userIds) {
+    if (!loggedInUser)
+        return;
+
+    console.log(userIds);
+    await knex('user_courses')
+        .whereIn("user_id", userIds)
+        .andWhere("course_id", courseId)
+        .del()
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))}); 
+
+    return {isValid: true};
+}

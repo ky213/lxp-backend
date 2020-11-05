@@ -9,7 +9,7 @@ var AdmZip = require('adm-zip');
 var fs = require('fs');
 
 // routes
-router.get('/:id', authorize(), getById);
+//router.get('/:id', authorize(), getById);
 router.get('/', authorize(), getAll);
 router.get('/downloadFile/:id', authorize(), downloadFile);
 
@@ -17,23 +17,18 @@ router.delete('/deleteCourses', authorize(), deleteCourses);
 router.get('/getById', authorize(), getById);
 router.get('/getByUser', authorize(), getByUser);
 router.get('/getByUserAll', authorize(), getByUserAll);
-router.get('/getAllJoined', authorize(), getAllJoinedCourses);
+router.get('/allCourseUsers', authorize(), getAllCourseUsers);
 
 router.post('/', authorize(), create);
 router.put('/', authorize(), update);
 router.post('/uploadFile', authorize(), uploadFile);
 router.post('/joinCourse', authorize(), requestToJoinCourse);
+router.post('/unjoinCourse', authorize(), requestToUnJoinCourse);
 
 module.exports = router;
 
 async function getAll(req, res, next) {
     courseService.getAll(req.user, req.query.organizationId, req.query.programId, req.query.page, req.query.take, req.query.filter)
-        .then(data => res.json(data))
-        .catch(err => next(err));
-}
-
-function getAllJoinedCourses(req, res, next) {
-    courseService.getAllJoinedCourses(req.user, req.query.organizationId, req.query.programId, req.query.page, req.query.take, req.query.filter)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
@@ -70,6 +65,7 @@ async function create(req, res, next) {
             data.uploadUrl = cloudFileURL;
             res.json(data);
         })
+        .catch(err => next(err));
 }
 
 async function update(req, res) {
@@ -143,4 +139,16 @@ async function requestToJoinCourse(req, res, next) {
             res.json(data);
         })
         .catch(err => next(err));
+}
+
+async function getAllCourseUsers(req, res, next) {
+    courseService.getAllCourseUsers(req.user, req.query.organizationId, req.query.programId, req.query.courseId, req.query.offset, req.query.pageSize)
+    .then(data => res.json(data))
+    .catch(err => next(err));
+}
+
+async function requestToUnJoinCourse(req, res, next) {
+    courseService.requestToUnJoinCourse(req.user, req.query.courseId,  req.body)
+    .then(data => res.json(data))
+    .catch(err => next(err));
 }
