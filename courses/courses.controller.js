@@ -68,7 +68,7 @@ async function create(req, res, next) {
         .catch(err => next(err));
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
 
     let cloudFileURL = ""
     if (req.body.tincan) {
@@ -84,6 +84,7 @@ async function update(req, res) {
             };
             res.json(data);
         })
+        .catch(err => next(err));
 }
 
 async function downloadFile(req, res, next) {

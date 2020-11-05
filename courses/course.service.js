@@ -225,7 +225,7 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
             if (error && error.code == '23505')
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code should be unique' })) 
             else
-                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  '' })) 
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
 }
 
@@ -246,6 +246,12 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
             starting_date: startingDate && moment(new Date(startingDate)).format() || null,
             generated: knex.fn.now(),
             course_code: courseCode
+        })
+        .catch(error => { 
+            if (error && error.code == '23505')
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code should be unique' })) 
+            else
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
 }
 
