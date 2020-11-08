@@ -716,51 +716,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 continue
             }
 
-        }
-
-        if (user.courseNames && (user.courseNames.length > 0 && user.courseNames[0]) ) {
-
-            if (!courses || courses.length === 0) {
-                addError(user, "Courses '" + user.courseNames + "' are not valid");
-                continue;
-            }
-
-            let valid = true; //holds validation state for all groups
-
-            let validatedCourses = []
-            let invalidCoursesNames = []
-
-            await user.courseNames.forEach(courseName => {
-
-                let validatedCourse = {}
-
-                let validLocal = false //helper variable, holds validatoin status for single group
-
-                for (let course of courses) {
-                    if (course.name.trim() === courseName.trim()) {
-                        validatedCourse.courseId = course.courseId
-                        validatedCourse.name = course.name
-                        validLocal = true
-                        break
-                    }
-                }
-
-                validatedCourses.push(validatedCourse)
-                valid = validLocal && valid
-
-                if (!validLocal) {
-                    invalidCoursesNames.push(courseName)
-                }
-            })
-
-            usersData[i].joinedCourses = validatedCourses
-
-            if (!valid) {
-                addError(user, "Courses '" + invalidCoursesNames + "' are not valid");
-                continue
-            }
-
-        }
+        }       
 
         if (user.courseCodes && user.courseCodes.length > 1) {
 
@@ -781,7 +737,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 let validLocal = false //helper variable, holds validatoin status for single group
 
                 for (let course of courses) {
-                    if (course.courseCode.trim() === courseCode.trim()) {
+                    if ((course.courseCode && course.courseCode.trim()) === (courseCode && courseCode.trim())) {
                         validatedCourse.courseId = course.courseId;
                         validatedCourse.name = course.name;
                         validatedCourse.courseCode = course.courseCode;
