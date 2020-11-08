@@ -144,7 +144,7 @@ async function requestToJoinCourse(req, res, next) {
 
 async function getAllCourseUsers(req, res, next) {
     courseService.getAllCourseUsers(req.user, req.query.organizationId, req.query.programId, 
-        req.query.courseId, req.query.offset, req.query.pageSize, req.query.filter)
+        req.query.courseId, req.query.offset, req.query.pageSize, req.query.status)
     .then(data => res.json(data))
     .catch(err => next(err));
 }

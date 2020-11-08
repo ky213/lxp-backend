@@ -184,6 +184,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
         }) : [];
 
         let newCourses = await Promise.all(tempCourse); 
+        newCourses = _.compact(newCourses);
 
         let tempGroups = userData.groupIds ? userData.groupIds.map(async(group) => { 
             let groupExists = await groupsvc.checkIfGroupExists(group.groupId , user.employeeId);
@@ -193,6 +194,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
         }) : [] ;
 
         let newGroups = await Promise.all(tempGroups);
+        newGroups = _.compact(newGroups);
 
         let insertsGroups = [];
         if (newGroups && (newGroups.length > 0 && newGroups[0])) {            
@@ -230,7 +232,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
         } 
 
         let insertsCourses = [];
-        if (newCourses && (newCourses.length > 0 && newCourses[0])) {            
+        if (newCourses && (newCourses.length > 0 && newCourses[0])) {  
             newCourses.forEach( course => {
                     let insertUserCourse = {
                         user_id: user.userId,
@@ -257,11 +259,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
             if(insertsCourses && insertsCourses.length > 0){
                 Promise.all(insertsCourses)
                 .then(() => {
-                    console.log('user courses will be persisted with commit'); 
-                    newCourses.forEach(async(course) => { 
-                        var email = {isCourse: 'TRUES', CourseId: course.courseId, organizationId: organizationId, UserId: user.userId};
-                        await organizationService.sendEmail(email, loggedInUser);
-                    });                   
+                    console.log('user courses will be persisted with commit');                 
                 })
                 .catch(err => {
                     console.log('Rollback. Because:', err);
