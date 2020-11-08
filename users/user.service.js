@@ -114,7 +114,7 @@ async function authenticate({ email, password }) {
 }
 
 // user administration screens
-async function getAll(user, pageId, recordsPerPage, filterName, isLearner, includeInactive, organizationId, filterProgramId) {
+async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isLearner, includeInactive, organizationId, filterProgramId) {
     let offset = (pageId - 1) * recordsPerPage;
 
     organizationId = (user.role == Role.SuperAdmin && organizationId) ? organizationId : user.organization;
@@ -157,6 +157,14 @@ async function getAll(user, pageId, recordsPerPage, filterName, isLearner, inclu
             this.orWhereRaw(`lower(users.surname) || ' ' || lower(users.name) like ?`, [`%${filterName.toLowerCase().trim()}%`])
         });
     }    
+
+    if (filterEmail)
+    {        
+        filterEmail = filterEmail.toLowerCase();
+        model.andWhere(function() {
+            this.whereRaw(`lower(users.email) like ?`, [`%${filterEmail.toLowerCase().trim()}%`])
+        });
+    }     
 
     var totalNumberOfRecords = await model.clone().count();
 

@@ -176,21 +176,21 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
     async function UpdateLearnerAsync(t, userData) {
         const user = await userService.getByUserEmail(userData.email.toLowerCase());
 
-        let tempCourse = userData.joinedCourses.map(async (course) => { 
+        let tempCourse = userData.joinedCourses ? userData.joinedCourses.map(async (course) => { 
             let courseExists = await coursessvc.checkIfCourseExists(course.courseId , user.userId);
             if(courseExists){
                 return course;
             }
-        });
+        }) : [];
 
         let newCourses = await Promise.all(tempCourse); 
 
-        let tempGroups = userData.groupIds.map(async(group) => { 
+        let tempGroups = userData.groupIds ? userData.groupIds.map(async(group) => { 
             let groupExists = await groupsvc.checkIfGroupExists(group.groupId , user.employeeId);
             if(groupExists){
                 return group;
             }
-        });
+        }) : [] ;
 
         let newGroups = await Promise.all(tempGroups);
 
@@ -644,37 +644,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
-        if (!user.email) {
-            addError(user, "Email is empty");
-            continue;
-        }
-
-        if (emails.indexOf(user.email) >= 0) {
-            addError(user, "The same email already defined in the file");
-            continue;
-        }
-
-        if (!validator.validate(user.email)) {
-            addError(user, "The format of the email address isn't correct");
-            continue;
-        }
-
-        let userEmailDomain = user.email.substring(user.email.indexOf('@'));
-        if (domain && userEmailDomain.toLowerCase() !== domain.toLowerCase()) {
-            addError(user, "The domain of the email address isn't correct");
-            continue;
-        }
-
-        emails.push(user.email);
-
-        let emailExists = await checkIfEmailExists(user.email, user.userId);
-        if (emailExists) {
-            addError(user, "Email already exists");
-            continue;
-        }
-
         if (user.groupNames && (user.groupNames.length > 0 && user.groupNames[0] )) {
-
             if (!groups || groups.length === 0) {
                 addError(user, "Groups '" + user.groupNames + "' are not valid");
                 continue;
@@ -715,10 +685,9 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 addError(user, "Groups '" + invalidGroupsNames + "' are not valid");
                 continue
             }
-
         }       
 
-        if (user.courseCodes && user.courseCodes.length > 1) {
+        if (user.courseCodes && (user.courseCodes.length > 0 && user.courseCodes[0])) {
 
             if (!courses || courses.length === 0) {
                 addError(user, "Courses '" + user.courseCodes + "' are not valid");
@@ -760,8 +729,36 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
                 addError(user, "Courses '" + invalidCoursesCodes + "' are not valid");
                 continue
             }
-
         }
+
+        if (!user.email) {
+            addError(user, "Email is empty");
+            continue;
+        }
+
+        if (emails.indexOf(user.email) >= 0) {
+            addError(user, "The same email already defined in the file");
+            continue;
+        }
+
+        if (!validator.validate(user.email)) {
+            addError(user, "The format of the email address isn't correct");
+            continue;
+        }
+
+        let userEmailDomain = user.email.substring(user.email.indexOf('@'));
+        if (domain && userEmailDomain.toLowerCase() !== domain.toLowerCase()) {
+            addError(user, "The domain of the email address isn't correct");
+            continue;
+        }
+
+        emails.push(user.email);
+
+        let emailExists = await checkIfEmailExists(user.email, user.userId);
+        if (emailExists) {
+            addError(user, "Email already exists");
+            continue;
+        }       
 
         output.data.push({...user, status: "ok"});
     }

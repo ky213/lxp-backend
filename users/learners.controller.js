@@ -52,6 +52,7 @@ function getAll(req, res, next)
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
+    req.query.filterEmail,
     isLearner,
     true,
     req.query.filterOrganizationId,
