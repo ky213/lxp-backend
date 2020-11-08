@@ -20,7 +20,7 @@ module.exports = {
     getAllCoursesIds,
     checkIfCourseExists,
     getAllCourseUsers,
-    requestToUnJoinCourse
+    unJoinCourse
 };
 
 var Readable = require('stream').Readable;
@@ -307,7 +307,7 @@ async function checkIfCourseExists(courseId, userId) {
     else return false;
   }
 
-  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize){
+  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize, filter){
     if (!loggedInUser)
         return;
 
@@ -367,7 +367,7 @@ async function checkIfCourseExists(courseId, userId) {
         
   }
 
-  async function requestToUnJoinCourse(loggedInUser, courseId, userIds) {
+  async function unJoinCourse(loggedInUser, courseId, userIds) {
     if (!loggedInUser)
         return;
 

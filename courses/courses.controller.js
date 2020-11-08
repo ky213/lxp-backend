@@ -23,7 +23,7 @@ router.post('/', authorize(), create);
 router.put('/', authorize(), update);
 router.post('/uploadFile', authorize(), uploadFile);
 router.post('/joinCourse', authorize(), requestToJoinCourse);
-router.post('/unjoinCourse', authorize(), requestToUnJoinCourse);
+router.delete('/unjoinCourse', authorize(), unJoinCourse);
 
 module.exports = router;
 
@@ -143,13 +143,14 @@ async function requestToJoinCourse(req, res, next) {
 }
 
 async function getAllCourseUsers(req, res, next) {
-    courseService.getAllCourseUsers(req.user, req.query.organizationId, req.query.programId, req.query.courseId, req.query.offset, req.query.pageSize)
+    courseService.getAllCourseUsers(req.user, req.query.organizationId, req.query.programId, 
+        req.query.courseId, req.query.offset, req.query.pageSize, req.query.filter)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
 
-async function requestToUnJoinCourse(req, res, next) {
-    courseService.requestToUnJoinCourse(req.user, req.query.courseId,  req.body)
+async function unJoinCourse(req, res, next) {
+    courseService.unJoinCourse(req.user, req.query.courseId,  req.body)
     .then(data => res.json(data))
     .catch(err => next(err));
 }
