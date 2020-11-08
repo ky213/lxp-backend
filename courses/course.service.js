@@ -307,7 +307,7 @@ async function checkIfCourseExists(courseId, userId) {
     else return false;
   }
 
-  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize, filter){
+  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize, status){
     if (!loggedInUser)
         return;
 
@@ -359,6 +359,11 @@ async function checkIfCourseExists(courseId, userId) {
         });
 
     let courseUsers = await Promise.all(tempCourse);          
+
+    if(status)
+    {
+        courseUsers = courseUsers.filter(user => user.status == status).map(user => user);
+    }
 
     return {
         courseUsers,
