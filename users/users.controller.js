@@ -19,10 +19,12 @@ router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningM
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
 router.post("/authToken", authToken); // public route
+router.options("/authToken", authTokenOptions); // public route
 module.exports = router;
 
 function authenticate(req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  console.log(JSON.stringify(req.headers));
   userService
     .authenticate(req.body)
     .then(user => {
@@ -181,6 +183,7 @@ async function resetPassowrd(req, res, next) {
 
 function authToken(req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  console.log(JSON.stringify(req.headers));
   userService
     .authToken(req.query.token)
     .then(user => {
@@ -203,4 +206,10 @@ function authToken(req, res, next) {
     .catch(err => {
       next(err);
     })
+}
+
+
+function authTokenOptions(req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  res.json('');
 }
