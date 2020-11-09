@@ -1,4 +1,5 @@
 ﻿const express = require("express");
+var cors = require('cors')
 const router = express.Router();
 const userService = require("./user.service");
 const authorize = require("helpers/authorize");
@@ -10,7 +11,7 @@ var async = require('async');
 router.get("/getAllActive", authorize(), getAllActiveUsers);
 router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
 router.get("/getByUserId/:id", authorize(), getByUserId);
-router.post("/authenticate", authenticate); // public route
+router.post("/authenticate", cors() , authenticate); // public route
 router.put("/change-password", authorize(), changePassword);
 router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
 router.put("/updateProfileData", authorize(), updateProfileData);
@@ -18,7 +19,7 @@ router.delete("/deleteEmployees", authorize(), deleteEmployees);
 router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
-router.post("/authToken", authToken); // public route
+router.post("/authToken", cors() , authToken); // public route
 router.options("/authToken", authTokenOptions); // public route
 module.exports = router;
 
