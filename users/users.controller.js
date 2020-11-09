@@ -11,6 +11,7 @@ var async = require('async');
 router.get("/getAllActive", authorize(), getAllActiveUsers);
 router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
 router.get("/getByUserId/:id", authorize(), getByUserId);
+router.options("/authenticate", cors() ); // public route
 router.post("/authenticate", cors() , authenticate); // public route
 router.put("/change-password", authorize(), changePassword);
 router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
@@ -19,8 +20,8 @@ router.delete("/deleteEmployees", authorize(), deleteEmployees);
 router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
+router.options("/authToken", cors() ); // public route
 router.post("/authToken", cors() , authToken); // public route
-router.options("/authToken", authTokenOptions); // public route
 module.exports = router;
 
 function authenticate(req, res, next) {
@@ -209,11 +210,4 @@ function authToken(req, res, next) {
     .catch(err => {
       next(err);
     })
-}
-
-
-function authTokenOptions(req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.json('');
 }
