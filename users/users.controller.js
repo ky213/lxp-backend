@@ -22,6 +22,7 @@ router.post("/authToken", authToken); // public route
 module.exports = router;
 
 function authenticate(req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
   userService
     .authenticate(req.body)
     .then(user => {
@@ -179,6 +180,7 @@ async function resetPassowrd(req, res, next) {
 }
 
 function authToken(req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
   userService
     .authToken(req.query.token)
     .then(user => {
