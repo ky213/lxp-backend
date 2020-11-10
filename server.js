@@ -34,14 +34,9 @@ app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json({limit: '250mb'}));
 
-var corsOptions = {
-    origin: '*',
-    optionsSuccessStatus: 200, // For legacy browser support
-    methods: "POST"
-}
 
 app.use(cors());
-app.options('*', cors()) // include before other routes
+//app.options('*', cors()) // include before other routes
 //app.use(cors({origin: process.env.FRONTEND_URL || 'http://localhost:4101', credentials: true}));
 app.use('/api/static', express.static('upload'));
 // api routes

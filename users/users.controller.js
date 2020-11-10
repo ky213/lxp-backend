@@ -8,11 +8,17 @@ const Role = require("helpers/role");
 const crypto = require('crypto');
 var async = require('async');
 
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200, // For legacy browser support
+  methods: "POST"
+}
+
 router.get("/getAllActive", authorize(), getAllActiveUsers);
 router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
 router.get("/getByUserId/:id", authorize(), getByUserId);
 router.options("/authenticate", cors() ); // public route
-router.post("/authenticate", cors() , authenticate); // public route
+router.post("/authenticate", cors(corsOptions) , authenticate); // public route
 router.put("/change-password", authorize(), changePassword);
 router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
 router.put("/updateProfileData", authorize(), updateProfileData);
@@ -21,13 +27,13 @@ router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningM
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
 router.options("/authToken", cors() ); // public route
-router.post("/authToken", cors() , authToken); // public route
+router.post("/authToken", cors(corsOptions) , authToken); // public route
 module.exports = router;
 
 function authenticate(req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  console.log(JSON.stringify(req.headers));
+  //res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+  //res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  //console.log(JSON.stringify(req.headers));
   userService
     .authenticate(req.body)
     .then(user => {
