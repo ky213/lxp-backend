@@ -324,7 +324,9 @@ async function getByEmployeeId(user, employeeId, programId) {
         'courses.description as description',
         'courses.period_days as periodDays',
         'courses.starting_date as startingDate',
-        'courses.program_id as programId'
+        'courses.program_id as programId',
+        'courses.activity_number as courseActivityNumbers',
+        'user_courses.activity_numbers_completed as activityCompleted',
         ])
         .from('user_courses')
         .join('courses', 'user_courses.course_id', 'courses.course_id');
@@ -345,7 +347,10 @@ async function getByEmployeeId(user, employeeId, programId) {
             description : d.description,
             periodDays : d.periodDays,
             startingDate : d.startingDate,
-            programId : d.programId
+            programId : d.programId,
+            courseActivityNumbers : d.courseActivityNumbers,
+            learnerActivityNumbers : d.activityCompleted,
+            courseProgress : (d.courseActivityNumbers && d.activityCompleted ) ? d.activityCompleted / d.courseActivityNumbers : 0
         }));
     }
 

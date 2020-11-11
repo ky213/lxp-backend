@@ -11,7 +11,8 @@ module.exports = {
     getById,
     create,
     update,
-    getExperiences
+    getExperiences,
+    getExperiencesForUser
 };
 
 async function getAll(user, statementId, voidedStatementId, registration, agent, verbId, activityId, since, until, limit, ascending, experiences, page, take) {
@@ -136,8 +137,51 @@ async function getExperiences(user, programId) {
         model.whereRaw(`payload->'context'->>'registration' like ?`, [`${programId}|%`]);
     }
 
-
     return await knex.table('statements').select(knex.raw(`payload->'verb'->>'display' as experience`)).distinct();
+}
+
+async function getExperiencesForUser(registration, agent) {
+    console.log("getExperiencesForUser: ", registration, agent[0]);
+
+    let courseId = registration ? registration.substring(registration.indexOf('|') +1) : null;
+    let userEmail = agent && agent[0] ? agent[0].substring(agent[0].indexOf(':') + 1) : null;
+    const verbId = 'http://adlnet.gov/expapi/verbs/experienced';
+    let model = knex.table('statements');
+
+    if (registration) {
+        model.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}`]);
+    }
+
+    if (agent && agent.length > 0 ) {         
+        model.whereRaw(`payload->'actor'->>'mbox' = ?`,[`${[agent[0]]}`]);
+    }
+
+    model.whereRaw(`payload->'verb'->>'id' = ?`, [verbId]);
+    model.whereRaw(`payload->'object'->>'objectType' = ?`, ['Activity']);
+
+    const statements = await model.clone()          
+            .select(knex.raw(`payload->'object'->>'id' as  activity`)).distinct();
+    console.log('statements => ' , statements , courseId);
+
+    if (statements)
+    {
+        let user = await knex('users')
+        .where('users.email', userEmail.toLowerCase())
+        .select(['users.user_id as userId'])
+        .first();
+
+        await knex("user_courses")
+        .where('course_id', courseId)
+        .andWhere('user_id', user.userId )
+        .update({
+            activity_numbers_completed: statements.length 
+        })
+        .catch(error => { 
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+        });
+    }
+
+    return {isValid: true};    
 }
 
 async function getById(id, user) {

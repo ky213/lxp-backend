@@ -61,8 +61,16 @@ async function create(req, res, next) {
 
     courseService.create(req.user, req.body.selectedOrganization, req.body.programId,
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, contentPath, req.body.courseCode)
-        .then(data => {
-            data.uploadUrl = cloudFileURL;
+        .then(data => { 
+            if(data)
+                courseId = data[0];
+            data = {
+                uploadUrl: cloudFileURL
+            };
+            const timeoutObj = setTimeout(() => {
+                console.log('timeout beyond time', courseId);
+                courseService.getTinCanXMLFileFromCloudStorage(contentPath,  courseId);
+              }, 40000);
             res.json(data);
         })
         .catch(err => next(err));
@@ -80,8 +88,12 @@ async function update(req, res, next) {
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate, req.body.logo, req.body.courseCode)
         .then(data => {
             data = {
-                uploadUrl: cloudFileURL,
+                uploadUrl: cloudFileURL
             };
+            const timeoutObj = setTimeout(() => {
+                console.log('timeout beyond time',);
+                courseService.getTinCanXMLFileFromCloudStorage(req.body.contentPath,  req.body.courseId);
+              }, 30000);
             res.json(data);
         })
         .catch(err => next(err));

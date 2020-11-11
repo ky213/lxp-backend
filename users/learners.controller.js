@@ -80,6 +80,7 @@ function getAllLearners(loggedInUser, pageId, recordsPerPage, filterName, isLear
       pageId,
       recordsPerPage,
       filterName,
+      filterEmail,
       isLearner,
       includeInactive,
       filterOrganizationId,

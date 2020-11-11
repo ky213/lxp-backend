@@ -2,6 +2,7 @@ const config = require('config.json');
 const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const knex = require('../db'); 
+const statementService = require('../xapi/statement.service');
 
 module.exports = {
     getById,
@@ -31,7 +32,7 @@ async function getById(activityId, agent, stateId, registration) {
         .limit(1)
         .first();
 
-        return state.state;
+        return state ? state.state : state;
     }
     catch(error){
         console.log("Error during getting activities state:", error)
@@ -40,7 +41,7 @@ async function getById(activityId, agent, stateId, registration) {
 }
 
 async function create(state, activityId, agent, stateId, registration) {
-    console.log("Create activity state:", state)
+    console.log("Create activity state:", stateId  )
     return knex.transaction(async function(t) {
 
         await knex('activities_state')
@@ -52,7 +53,14 @@ async function create(state, activityId, agent, stateId, registration) {
             state: state,
             registration: registration
         });
-
+        
+        let agentObj = JSON.parse(agent);
+        let experiencesActivity = await statementService.getExperiencesForUser(registration,[agentObj.mbox]);
+        
+        if(experiencesActivity)
+        {
+            // insert records in DB 
+        }
     })
     .catch(err => {
         console.log('Create state error:', err);

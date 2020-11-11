@@ -3,6 +3,8 @@ const moment = require('moment');
 const Role = require('helpers/role');
 const fs = require('fs');
 const path = require('path');
+var xpath   = require('xpath');
+var dom     = require('xmldom').DOMParser;
 const {Storage} = require('@google-cloud/storage');
 const dashboardService = require('../dashboard/dashboard.service.js');
 const organizationService = require('../organizations/organization.service');
@@ -20,7 +22,8 @@ module.exports = {
     getAllCoursesIds,
     checkIfCourseExists,
     getAllCourseUsers,
-    unJoinCourse
+    unJoinCourse,
+    getTinCanXMLFileFromCloudStorage
 };
 
 var Readable = require('stream').Readable;
@@ -221,12 +224,13 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
             generated: knex.fn.now(),
             course_code:  courseCode
         })
+        .returning('course_id')
         .catch(error => { 
             if (error && error.code == '23505')
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code already taken, it should be unique' })) 
             else
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
-            });
+            });     
 }
 
 async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo, courseCode) {
@@ -315,7 +319,9 @@ async function checkIfCourseExists(courseId, userId) {
 
     let model = knex.table('user_courses')
     .join('users', 'users.user_id', 'user_courses.user_id')
+    .join('courses', 'courses.course_id', 'user_courses.course_id')
     .where('user_courses.course_id', courseId)
+    .andWhere('courses.organization_id', organizationId);
 
     var totalNumberOfRecords = (await model.clone().count().first()).count;
 
@@ -327,6 +333,8 @@ async function checkIfCourseExists(courseId, userId) {
             'user_courses.course_id as courseId',
             'user_courses.joining_date as joiningDate',
             'user_courses.user_id as userId',
+            'user_courses.activity_numbers_completed as activityCompleted',
+            'courses.activity_number as courseActivityNumbers',
             'users.email',
             'users.name', 
             'users.name as firstName',
@@ -334,26 +342,19 @@ async function checkIfCourseExists(courseId, userId) {
         ])
         .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
 
+        let courseActivity = 0;
+        if(allUsersForCourse && allUsersForCourse.length > 0)
+            courseActivity = allUsersForCourse[0].courseActivityNumbers;
+
         let tempCourse = allUsersForCourse.map(async (user) => {
-            let notAttempted = await dashboardService.findProgressDistrubitionNotAttemptedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
-            let attempted = await dashboardService.findProgressDistrubitionAttemptedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
-            let completed = await dashboardService.findProgressDistrubitionCompletedUserData(loggedInUser, organizationId, programId , user.courseId, offset, pageSize);
-            
-            if(completed.nnumofCompleted > 0){
-                completed.users.map(async (u) => {
-                    if (u.userId == user.userId)
-                        user.status = 'Completed';
-                    }); }
-            if(attempted.numofAttempted > 0){
-                attempted.users.map(async (u) => {
-                if (u.userId == user.userId)
-                    user.status = 'In Progress';
-                }); }
-            if(notAttempted.numofNotAttempted > 0){
-                notAttempted.users.map(async (u) => {
-                if (u.userId == user.userId)
+            let activiryNumber = user.activityCompleted;
+
+            if(activiryNumber == 0 ||  activiryNumber == null ||  activiryNumber == undefined)
                     user.status = 'Not Started';
-                }); }
+            else if(activiryNumber < courseActivity)
+                user.status = 'In Progress';
+            else if(activiryNumber >= courseActivity)
+                user.status = 'Completed';
 
             return user;
         });
@@ -382,6 +383,46 @@ async function checkIfCourseExists(courseId, userId) {
         .andWhere("course_id", courseId)
         .del()
         .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))}); 
+
+    return {isValid: true};
+}
+
+async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
+    var activityCount = 0;
+
+    console.log('contentPath => ' , contentPath);
+
+    const chunks = []
+    const fstream = cloudStorage
+            .bucket(bucket)
+            .file(contentPath + "tincan.xml")
+            .createReadStream()
+    for await (const chunk of fstream) {
+        chunks.push(chunk);
+    }
+
+    bin = Buffer.concat(chunks).toString('utf8')
+    var doc = new dom().parseFromString(bin);
+
+    var result = xpath.evaluate("//*//*[local-name()='activity']", doc, null, xpath.XPathResult.ANY_TYPE, null);
+    var node = result.iterateNext();
+
+    while (node) {
+            activityCount +=1;
+            node = result.iterateNext();
+    }
+
+    console.log(" activityCount => ", activityCount);
+
+    console.log('courseId => ' , courseId);
+    await knex("courses")
+        .where('course_id', courseId)
+        .update({
+            activity_number: activityCount
+        })
+        .catch(error => { 
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+        });
 
     return {isValid: true};
 }
