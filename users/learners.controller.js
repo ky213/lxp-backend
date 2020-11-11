@@ -26,6 +26,7 @@ function getAllActive(req, res, next) {
     req.query.pageId,
     req.query.recordsPerPage,
     req.query.filterName,
+    req.query.filterEmail,
     null,
     false,
     req.query.filterOrganizationId,
@@ -72,7 +73,7 @@ function getAll(req, res, next)
   .catch(error => console.log("Error getAll:", error));
 }
 
-function getAllLearners(loggedInUser, pageId, recordsPerPage, filterName, isLearner, includeInactive, filterOrganizationId, filterProgramId)
+function getAllLearners(loggedInUser, pageId, recordsPerPage, filterName,filterEmail, isLearner, includeInactive, filterOrganizationId, filterProgramId)
 {
   return userService
     .getAll(
