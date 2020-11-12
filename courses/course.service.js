@@ -334,6 +334,7 @@ async function checkIfCourseExists(courseId, userId) {
             'user_courses.joining_date as joiningDate',
             'user_courses.user_id as userId',
             'user_courses.activity_numbers_completed as activityCompleted',
+            'user_courses.is_completed as isCompleted',
             'courses.activity_number as courseActivityNumbers',
             'users.email',
             'users.name', 
@@ -351,11 +352,11 @@ async function checkIfCourseExists(courseId, userId) {
 
             if(activiryNumber == 0 ||  activiryNumber == null ||  activiryNumber == undefined)
                     user.status = 'Not Started';
+            else if(user.isCompleted == true)
+                user.status = 'Completed';
             else if(activiryNumber < courseActivity)
                 user.status = 'In Progress';
-            else if(activiryNumber >= courseActivity)
-                user.status = 'Completed';
-
+                
             return user;
         });
 
@@ -398,6 +399,7 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
             .file(contentPath + "tincan.xml")
             .createReadStream()
     for await (const chunk of fstream) {
+        
         chunks.push(chunk);
     }
 
@@ -408,8 +410,8 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
     var node = result.iterateNext();
 
     while (node) {
-            activityCount +=1;
-            node = result.iterateNext();
+        activityCount +=1;
+        node = result.iterateNext();
     }
 
     console.log(" activityCount => ", activityCount);

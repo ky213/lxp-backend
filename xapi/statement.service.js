@@ -141,13 +141,15 @@ async function getExperiences(user, programId) {
 }
 
 async function getExperiencesForUser(registration, agent) {
-    console.log("getExperiencesForUser: ", registration, agent[0]);
 
     let courseId = registration ? registration.substring(registration.indexOf('|') +1) : null;
     let userEmail = agent && agent[0] ? agent[0].substring(agent[0].indexOf(':') + 1) : null;
-    const verbId = 'http://adlnet.gov/expapi/verbs/experienced';
-    let model = knex.table('statements');
 
+    const completedId = 'http://adlnet.gov/expapi/verbs/completed' ;
+    const passedId = 'http://adlnet.gov/expapi/verbs/passed';
+    let generateIds = `'${passedId}','${completedId}'`; 
+
+    let model = knex.table('statements');
     if (registration) {
         model.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}`]);
     }
@@ -156,29 +158,59 @@ async function getExperiencesForUser(registration, agent) {
         model.whereRaw(`payload->'actor'->>'mbox' = ?`,[`${[agent[0]]}`]);
     }
 
-    model.whereRaw(`payload->'verb'->>'id' = ?`, [verbId]);
+    model.whereRaw(`payload->'verb'->>'id' IN (${generateIds})`);
     model.whereRaw(`payload->'object'->>'objectType' = ?`, ['Activity']);
 
     const statements = await model.clone()          
             .select(knex.raw(`payload->'object'->>'id' as  activity`)).distinct();
-    console.log('statements => ' , statements , courseId);
-
-    if (statements)
-    {
-        let user = await knex('users')
+    
+    let user = await knex('users')
         .where('users.email', userEmail.toLowerCase())
         .select(['users.user_id as userId'])
         .first();
 
+    if (statements && statements.length > 0)
+    {
         await knex("user_courses")
         .where('course_id', courseId)
-        .andWhere('user_id', user.userId )
+        .andWhere('user_id', user.userId)
         .update({
-            activity_numbers_completed: statements.length 
+            is_completed: true
         })
         .catch(error => { 
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
+    }
+    else
+    {
+        let expModel = knex.table('statements');
+
+        if (registration) {
+            expModel.whereRaw(`payload->'context'->>'registration' like ?`, [`${registration}`]);
+        }
+
+        if (agent && agent.length > 0 ) {         
+            expModel.whereRaw(`payload->'actor'->>'mbox' = ?`,[`${[agent[0]]}`]);
+        }
+
+        const verbId = 'http://adlnet.gov/expapi/verbs/experienced';
+        expModel.whereRaw(`payload->'verb'->>'id' = ? `, [verbId]);
+        expModel.whereRaw(`payload->'object'->>'objectType' = ?`, ['Activity']);
+
+        const expStatements = await expModel.clone()          
+            .select(knex.raw(`payload->'object'->>'id' as  activity`)).distinct();
+
+        if(expStatements){    
+            await knex("user_courses")
+            .where('course_id', courseId)
+            .andWhere('user_id', user.userId )
+            .update({
+                activity_numbers_completed: expStatements.length 
+            })
+            .catch(error => { 
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+            });
+        }        
     }
 
     return {isValid: true};    

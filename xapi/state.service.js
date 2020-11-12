@@ -55,12 +55,8 @@ async function create(state, activityId, agent, stateId, registration) {
         });
         
         let agentObj = JSON.parse(agent);
-        let experiencesActivity = await statementService.getExperiencesForUser(registration,[agentObj.mbox]);
+        await statementService.getExperiencesForUser(registration,[agentObj.mbox]);
         
-        if(experiencesActivity)
-        {
-            // insert records in DB 
-        }
     })
     .catch(err => {
         console.log('Create state error:', err);
