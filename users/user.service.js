@@ -327,6 +327,7 @@ async function getByEmployeeId(user, employeeId, programId) {
         'courses.program_id as programId',
         'courses.activity_number as courseActivityNumbers',
         'user_courses.activity_numbers_completed as activityCompleted',
+        'user_courses.is_completed as isCompleted'
         ])
         .from('user_courses')
         .join('courses', 'user_courses.course_id', 'courses.course_id');
@@ -350,6 +351,7 @@ async function getByEmployeeId(user, employeeId, programId) {
             programId : d.programId,
             courseActivityNumbers : d.courseActivityNumbers,
             learnerActivityNumbers : d.activityCompleted,
+            isCompleted : d.isCompleted,
             courseProgress : (d.courseActivityNumbers && d.activityCompleted ) ? d.activityCompleted / d.courseActivityNumbers : 0
         }));
     }
