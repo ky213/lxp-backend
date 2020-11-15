@@ -162,8 +162,8 @@ async function getExperiencesForUser(registration, agent) {
     model.whereRaw(`payload->'object'->>'objectType' = ?`, ['Activity']);
 
     const statements = await model.clone()          
-            .select(knex.raw(`payload->'object'->>'id' as  activity`)).distinct();
-    
+            .select(knex.raw(`payload->'object'->>'id' as  activity, payload->'verb'->>'display' as experienced`)).distinct();
+
     let user = await knex('users')
         .where('users.email', userEmail.toLowerCase())
         .select(['users.user_id as userId'])
@@ -264,6 +264,14 @@ async function sendCertificateEmail(registration,actorEmail) {
 
     user.organization = program.organizationId;
 
+    await knex("user_courses")
+    .where('course_id', courseId)
+    .andWhere('user_id', user.userId)
+    .update({ is_completed: true })
+    .catch(error => { 
+        throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+    });
+
     if(program.body)
     {
         var email = {  UserName: user.UserName , CourseName : course.Name ,  organizationId: program.organizationId , UserId : user.userId ,
@@ -276,7 +284,6 @@ async function create(statement, statementId) {
 
     if(statement.verb.id == 'http://adlnet.gov/expapi/verbs/completed' || 
     statement.verb.id == 'http://adlnet.gov/expapi/verbs/passed'){    
-        console.log('statement.verb.id ', statement.verb.id);
         await sendCertificateEmail(statement.context.registration ,statement.actor.mbox);
     }
     
