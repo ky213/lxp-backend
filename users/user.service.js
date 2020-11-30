@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const bcrypt = require('bcrypt');
 const knex = require('../db'); 
+const htmlPdf  = require('html-pdf');
 const { listenerCount } = require('nodemailer/lib/mailer');
 const organizationService = require('../organizations/organization.service');
 
@@ -22,7 +23,8 @@ module.exports = {
     resetPassword,
     findResetPasswordToken,
     authToken,
-    getByUserEmail
+    getByUserEmail,
+    downloadCertificateAsPDF
 };
 
 async function authenticate({ email, password }) {
@@ -846,4 +848,55 @@ async function getByUserEmail(email) {
         .first();
         
         return userData
+}
+
+
+async function downloadCertificateAsPDF(organizationId,  userId) {
+
+    let userCourseData  = knex.select(['courses.course_id as courseId',
+        'courses.name as courseName',
+        'courses.program_id as programId',
+        'user_courses.is_completed as isCompleted',
+        'users.email as userEmail',
+        'users.name as userName',
+        'users.surname as userLastName'
+        ])
+        .from('user_courses')
+        .join('users', 'users.user_id', 'user_courses.user_id')
+        .join('courses', 'user_courses.course_id', 'courses.course_id');
+
+    let courses = await userCourseData
+    .where('user_courses.user_id', userId)
+    .andWhere('courses.organization_id', organizationId);
+
+    let tempCourses = courses.filter(c => c.isCompleted == true).map(async (course) => {
+            console.log(' isCompleted => ' , course);
+
+            let select =  knex.select([
+                'organizations.name as Name', 
+                'programs.certifcate_subject as Subject',
+                'programs.certifcate_body as Body'
+            ])
+            .from('organizations')
+            .leftJoin('programs', 'programs.organization_id', 'organizations.organization_id');
+            
+            let organization = await select
+            .where('organizations.organization_id', organizationId)
+            .andWhere('programs.program_id', course.programId)
+            .limit(1)
+            .first();
+            
+            const replacements = { OrgName: organization.Name , UserName: course.userName, UserLastName: course.userLastName,
+                UserLogin: course.userEmail, UserCourse : course.courseName};
+            
+            let body = organization.Body ? organization.Body.replace(/{\w+}/g, placeholder =>
+                replacements[placeholder.substring(1, placeholder.length - 1)] || placeholder, ) : null;
+
+            course.htmlBody = body;
+            return course;    
+    });
+
+    let coursesData = await Promise.all(tempCourses);
+
+    return coursesData;
 }

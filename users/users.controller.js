@@ -28,6 +28,8 @@ router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
 router.options("/authToken", cors() ); // public route
 router.post("/authToken", cors(corsOptions) , authToken); // public route
+router.get('/:id/downloadPDF/:userId', authorize(), downloadCertificateAsPDF);
+
 module.exports = router;
 
 function authenticate(req, res, next) {
@@ -216,4 +218,10 @@ function authToken(req, res, next) {
     .catch(err => {
       next(err);
     })
+}
+
+async function downloadCertificateAsPDF(req, res, next) {
+   userService.downloadCertificateAsPDF(req.params.id, req.params.userId)
+  .then(data => res.send(data))
+  .catch(err => next(err));
 }
