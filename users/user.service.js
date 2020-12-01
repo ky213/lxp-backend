@@ -851,7 +851,7 @@ async function getByUserEmail(email) {
 }
 
 
-async function downloadCertificateAsPDF(organizationId,  userId) {
+async function downloadCertificateAsPDF(organizationId,  userId , courseId) {
 
     let userCourseData  = knex.select(['courses.course_id as courseId',
         'courses.name as courseName',
@@ -867,7 +867,8 @@ async function downloadCertificateAsPDF(organizationId,  userId) {
 
     let courses = await userCourseData
     .where('user_courses.user_id', userId)
-    .andWhere('courses.organization_id', organizationId);
+    .andWhere('courses.organization_id', organizationId)
+    .andWhere('user_courses.course_id', courseId);
 
     let tempCourses = courses.filter(c => c.isCompleted == true).map(async (course) => {
             console.log(' isCompleted => ' , course);
@@ -898,5 +899,5 @@ async function downloadCertificateAsPDF(organizationId,  userId) {
 
     let coursesData = await Promise.all(tempCourses);
 
-    return coursesData;
+    return coursesData && coursesData.length > 0 ? coursesData[0] : coursesData;
 }
