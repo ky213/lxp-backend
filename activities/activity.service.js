@@ -293,6 +293,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.status',
         'activities.assigned_by as assignedBy',
         'activities.exp_level_id as level',
+        'activities_repetitions.rrule',
         'users.name as assignedByFirstName',
         'users.surname as assignedByLastName'
     ])
@@ -544,6 +545,7 @@ async function create(activity, user) {
                 priority: activity.priority,
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
+                repeat: activity.repeat,
                 description: activity.description,
                 assigned_by: user.employeeId || user.sub,
                 status: activity.activityTypeId == 11 ? 1 : status,
@@ -702,6 +704,7 @@ async function update(activity, user) {
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
                 description: activity.description,
+                repeat: activity.repeat,
                 status: activity.activityTypeId == 11 ? 1 : status,
                 modified_by: user.employeeId || user.sub,
                 modified_at: knex.fn.now()
@@ -1019,6 +1022,8 @@ async function getLogActivityById(activityId, user) {
                 "log_activities_links.url",
                 "log_activities_links.log_activity_link_id as logActivityLinkId"
             ]);
+        
+            activityDetails.replies = await getLogActivityReplies(activityId, user);
     }
     
     return activityDetails;
@@ -1279,8 +1284,8 @@ async function addActivityFile(loggedInUser, data) {
         'log_activity_replies.modified_at as modifiedAt'          
     ])
     .from('log_activity_replies')
-    .join('employees', 'employees.employee_id', 'log_activity_replies.employee_id')
-    .join('users', 'users.user_id', 'employees.user_id')
+    .leftJoin('employees', 'employees.employee_id', 'log_activity_replies.employee_id')
+    .leftJoin('users', 'users.user_id', 'employees.user_id')
     .where('log_activity_replies.activity_id', activityId)
     .where('log_activity_replies.active', true);
     
