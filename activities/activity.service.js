@@ -107,52 +107,31 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
 
     repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
-    //console.log("Get repeating activities query: ", repeatingActivitiesModel.toSQL().toNative())
     const repeatingActivities = await repeatingActivitiesModel;
     console.log("Repeating act:", repeatingActivities)
-    //const parsed = rrulestr(repeatingActivities.map(r => r.rrule).join('\n'));
 
     let generatedActivities = [];
     
     for(let i = 0; i < repeatingActivities.length; i++) {
         const ra = repeatingActivities[i];
         if(ra) {
-            const dtStart = moment(from, 'DDMMYYYY').startOf('day').utc().format("YYYYMMDDTHHmmss")
 
-            const parsed = rrulestr("DTSTART:"+ dtStart +"\n" + ra.rrule);
-            //console.log("Parsed rules:", parsed, moment(from, 'DDMMYYYY').startOf('day').utc().toDate(),moment(to, 'DDMMYYYY').utc().endOf('day').toDate(), parsed.all(), parsed.between(moment(from, 'DDMMYYYY').startOf('day').utc().toDate(), moment(to, 'DDMMYYYY').utc().endOf('day').toDate()))
-            //const parsedDates = parsed.between(moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate());
+            const dtStart = moment(from, 'DDMMYYYY').startOf('day').utc().format("YYYYMMDDTHHmmss");
+            const parsed = rrulestr("DTSTART:"+ dtStart  +"\n" + ra.rrule);
+
             const parsedDates = parsed.between(moment(from, 'DDMMYYYY').startOf('day').utc().toDate(), moment(to, 'DDMMYYYY').utc().endOf('day').toDate());
-            //console.log("Parsed dates:", parsedDates)
 
             for(let j = 0; j < parsedDates.length; j++) {
                 const date = parsedDates[j];
-                //console.log("Got parsed date:", date)
+                console.log("Got parsed date:", date)
 
                 const start = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.start).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
                 const end = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.end).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
 
                 const act = {...ra, start, end};
 
-                //const existing = getExistingActivities(act, user);
-                //const status = calculateStatus(act, existing, user);
-                //console.log("got calculated status:", act)
                 generatedActivities.push(act);
             }
-            //console.log("Parsed dates:", parsedDates)
-            /*
-            parsedDates.map(date => {
-                //console.log("Generate activity for date:", date)
-                const start = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.start).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
-                const end = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.end).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
-
-                const act = {...ra, start, end};
-
-                //const existing = getExistingActivities(act, user);
-                //const status = calculateStatus(act, existing, user);
-                //console.log("got calculated status:", act, existing, status)
-                generatedActivities.push({...ra, start, end, status});
-            })*/
         }
     }
 
@@ -454,7 +433,7 @@ async function calculateStatus(activity, existingActivities, user) {
 
 async function checkConflicts(activity, user) {
     console.log("Activity conflict start/end", activity )
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
+    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     let existingActivities = [];
