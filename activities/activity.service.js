@@ -5,6 +5,7 @@ const converter = require("helpers/converter");
 const Role = require('helpers/role');
 const notificationService = require('../notifications/notification.service');
 const programService = require('../programs/program.service');
+const courseService = require('../courses/course.service');
 const userService = require('../users/user.service');
 const { RRule, RRuleSet, rrulestr } = require('rrule');
 
@@ -62,6 +63,10 @@ async function getActivityTypes(user, selectedOrganizationId) {
 
 
 async function getRepeatingActivities(user, programIds, from, to, selectedOrganizationId) {
+
+    const userCourses = await courseService.getAllUserCourses(user,selectedOrganizationId);
+    const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
+
     let repeatingActivitiesModel = knex.select([
         'activities_repetitions.activity_id as activityId',
         'activities.program_id as programId', 
@@ -102,13 +107,15 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
                 })                
                 .orWhere('activities.exp_level_id', user.experienceLevelId || null) 
+                .orWhereIn('activities.activity_id', function() {
+                    this.select('activity_id').from('activity_courses').whereIn('activity_courses.course_id', courseIds );
+                }) 
         });
     }
 
     repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
     const repeatingActivities = await repeatingActivitiesModel;
-    console.log("Repeating act:", repeatingActivities)
 
     let generatedActivities = [];
     
@@ -143,11 +150,14 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
 
 
 async function getAll(user, from, to, selectedOrganizationId) {
-    //console.log("Entered get activities:", user, programId, from, to)
 
     const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
-    console.log("Entered get activities:", userPrograms, programIds)
+
+    const userCourses = await courseService.getAllUserCourses(user,selectedOrganizationId);
+    const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
+
+    console.log("Entered get activities:", userPrograms, programIds , user , userCourses , courseIds)
 
     let model = knex.select([
         'activities.activity_id as activityId', 
@@ -177,7 +187,8 @@ async function getAll(user, from, to, selectedOrganizationId) {
         .andWhere(function() {
             this.whereIn('activities.program_id', programIds)
                 .orWhereNull('activities.program_id')
-        }).andWhere(function() {
+        })
+        .andWhere(function() {
             this.where('assigned_by', user.employeeId)
                 .orWhereIn('activities.activity_id', function() {
                     this.select('activity_id').from('activity_participants').where('employee_id', user.employeeId);
@@ -190,7 +201,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
                 })
                 .orWhereIn('activities.activity_id', function() {
                     this.select('activity_id').from('activity_levels').where('exp_level_id', user.experienceLevelId);
-                })
+                })     
+                .orWhereIn('activities.activity_id', function() {
+                    this.select('activity_id').from('activity_courses').whereIn('activity_courses.course_id', courseIds );
+                })           
         });
     }
 
@@ -252,8 +266,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
 
     console.log("Got repeating activities:", repeatingActivities)
 
-    //console.log("Get all activities query: ", knex.unionAll(model, true).unionAll(logModel, true).toSQL().toNative())
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
+
+    console.log(" activities:", activities)
+
     return activities.concat(repeatingActivities);
 }
 

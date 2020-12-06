@@ -23,7 +23,8 @@ module.exports = {
     checkIfCourseExists,
     getAllCourseUsers,
     unJoinCourse,
-    getTinCanXMLFileFromCloudStorage
+    getTinCanXMLFileFromCloudStorage,
+    getAllUserCourses
 };
 
 var Readable = require('stream').Readable;
@@ -428,3 +429,24 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
 
     return {isValid: true};
 }
+
+async function getAllUserCourses(loggedInUser, selectedOrganizationId ){
+    if (!loggedInUser)
+        return;
+
+    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let model = knex.table('user_courses')
+    .join('users', 'users.user_id', 'user_courses.user_id')
+    .join('courses', 'courses.course_id', 'user_courses.course_id')
+    .where('user_courses.user_id', loggedInUser.userId)
+    .andWhere('courses.organization_id', organizationId);
+
+    const courseUsers = await model.clone()
+        .select([
+            'user_courses.course_id as courseId'
+        ])
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
+
+    return courseUsers;    
+  }

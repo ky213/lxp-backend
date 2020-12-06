@@ -117,11 +117,10 @@ async function authenticate({ email, password }) {
 
 // user administration screens
 async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isLearner, includeInactive, organizationId, filterProgramId) {
-    let offset = (pageId - 1) * recordsPerPage;
+
+    let offset = ((pageId || 1) - 1) * recordsPerPage;
 
     organizationId = (user.role == Role.SuperAdmin && organizationId) ? organizationId : user.organization;
-
-    console.log('getAll', user, organizationId);
 
     var model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
