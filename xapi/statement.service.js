@@ -78,15 +78,13 @@ async function getAll(user, statementId, voidedStatementId, registration, agent,
 
     if(since) {
         var strToDate = new Date(since);
-        since = moment(strToDate).format("YYYY-MM-DD");
-        console.log(since);
+        since = moment(strToDate).add(1, 'day').format("YYYY-MM-DD");
         model.whereRaw(`payload->>'timestamp' >= ?`, [`${since}`]);
     }
 
     if(until) {
         var strToDate = new Date(until);
-        until = moment(strToDate).format("YYYY-MM-DD");
-        console.log(until);
+        until = moment(strToDate).add(1, 'day').format("YYYY-MM-DD");
         model.whereRaw(`payload->>'timestamp' <= ?`, [`${until}`]);
     }
 
