@@ -39,6 +39,7 @@ module.exports = {
     updateLogActivityReply,
     deleteLogActivityReply,
     getLogActivityReplies,
+    evaluate
 };
 
 
@@ -62,10 +63,7 @@ async function getActivityTypes(user, selectedOrganizationId) {
 
 
 
-async function getRepeatingActivities(user, programIds, from, to, selectedOrganizationId) {
-
-    const userCourses = await courseService.getAllUserCourses(user,selectedOrganizationId);
-    const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
+async function getRepeatingActivities(user, programIds, courseIds, from, to, selectedOrganizationId) {
 
     let repeatingActivitiesModel = knex.select([
         'activities_repetitions.activity_id as activityId',
@@ -106,9 +104,8 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
                 })                
-                .orWhere('activities.exp_level_id', user.experienceLevelId || null) 
                 .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_courses').whereIn('activity_courses.course_id', courseIds );
+                    this.select('activity_id').from('activity_courses').whereIn('course_id', courseIds );
                 }) 
         });
     }
@@ -142,7 +139,6 @@ async function getRepeatingActivities(user, programIds, from, to, selectedOrgani
         }
     }
 
-
     console.log("Generated repeating activities:", generatedActivities)
     
     return generatedActivities;
@@ -157,7 +153,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     const userCourses = await courseService.getAllUserCourses(user,selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
-    console.log("Entered get activities:", userPrograms, programIds , user , userCourses , courseIds)
+    console.log("Entered get activities:",  programIds  , courseIds)
 
     let model = knex.select([
         'activities.activity_id as activityId', 
@@ -173,6 +169,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
         'activities.assigned_by as assignedBy',
+        'activities.total_points as totalPoints',
         knex.raw('? as source', ['assigned']),
         knex.raw('NULL as rrule'),
     ])
@@ -198,13 +195,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
                 })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
-                })
+                }) 
                 .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_levels').where('exp_level_id', user.experienceLevelId);
-                })     
-                .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_courses').whereIn('activity_courses.course_id', courseIds );
-                })           
+                    this.select('activity_id').from('activity_courses').whereIn('course_id', courseIds );
+                })                                                          
         });
     }
 
@@ -250,10 +244,9 @@ async function getAll(user, from, to, selectedOrganizationId) {
                 })
         });
     }
-
    
-
     model.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+
     logModel.whereIn('log_activities.program_id', function() {
         this.select('program_id').from('programs').where('organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
     });
@@ -261,10 +254,8 @@ async function getAll(user, from, to, selectedOrganizationId) {
 
     let repeatingActivities = [];
     if(from && to) {
-        repeatingActivities = await getRepeatingActivities(user, programIds, from, to, selectedOrganizationId);
+        repeatingActivities = await getRepeatingActivities(user, programIds, courseIds, from, to, selectedOrganizationId);
     }
-
-    console.log("Got repeating activities:", repeatingActivities)
 
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
 
@@ -288,6 +279,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.status',
         'activities.assigned_by as assignedBy',
         'activities.exp_level_id as level',
+        'activities.total_points as totalPoints',
         'activities_repetitions.rrule',
         'users.name as assignedByFirstName',
         'users.surname as assignedByLastName'
@@ -388,6 +380,9 @@ async function getExistingActivities(activity, user) {
     const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
+    const userCourses = await courseService.getAllUserCourses(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
+    const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
+
     let existingActivitiesModel =  knex.select([
         'activities.activity_id as activityId', 
         'activities.program_id as programId', 
@@ -395,6 +390,7 @@ async function getExistingActivities(activity, user) {
         'activities.start',             
         'activities.end', 
         'activities.priority',
+        'activities.total_points as totalPoints',
         'activities.assigned_by as assignedBy'
     ])
     .from('activities')
@@ -425,7 +421,7 @@ async function getExistingActivities(activity, user) {
 
     let repeatingActivities = [];
     try {
-        repeatingActivities = await getRepeatingActivities(user, programIds, 
+        repeatingActivities = await getRepeatingActivities(user, programIds, courseIds,
             moment(activity.start).format('DDMMYYYY'), moment(activity.end).format('DDMMYYYY'), activity.organizationId);
     }
     catch(exc) {
@@ -545,6 +541,7 @@ async function create(activity, user) {
                 assigned_by: user.employeeId || user.sub,
                 status: activity.activityTypeId == 11 ? 1 : status,
                 repeat: activity.repeat || false,
+                total_points: activity.totalPoints,
                 organization_id: activity.organizationId || user.organization,
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub
@@ -700,6 +697,7 @@ async function update(activity, user) {
                 location: activity.location,
                 description: activity.description,
                 repeat: activity.repeat,
+                total_points: activity.totalPoints,
                 status: activity.activityTypeId == 11 ? 1 : status,
                 modified_by: user.employeeId || user.sub,
                 modified_at: knex.fn.now()
@@ -1045,11 +1043,14 @@ async function getReplies(activityId, user) {
         'employees.profile_photo as profilePhoto',  
         'employees.employee_id as employeeId',
         'activity_replies.text',
-        'activity_replies.modified_at as modifiedAt'          
+        'activity_replies.modified_at as modifiedAt'  ,
+        'activity_points.points as activityPoints'  ,    
+        'activity_points.starting_date as startingDate'     
     ])
     .from('activity_replies')
     .join('employees', 'employees.employee_id', 'activity_replies.employee_id')
     .join('users', 'users.user_id', 'employees.user_id')
+    .leftJoin('activity_points', 'activity_points.activity_reply_id', 'activity_replies.activity_reply_id')
     .where('activity_replies.activity_id', activityId)
     .where('activity_replies.active', true);
     
@@ -1076,7 +1077,9 @@ async function getReplies(activityId, user) {
                 avatar: converter.ConvertImageBufferToBase64(r.profilePhoto),
                 learner: `${r.firstName} ${r.lastName}`,
                 text: r.text,
-                modifiedAt: r.modifiedAt
+                modifiedAt: r.modifiedAt,
+                activityPoints : r.activityPoints,
+                startingDate: r.startingDate
             }
         });
     }
@@ -1381,5 +1384,40 @@ async function deleteLogActivityReply(replyId, user) {
 
 }
 
+async function evaluate(activityReply , user) {
+    console.log('activityReply => ' , activityReply)
+    return knex.transaction(async function(t) {
 
+        const activityReplyIds = activityReply.filter(p => p.points).map(p => {
+            return  p.activityReplyId
+        });
+console.log('activityReplyIds => ' , activityReplyIds)
+        const insertActivityReplyPoints = activityReply.filter(p => p.points).map(p => {
+            return {
+                activity_reply_id: p.activityReplyId,
+                employee_id: p.employeeId,
+                points: p.points,      
+                starting_date: p.modifiedAt
+            }
+        });
+        console.log('insertActivityReplyPoints => ' , insertActivityReplyPoints)
+        await knex('activity_points')
+            .whereIn('activity_reply_id', activityReplyIds)
+            .transacting(t)
+            .del();
+
+        await knex('activity_points')
+            .transacting(t)
+            .insert(insertActivityReplyPoints);
+        
+        try {
+            await t.commit();
+        }
+        catch(error) {
+            console.log("Error while evaluate activity replies: ", error)
+            await t.rollback();
+        }
+    })
+    .catch(err => console.log('Error while evaluate activity replies:', err));
+}
 
