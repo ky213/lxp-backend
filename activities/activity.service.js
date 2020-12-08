@@ -39,7 +39,8 @@ module.exports = {
     updateLogActivityReply,
     deleteLogActivityReply,
     getLogActivityReplies,
-    getActivityStatus,
+    getActivityStatusIds,
+    getActivityStatusDetails,
     evaluate
 };
 
@@ -1048,29 +1049,20 @@ async function getReplies(activityId, user) {
         'activity_replies.text',
         'activity_replies.modified_at as modifiedAt'  ,
         'activity_points.points as activityPoints'  ,    
-        'activity_points.starting_date as startingDate'     
+        'activity_points.starting_date as startingDate'   ,
+        'activity_statuses.name as status',
+        'activity_statuses.activity_status_id as statusId',
     ])
     .from('activity_replies')
     .join('employees', 'employees.employee_id', 'activity_replies.employee_id')
     .join('users', 'users.user_id', 'employees.user_id')
+    .join('activities', 'activities.activity_id', 'activity_replies.activity_id')
+    .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_points', 'activity_points.activity_reply_id', 'activity_replies.activity_reply_id')
     .where('activity_replies.activity_id', activityId)
     .where('activity_replies.active', true);
     
-    /*
-    if(user.role == Role.Learner) {
-        replyModel
-            .andWhere('activity_replies.employee_id', user.employeeId)
-            .orWhereIn('activity_replies.employee_id', function() {
-                this.select('employee_id').from('employees')
-                    .where('organization_id', user.organization)
-                    .andWhere('is_active', true)
-                    .andWhere('is_learner', false)
-            })
-    }
-    */
-
-    const response = await replyModel.orderBy('modified_at', 'asc');
+    const response = await replyModel.orderBy('activity_replies.modified_at', 'asc');
     let replies = [];
     if(response && response.length > 0) {
         replies = response.map(r => {
@@ -1082,7 +1074,9 @@ async function getReplies(activityId, user) {
                 text: r.text,
                 modifiedAt: r.modifiedAt,
                 activityPoints : r.activityPoints,
-                startingDate: r.startingDate
+                startingDate: r.startingDate,
+                status: r.status,
+                statusId : r.statusId
             }
         });
     }
@@ -1094,27 +1088,34 @@ async function getReplies(activityId, user) {
 async function addReply(reply, user) {
     console.log("Entered add reply:", reply.activityId, user)
 
-    return knex.transaction(async function(t) {
-        const activityId = await 
-        knex('activity_replies')
-        .transacting(t)
-        .insert({
-            activity_id: reply.activityId, 
-            employee_id: user.employeeId,
-            text: reply.text,      
-            created_by: user.employeeId  || user.sub,
-            modified_by: user.employeeId || user.sub
-        }).returning('activity_reply_id');
+    var actvity = await getActivityStatusDetails(reply.activityId, user , user);
+    var status = actvity && actvity.length > 0 ? actvity[0].status : null;
+    console.log("actvity => ", actvity , status);
 
-        try {
-            await t.commit();
-        }
-        catch(error) {
-            console.log("Error while replying to activities: ", error)
-            await t.rollback();
-        }
-    })
-    .catch(err => console.log('Reply to activity error:', err));
+    if(status && status !== 6)
+    {
+        return knex.transaction(async function(t) {
+            const activityId = await 
+            knex('activity_replies')
+            .transacting(t)
+            .insert({
+                activity_id: reply.activityId, 
+                employee_id: user.employeeId,
+                text: reply.text,      
+                created_by: user.employeeId  || user.sub,
+                modified_by: user.employeeId || user.sub
+            }).returning('activity_reply_id');
+
+            try {
+                await t.commit();
+            }
+            catch(error) {
+                console.log("Error while replying to activities: ", error)
+                await t.rollback();
+            }
+        })
+        .catch(err => console.log('Reply to activity error:', err));
+    }
 }
 
 async function updateReply(replyId, reply, user)
@@ -1387,7 +1388,7 @@ async function deleteLogActivityReply(replyId, user) {
 
 }
 
-async function getActivityStatus() {
+async function getActivityStatusIds() {
     let model = knex.select([
             'activity_statuses.activity_status_id as activityStatusId', 
             'activity_statuses.name as activityStatusName', 
@@ -1397,11 +1398,23 @@ async function getActivityStatus() {
     return await model.orderBy('activity_status_id', 'asc');
 }
 
+async function getActivityStatusDetails(activityId)
+{
+    let model = knex.select([
+        'activities.activity_id as activityId', 
+        'activities.status'  
+    ])
+    .from('activities')
+    .where('activities.activity_id' , activityId);
+
+    return await model.orderBy('activity_id', 'asc');
+}
+
 async function evaluate(activityReply , user , activityId) {
     console.log('activityReply => ' , activityReply)
     return knex.transaction(async function(t) {
 
-        var statusIds = await getActivityStatus();
+        var statusIds = await getActivityStatusIds();
         const closedStatus = statusIds.filter(c => c.activityStatusName == 'Closed').map(c =>  c.activityStatusId);
 
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
