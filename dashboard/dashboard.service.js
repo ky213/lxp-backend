@@ -296,8 +296,7 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
     let completedQuery = knex.raw("select count(distinct payload->'actor'->>'mbox')::integer as a from \"statements\" where " +
         "((payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/passed' and  " +
         "(payload::json#>'{result,score,max}') IS NOT NULL ) or " +
-        "(payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed' and " +
-        "(payload::json#>'{result,completion}') IS NOT NULL ))" +
+        "(payload->'verb'->>'id' = 'http://adlnet.gov/expapi/verbs/completed'  " +
         "and payload->'context'->>'registration' = ? " +
         "group by payload->'context'->>'registration'", [programId + "|" + courseId]);
 
