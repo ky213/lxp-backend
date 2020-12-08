@@ -44,7 +44,7 @@ router.delete('/deleteActivityLink/:id', authorize(), deleteActivityLink);
 router.post('/addLogActivityLink', authorize(), addLogActivityLink);
 router.delete('/deleteLogActivityLink/:id', authorize(), deleteLogActivityLink);
 
-router.post('/evaluate', authorize(), evaluate);
+router.post('/evaluate/:id', authorize(), evaluate);
 
 module.exports = router;
 
@@ -231,7 +231,7 @@ function deleteLogActivityReply(req, res, next) {
 }
 
 function evaluate(req, res, next) {
-    activityService.evaluate(req.body, req.user)
+    activityService.evaluate(req.body, req.user , req.params.id)
         .then(() => res.json(true))
         .catch(err => next(err));
 }

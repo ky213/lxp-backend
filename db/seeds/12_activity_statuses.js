@@ -10,6 +10,7 @@ exports.seed = async function(knex) {
           {activity_status_id: 3, name: 'Deleted'},
           {activity_status_id: 4, name: 'Accepted'},
           {activity_status_id: 5, name: 'Declined'},
+          {activity_status_id: 6, name: 'Closed'},
         ]);
     });
 };

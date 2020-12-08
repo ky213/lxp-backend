@@ -39,6 +39,7 @@ module.exports = {
     updateLogActivityReply,
     deleteLogActivityReply,
     getLogActivityReplies,
+    getActivityStatus,
     evaluate
 };
 
@@ -1386,9 +1387,22 @@ async function deleteLogActivityReply(replyId, user) {
 
 }
 
-async function evaluate(activityReply , user) {
+async function getActivityStatus() {
+    let model = knex.select([
+            'activity_statuses.activity_status_id as activityStatusId', 
+            'activity_statuses.name as activityStatusName', 
+        ])
+        .from('activity_statuses')
+
+    return await model.orderBy('activity_status_id', 'asc');
+}
+
+async function evaluate(activityReply , user , activityId) {
     console.log('activityReply => ' , activityReply)
     return knex.transaction(async function(t) {
+
+        var statusIds = await getActivityStatus();
+        const closedStatus = statusIds.filter(c => c.activityStatusName == 'Closed').map(c =>  c.activityStatusId);
 
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
             return  p.activityReplyId
@@ -1404,14 +1418,25 @@ async function evaluate(activityReply , user) {
         });
 
         await knex('activity_points')
-            .whereIn('activity_reply_id', activityReplyIds)
-            .transacting(t)
-            .del();
+        .whereIn('activity_reply_id', activityReplyIds)
+        .transacting(t)
+        .del();
 
         await knex('activity_points')
-            .transacting(t)
-            .insert(insertActivityReplyPoints);
+        .transacting(t)
+        .insert(insertActivityReplyPoints)
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
         
+        await knex('activities')
+        .where('activity_id', activityId)
+        .transacting(t)
+        .update({
+            status: closedStatus[0],
+            modified_at: knex.fn.now(),
+            modified_by: user.employeeId || user.sub
+        })
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});    
+
         try {
             await t.commit();
         }
@@ -1420,6 +1445,6 @@ async function evaluate(activityReply , user) {
             await t.rollback();
         }
     })
-    .catch(err => console.log('Error while evaluate activity replies:', err));
+    .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
 }
 
