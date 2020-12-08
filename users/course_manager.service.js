@@ -533,7 +533,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             }
         }
 
-        if (user.groupNames && user.groupNames.length > 0) {
+        if (user.groupNames && (user.groupNames.length > 0 && user.groupNames[0] )) {
 
             if (!groups || groups.length === 0) {
                 addError(user, "Groups '" + user.groupNames + "' are not valid");
