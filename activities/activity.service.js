@@ -79,6 +79,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
         'activities.assigned_by as assignedBy',
+        'activities.total_points as totalPoints',
         knex.raw('? as source', ['assigned']),
         'activities_repetitions.rrule'
     ])
@@ -217,6 +218,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
         'log_activities.logged_by as assignedBy',
+        knex.raw('? as totalPoints', ['0']),
         knex.raw('? as source', ['logged']),
         knex.raw('NULL as rrule'),
     ])
@@ -1391,7 +1393,7 @@ async function evaluate(activityReply , user) {
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
             return  p.activityReplyId
         });
-console.log('activityReplyIds => ' , activityReplyIds)
+
         const insertActivityReplyPoints = activityReply.filter(p => p.points).map(p => {
             return {
                 activity_reply_id: p.activityReplyId,
@@ -1400,7 +1402,7 @@ console.log('activityReplyIds => ' , activityReplyIds)
                 starting_date: p.modifiedAt
             }
         });
-        console.log('insertActivityReplyPoints => ' , insertActivityReplyPoints)
+
         await knex('activity_points')
             .whereIn('activity_reply_id', activityReplyIds)
             .transacting(t)
