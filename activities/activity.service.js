@@ -892,20 +892,11 @@ async function logActivity(activity, user)
             .transacting(t)
             .insert(insertActivitySupervisors);
 
-        try {
-            await Promise.all(notifications);
-            await t.commit();
-
-            return {...activity, activityId};            
-        }
-        catch(error) {
-            console.log("Error while logging activities: ", error)
-            await t.rollback();
-        }   
-        
+        await Promise.all(notifications);
         return {...activity, activityId};   
+        
     })
-    .catch(err => console.log('Log activity error:', err));
+    .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
 }
 
 async function updateLogActivity(activity, user)
