@@ -148,7 +148,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
     return generatedActivities;
 }
 
-async function getRepeatingActivities(user, programIds, courseIds, selectedOrganizationId) {
+async function getRepeatingActivity(user, programIds, courseIds, selectedOrganizationId) {
 
     let repeatingActivitiesModel = knex.select([
         'activities_repetitions.activity_id as activityId',
