@@ -41,7 +41,8 @@ module.exports = {
     getLogActivityReplies,
     getActivityStatusIds,
     getActivityStatusDetails,
-    evaluate
+    evaluate,
+    getAllByLearner
 };
 
 
@@ -89,8 +90,10 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
     .from('activities_repetitions')
     .join('activities', 'activities_repetitions.activity_id', 'activities.activity_id')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
+    .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
-    .andWhere('activities.repeat', true);
+    .andWhere('activities.repeat', true)
+    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
 
     if(!userHasAdminRole(user)) {
         repeatingActivitiesModel.andWhere(function() {
@@ -108,9 +111,6 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
                 })                
-                .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_courses').whereIn('course_id', courseIds );
-                }) 
         });
     }
 
@@ -148,6 +148,59 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
     return generatedActivities;
 }
 
+async function getRepeatingActivities(user, programIds, courseIds, selectedOrganizationId) {
+
+    let repeatingActivitiesModel = knex.select([
+        'activities_repetitions.activity_id as activityId',
+        'activities.program_id as programId', 
+        'activities.name',
+        'activities.start',             
+        'activities.end',
+        'activities.priority',
+        'activities.activity_type_id',
+        'activities.location',
+        'activities.repeat',
+        'activities.description',
+        'activity_statuses.name as status',
+        'activity_statuses.activity_status_id as statusId',
+        'activities.assigned_by as assignedBy',
+        'activities.total_points as totalPoints',
+        'activities.is_public as isPublic',  
+        knex.raw('? as source', ['assigned']),
+        'activities_repetitions.rrule'
+    ])
+    .from('activities_repetitions')
+    .join('activities', 'activities_repetitions.activity_id', 'activities.activity_id')
+    .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
+    .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
+    .where('activities.repeat', true)
+    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
+
+    if(!userHasAdminRole(user)) {
+        repeatingActivitiesModel.andWhere(function() {
+            this.whereIn('activities.program_id', programIds)
+                .orWhereNull('activities.program_id')
+        })
+        .andWhere(function() {
+            this.where('assigned_by', user.employeeId)
+                .orWhereIn('activities.activity_id', function() {
+                    this.select('activity_id').from('activity_participants').where('employee_id', user.employeeId);
+                })
+                .orWhereIn('activities.program_id', function() {
+                    this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
+                })
+                .orWhereIn('activities.program_id', function() {
+                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
+                })                
+        });
+    }
+
+    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+
+    const repeatingActivities = await repeatingActivitiesModel;
+
+    return repeatingActivities;
+}
 
 async function getAll(user, from, to, selectedOrganizationId) {
 
@@ -180,8 +233,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
     ])
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
+    .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
     .andWhere('activities.repeat', false)
+    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
     .andWhereBetween('activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()])
 
     if(!userHasAdminRole(user)) {
@@ -200,10 +255,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
                 })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
-                }) 
-                .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_courses').whereIn('course_id', courseIds );
-                })                                                          
+                })                                                         
         });
     }
 
@@ -894,7 +946,7 @@ async function logActivity(activity, user)
 
         await Promise.all(notifications);
         return {...activity, activityId};   
-        
+
     })
     .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
 }
@@ -1466,3 +1518,7 @@ async function evaluate(activityReply , user , activityId) {
     .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
 }
 
+async function getAllByLearner(user, employeeId , selectedOrganizationId) {
+
+    
+}

@@ -16,6 +16,7 @@ router.put('/', authorize(), update);
 router.get('/', authorize(), getAll); 
 router.get('/types', authorize(), getActivityTypes);  
 router.get('/participation-levels', authorize(), getParticipationLevels);  
+router.get('/byLearner/:id', authorize(), getAllByLearner); 
 
 router.put('/:id/status', authorize(), updateStatus); 
 router.get('/:id', authorize(), getById);  
@@ -233,5 +234,11 @@ function deleteLogActivityReply(req, res, next) {
 function evaluate(req, res, next) {
     activityService.evaluate(req.body, req.user , req.params.id)
         .then(() => res.json(true))
+        .catch(err => next(err));
+}
+
+function getAllByLearner(req, res, next) {
+    activityService.getAllByLearner(req.user, req.params.id , req.query.organizationId)
+        .then(events => res.json(events))
         .catch(err => next(err));
 }
