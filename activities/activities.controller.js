@@ -86,7 +86,7 @@ function updateStatus(req, res, next) {
 
 function logActivity(req, res, next) {
     activityService.logActivity(req.body, req.user)
-        .then(() => res.json(true))
+        .then((activity) => res.json(activity))
         .catch(err => next(err));
 }
 

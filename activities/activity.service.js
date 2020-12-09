@@ -82,6 +82,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         'activity_statuses.activity_status_id as statusId',
         'activities.assigned_by as assignedBy',
         'activities.total_points as totalPoints',
+        'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
         'activities_repetitions.rrule'
     ])
@@ -173,6 +174,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activity_statuses.activity_status_id as statusId',
         'activities.assigned_by as assignedBy',
         'activities.total_points as totalPoints',
+        'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
         knex.raw('NULL as rrule'),
     ])
@@ -221,6 +223,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activity_statuses.activity_status_id as statusId',
         'log_activities.logged_by as assignedBy',
         knex.raw('? as totalPoints', ['0']),
+        'log_activities.is_public as isPublic',  
         knex.raw('? as source', ['logged']),
         knex.raw('NULL as rrule'),
     ])
@@ -284,6 +287,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.assigned_by as assignedBy',
         'activities.exp_level_id as level',
         'activities.total_points as totalPoints',
+        'activities.is_public as isPublic',  
         'activities_repetitions.rrule',
         'users.name as assignedByFirstName',
         'users.surname as assignedByLastName'
@@ -395,6 +399,7 @@ async function getExistingActivities(activity, user) {
         'activities.end', 
         'activities.priority',
         'activities.total_points as totalPoints',
+        'activities.is_public as isPublic',  
         'activities.assigned_by as assignedBy'
     ])
     .from('activities')
@@ -461,6 +466,8 @@ async function checkConflicts(activity, user) {
             'activities.start',             
             'activities.end', 
             'activities.priority',
+            'activities.total_points as totalPoints',
+            'activities.is_public as isPublic',  
             'activities.assigned_by as assignedBy'
         ])
         .from('activities')
@@ -546,6 +553,7 @@ async function create(activity, user) {
                 status: activity.activityTypeId == 11 ? 1 : status,
                 repeat: activity.repeat || false,
                 total_points: activity.totalPoints,
+                is_public : activity.isPublic,
                 organization_id: activity.organizationId || user.organization,
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub
@@ -702,6 +710,7 @@ async function update(activity, user) {
                 description: activity.description,
                 repeat: activity.repeat,
                 total_points: activity.totalPoints,
+                is_public : activity.isPublic,
                 status: activity.activityTypeId == 11 ? 1 : status,
                 modified_by: user.employeeId || user.sub,
                 modified_at: knex.fn.now()
@@ -854,6 +863,7 @@ async function logActivity(activity, user)
             details: activity.details,
             logged_by: user.employeeId,
             status: activity.activityTypeId == 11 ? 1 : 2,
+            is_public : activity.isPublic,
             created_by: user.employeeId,
             modified_by: user.employeeId
         }).returning('log_activity_id');
@@ -876,9 +886,7 @@ async function logActivity(activity, user)
                 log_activity_id: activityId[0],
                 employee_id: p.employeeId
             }
-        });
-
-        
+        });        
     
         await knex('log_activity_supervisors')
             .transacting(t)
@@ -887,12 +895,15 @@ async function logActivity(activity, user)
         try {
             await Promise.all(notifications);
             await t.commit();
-            
+
+            return {...activity, activityId};            
         }
         catch(error) {
             console.log("Error while logging activities: ", error)
             await t.rollback();
-        }
+        }   
+        
+        return {...activity, activityId};   
     })
     .catch(err => console.log('Log activity error:', err));
 }
@@ -914,6 +925,7 @@ async function updateLogActivity(activity, user)
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
                 status: activity.activityTypeId == 11 ? 1 : 2,
+                is_public : activity.isPublic,
                 modified_by: user.employeeId,
                 modified_at: knex.fn.now(),
             });
@@ -968,6 +980,7 @@ async function getLogActivityById(activityId, user) {
         'log_activities.location',
         'log_activities.details',
         'log_activities.status',
+        'log_activities.is_public as isPublic', 
         'log_activities.logged_by as loggedBy',
         'users.name as loggedByFirstName',
         'users.surname as loggedByLastName',
@@ -1402,7 +1415,8 @@ async function getActivityStatusDetails(activityId)
 {
     let model = knex.select([
         'activities.activity_id as activityId', 
-        'activities.status'  
+        'activities.status',
+        'activities.is_public as isPublic',  
     ])
     .from('activities')
     .where('activities.activity_id' , activityId);
