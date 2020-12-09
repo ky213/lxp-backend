@@ -16,7 +16,7 @@ router.put('/', authorize(), update);
 router.get('/', authorize(), getAll); 
 router.get('/types', authorize(), getActivityTypes);  
 router.get('/participation-levels', authorize(), getParticipationLevels);  
-router.get('/byLearner/:id', authorize(), getAllByLearner); 
+router.get('/byLearner', authorize(), getAllByLearner); 
 
 router.put('/:id/status', authorize(), updateStatus); 
 router.get('/:id', authorize(), getById);  
@@ -238,7 +238,7 @@ function evaluate(req, res, next) {
 }
 
 function getAllByLearner(req, res, next) {
-    activityService.getAllByLearner(req.user, req.params.id , req.query.organizationId)
+    activityService.getAllByLearner(req.user, req.query.organizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
 }
