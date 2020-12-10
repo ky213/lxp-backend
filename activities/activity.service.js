@@ -171,20 +171,19 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
     .join('activities', 'activities_repetitions.activity_id', 'activities.activity_id')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
+    .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
-    .andWhere('activities.repeat', true)
-    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
+    .andWhere('activities.repeat', true);
 
     if(!userHasAdminRole(user)) {
         repeatingActivitiesModel.andWhere(function() {
             this.whereIn('activities.program_id', programIds)
                 .orWhereNull('activities.program_id')
-        })
+        })        
+        .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
+        .andWhere('activity_participants.employee_id', user.employeeId ).orWhereNull('activity_participants.employee_id')
         .andWhere(function() {
             this.where('assigned_by', user.employeeId)
-                .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_participants').where('employee_id', user.employeeId);
-                })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
                 })
@@ -233,9 +232,9 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
+    .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
-    .andWhere('activities.repeat', false)
-    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
+    .andWhere('activities.repeat', false)    
     .andWhereBetween('activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()])
 
     if(!userHasAdminRole(user)) {
@@ -244,11 +243,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
             this.whereIn('activities.program_id', programIds)
                 .orWhereNull('activities.program_id')
         })
+        .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
+        .andWhere('activity_participants.employee_id', user.employeeId ).orWhereNull('activity_participants.employee_id')
         .andWhere(function() {
             this.where('assigned_by', user.employeeId)
-                .orWhereIn('activities.activity_id', function() {
-                    this.select('activity_id').from('activity_participants').where('employee_id', user.employeeId);
-                })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
                 })
