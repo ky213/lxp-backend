@@ -238,7 +238,7 @@ function evaluate(req, res, next) {
 }
 
 function getAllByLearner(req, res, next) {
-    activityService.getAllByLearner(req.user, req.query.organizationId)
+    activityService.getAllByLearner(req.user, req.query.userId , req.query.employeeId , req.query.organizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
 }

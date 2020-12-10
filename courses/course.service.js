@@ -430,7 +430,7 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
     return {isValid: true};
 }
 
-async function getAllUserCourses(loggedInUser, selectedOrganizationId ){
+async function getAllUserCourses(loggedInUser, userId , selectedOrganizationId ){
     if (!loggedInUser)
         return;
 
@@ -439,7 +439,7 @@ async function getAllUserCourses(loggedInUser, selectedOrganizationId ){
     let model = knex.table('user_courses')
     .join('users', 'users.user_id', 'user_courses.user_id')
     .join('courses', 'courses.course_id', 'user_courses.course_id')
-    .where('user_courses.user_id', loggedInUser.userId)
+    .where('user_courses.user_id', userId)
     .andWhere('courses.organization_id', organizationId);
 
     const courseUsers = await model.clone()
