@@ -181,7 +181,8 @@ async function create(organization, user) {
                 organization_id: organizationId[0],
                 created_by: user.sub,
                 modified_by: user.sub,
-                block_type_id: blockType.block_type_id
+                block_type_id: blockType.block_type_id,
+                is_default : true
             }).returning('program_id'); 
         
         let groupType = await knex('group_types')

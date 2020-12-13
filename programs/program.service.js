@@ -177,7 +177,6 @@ async function getById(id, user, selectedorganizationId) {
 }
 
 async function getDefaultProgram(user, selectedorganizationId) {
-    const name = 'Default Program';
 
     let select = knex.select([
         'programs.program_id as programId',
@@ -210,7 +209,7 @@ async function getDefaultProgram(user, selectedorganizationId) {
     }
 
     let program = await select
-        .whereRaw(`LOWER(programs.name) = ?`, [`${name.toLowerCase().trim()}`])
+        .where('is_default', true)
         .limit(1)
         .first();
 
