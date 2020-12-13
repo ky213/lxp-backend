@@ -278,6 +278,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
+    .andWhere('log_activities.is_public', true)
     .andWhereBetween('log_activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()]);
     
     if(!userHasAdminRole(user)) {
@@ -1099,12 +1100,14 @@ async function getReplies(activityId, user) {
         'users.surname as lastName',
         'employees.profile_photo as profilePhoto',  
         'employees.employee_id as employeeId',
+        'employees.is_learner as isLearner',
         'activity_replies.text',
         'activity_replies.modified_at as modifiedAt'  ,
         'activity_points.points as points'  ,    
         'activity_points.starting_date as startingDate'   ,
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
+        'activities.is_public as isPublic',
     ])
     .from('activity_replies')
     .join('employees', 'employees.employee_id', 'activity_replies.employee_id')
@@ -1116,9 +1119,11 @@ async function getReplies(activityId, user) {
     .where('activity_replies.active', true);
     
     const response = await replyModel.orderBy('activity_replies.modified_at', 'asc');
+    console.log("response :", response)
     let replies = [];
     if(response && response.length > 0) {
-        replies = response.map(r => {
+        replies =  response.filter(x => (x.isPublic == true) || (user.role !== 'Learner') || (user.role == 'Learner' &&  x.isPublic == false && ((x.isLearner == true && x.employeeId == user.employeeId ) || (x.isLearner == false))))
+        .map(r => {
             return {
                 activityReplyId: r.activityReplyId,
                 employeeId: r.employeeId,
@@ -1131,9 +1136,8 @@ async function getReplies(activityId, user) {
                 status: r.status,
                 statusId : r.statusId
             }
-        });
+        });    
     }
-
 
     return replies;
 }
