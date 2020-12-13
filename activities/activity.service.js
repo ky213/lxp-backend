@@ -331,7 +331,8 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.location',
         'activities.repeat',
         'activities.description',
-        'activities.status',
+        'activity_statuses.activity_status_id as statusId',
+        'activity_statuses.name as status',
         'activities.assigned_by as assignedBy',
         'activities.exp_level_id as level',
         'activities.total_points as totalPoints',
@@ -1469,12 +1470,11 @@ async function evaluate(activityReply , user , activityId) {
 
         var statusIds = await getActivityStatusIds();
         const closedStatus = statusIds.filter(c => c.activityStatusName == 'Closed').map(c =>  c.activityStatusId);
-        console.log('statusIds => ' , statusIds)
 
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
             return  p.activityReplyId
         });
-        console.log('activityReplyIds => ' , activityReplyIds)
+
         const insertActivityReplyPoints = activityReply.filter(p => p.points).map(p => {
             return {
                 activity_reply_id: p.activityReplyId,
