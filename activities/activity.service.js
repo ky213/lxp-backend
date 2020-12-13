@@ -1100,7 +1100,7 @@ async function getReplies(activityId, user) {
         'employees.employee_id as employeeId',
         'activity_replies.text',
         'activity_replies.modified_at as modifiedAt'  ,
-        'activity_points.points as activityPoints'  ,    
+        'activity_points.points as points'  ,    
         'activity_points.starting_date as startingDate'   ,
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
@@ -1125,7 +1125,7 @@ async function getReplies(activityId, user) {
                 learner: `${r.firstName} ${r.lastName}`,
                 text: r.text,
                 modifiedAt: r.modifiedAt,
-                activityPoints : r.activityPoints,
+                points : r.points,
                 startingDate: r.startingDate,
                 status: r.status,
                 statusId : r.statusId
@@ -1469,11 +1469,12 @@ async function evaluate(activityReply , user , activityId) {
 
         var statusIds = await getActivityStatusIds();
         const closedStatus = statusIds.filter(c => c.activityStatusName == 'Closed').map(c =>  c.activityStatusId);
+        console.log('statusIds => ' , statusIds)
 
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
             return  p.activityReplyId
         });
-
+        console.log('activityReplyIds => ' , activityReplyIds)
         const insertActivityReplyPoints = activityReply.filter(p => p.points).map(p => {
             return {
                 activity_reply_id: p.activityReplyId,
