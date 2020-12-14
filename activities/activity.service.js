@@ -123,8 +123,10 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
 
             const dtStart = moment(from, 'DDMMYYYY').startOf('day').utc().format("YYYYMMDDTHHmmss");
             const parsed = rrulestr("DTSTART:"+ dtStart  +"\n" + ra.rrule);
-
+            
             const parsedDates = parsed.between(moment(from, 'DDMMYYYY').startOf('day').utc().toDate(), moment(to, 'DDMMYYYY').utc().endOf('day').toDate());
+            //console.log('dtStart => ' , dtStart , 'parsed =>' , parsed , 'parsed date => ', parsedDates );
+            
 
             for(let j = 0; j < parsedDates.length; j++) {
                 const date = parsedDates[j];
@@ -597,7 +599,6 @@ async function create(activity, user) {
                 priority: activity.priority,
                 activity_type_id: activity.activityTypeId,
                 location: activity.location,
-                repeat: activity.repeat,
                 description: activity.description,
                 assigned_by: user.employeeId || user.sub,
                 status: activity.activityTypeId == 11 ? 1 : status,
@@ -608,7 +609,7 @@ async function create(activity, user) {
                 created_by: user.employeeId || user.sub,
                 modified_by: user.employeeId || user.sub
             }).returning('activity_id');
-        
+
         if(activity.repeat) {
             await t('activities_repetitions')
             .insert({rrule: activity.rrule, activity_id: activityId[0], created_by: user.employeeId  || user.sub, modified_by: user.employeeId  || user.sub});
@@ -1119,7 +1120,7 @@ async function getReplies(activityId, user) {
     .where('activity_replies.active', true);
     
     const response = await replyModel.orderBy('activity_replies.modified_at', 'asc');
-    console.log("response :", response)
+
     let replies = [];
     if(response && response.length > 0) {
         replies =  response.filter(x => (x.isPublic == true) || (user.role !== 'Learner') || (user.role == 'Learner' &&  x.isPublic == false && ((x.isLearner == true && x.employeeId == user.employeeId ) || (x.isLearner == false))))
@@ -1145,7 +1146,7 @@ async function getReplies(activityId, user) {
 async function addReply(reply, user) {
     console.log("Entered add reply:", reply.activityId, user)
 
-    var actvity = await getActivityStatusDetails(reply.activityId, user , user);
+    var actvity = await getActivityStatusDetails(reply.activityId);
     var status = actvity && actvity.length > 0 ? actvity[0].status : null;
     console.log("actvity => ", actvity , status);
 
@@ -1461,6 +1462,7 @@ async function getActivityStatusDetails(activityId)
         'activities.activity_id as activityId', 
         'activities.status',
         'activities.is_public as isPublic',  
+        'activities.total_points as totalPoints',
     ])
     .from('activities')
     .where('activities.activity_id' , activityId);
@@ -1469,11 +1471,23 @@ async function getActivityStatusDetails(activityId)
 }
 
 async function evaluate(activityReply , user , activityId) {
-    console.log('activityReply => ' , activityReply)
+    var errorStatus = 0;
     return knex.transaction(async function(t) {
+
+        var actvity = await getActivityStatusDetails(activityId);
+        var totalPoints  = actvity && actvity.length > 0 ? actvity[0].totalPoints : 0;
 
         var statusIds = await getActivityStatusIds();
         const closedStatus = statusIds.filter(c => c.activityStatusName == 'Closed').map(c =>  c.activityStatusId);
+
+        const checkNotValidPoints = activityReply.filter(p => p.points && p.points > totalPoints).map(p => {
+            return  p.activityReplyId
+        });
+
+        if(checkNotValidPoints && checkNotValidPoints.length > 0){   
+            errorStatus = 1;
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Points should not exceed the total points.'}));
+        }
 
         const activityReplyIds = activityReply.filter(p => p.points).map(p => {
             return  p.activityReplyId
@@ -1506,7 +1520,7 @@ async function evaluate(activityReply , user , activityId) {
             modified_at: knex.fn.now(),
             modified_by: user.employeeId || user.sub
         })
-        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});    
+        .catch( (error) => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});    
 
         try {
             await t.commit();
@@ -1516,7 +1530,12 @@ async function evaluate(activityReply , user , activityId) {
             await t.rollback();
         }
     })
-    .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
+    .catch( (error) => { 
+        if(errorStatus == 1)
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Points should not exceed the total points.'}));
+        else
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}));    
+    });
 }
 
 async function getAllByLearner(user, userId, employeeId, selectedOrganizationId) {
