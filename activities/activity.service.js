@@ -114,27 +114,24 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
     repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
     const repeatingActivities = await repeatingActivitiesModel;
-
+    console.log('repeatingActivities => ' , repeatingActivities);
     let generatedActivities = [];
     
     for(let i = 0; i < repeatingActivities.length; i++) {
         const ra = repeatingActivities[i];
         if(ra) {
 
-            const dtStart = moment(from, 'DDMMYYYY').startOf('day').utc().format("YYYYMMDDTHHmmss");
+            const dtStart = moment(ra.start, 'DDMMYYYY').startOf('day').utc().format("YYYYMMDDTHHmmss");
             const parsed = rrulestr("DTSTART:"+ dtStart  +"\n" + ra.rrule);
-            
+
             const parsedDates = parsed.between(moment(from, 'DDMMYYYY').startOf('day').utc().toDate(), moment(to, 'DDMMYYYY').utc().endOf('day').toDate());
-            //console.log('dtStart => ' , dtStart , 'parsed =>' , parsed , 'parsed date => ', parsedDates );
-            
 
             for(let j = 0; j < parsedDates.length; j++) {
                 const date = parsedDates[j];
-                console.log("Got parsed date:", date)
-
+                
                 const start = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.start).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
                 const end = moment(moment(date).format('DDMMYYYY') + ' ' + moment(ra.end).format('HH:mm'), 'DDMMYYYY HH:mm').format('YYYY-MM-DDTHH:mm:ss');
-
+                console.log("Got parsed date => ", date , start , end)
                 const act = {...ra, start, end};
 
                 generatedActivities.push(act);
@@ -142,7 +139,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         }
     }
 
-    console.log("Generated repeating activities:", generatedActivities)
+    //console.log("Generated repeating activities:", generatedActivities)
     
     return generatedActivities;
 }
@@ -317,7 +314,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
 
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
 
-    console.log(" activities:", activities)
+    //console.log(" activities:", activities)
 
     return activities.concat(repeatingActivities);
 }
