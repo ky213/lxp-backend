@@ -139,7 +139,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         }
     }
 
-    //console.log("Generated repeating activities:", generatedActivities)
+    console.log("Generated repeating activities:", generatedActivities)
     
     return generatedActivities;
 }
