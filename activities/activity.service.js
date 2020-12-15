@@ -206,6 +206,9 @@ async function getAll(user, from, to, selectedOrganizationId) {
     const userCourses = await courseService.getAllUserCourses(user, user.userId,selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
+    var statusIds = await getActivityStatusIds();
+    const deletedStatus = statusIds.filter(c => c.activityStatusName == 'Deleted').map(c =>  c.activityStatusId);
+
     console.log("Entered get activities:",  programIds  , courseIds)
 
     let model = knex.select([
@@ -231,7 +234,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
-    .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
+    .where('activity_statuses.activity_status_id', '<>', deletedStatus[0]) // not deleted
     .andWhere('activities.repeat', false)    
     .andWhereBetween('activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()])
 
@@ -277,8 +280,11 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
-    .andWhere('log_activities.is_public', true)
     .andWhereBetween('log_activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()]);
+    
+    if(userHasAdminRole(user)) {
+        logModel.andWhere('log_activities.is_public', true)
+    }
     
     if(!userHasAdminRole(user)) {
         logModel
@@ -314,9 +320,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
 
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
 
-    //console.log(" activities:", activities)
+    var returnedActivities = activities.concat(repeatingActivities);
+    returnedActivities = returnedActivities.filter(x => x.statusId !== deletedStatus[0]);
 
-    return activities.concat(repeatingActivities);
+    return returnedActivities;
 }
 
 async function getById(activityId, user, selectedOrganizationId) {
