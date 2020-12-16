@@ -256,7 +256,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
                 })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
-                    .whereIn('activity_courses.course_id', courseIds );
+                    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
                 })                                                         
         });
     }
