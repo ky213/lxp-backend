@@ -83,7 +83,8 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         'activities.total_points as totalPoints',
         'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
-        'activities_repetitions.rrule'
+        'activities_repetitions.rrule',
+        'activity_courses.course_id as courseId'
     ])
     .from('activities_repetitions')
     .join('activities', 'activities_repetitions.activity_id', 'activities.activity_id')
@@ -106,7 +107,8 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
                     this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
                 })
                 .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
+                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
+                    .whereIn('activity_courses.course_id', courseIds );
                 })                
         });
     }
@@ -228,7 +230,8 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activities.total_points as totalPoints',
         'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
-        knex.raw('NULL as rrule')
+        knex.raw('NULL as rrule'),
+        'activity_courses.course_id as courseId'
     ])
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
@@ -252,7 +255,8 @@ async function getAll(user, from, to, selectedOrganizationId) {
                     this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
                 })
                 .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
+                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
+                    .whereIn('activity_courses.course_id', courseIds );
                 })                                                         
         });
     }
@@ -274,7 +278,8 @@ async function getAll(user, from, to, selectedOrganizationId) {
         knex.raw('? as totalPoints', ['0']),
         'log_activities.is_public as isPublic',  
         knex.raw('? as source', ['logged']),
-        knex.raw('NULL as rrule')
+        knex.raw('NULL as rrule'),
+        knex.raw('NULL as courseId')
     ])
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
@@ -1602,7 +1607,8 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
 
     console.log("getAllByLearner => ", user,  programIds  , courseIds)
 
-    let model = knex.select([
+    let model = knex
+    .select([
         'activities.activity_id as activityId', 
         'activities.program_id as programId', 
         'activities.name',
@@ -1625,29 +1631,28 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
-    .andWhere('activities.repeat', false)
+    .where('activities.repeat', false)
     .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
     .andWhere('activity_participants.employee_id', employeeId ).orWhereNull('activity_participants.employee_id');
 
-    //if(!userHasAdminRole(user)) {
-        model
-        .andWhere(function() {
-            this.whereIn('activities.program_id', programIds)
-                .orWhereNull('activities.program_id')
-        })
-        .andWhere(function() {
-            this.where('assigned_by', employeeId)
-                .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('program_directors').where('employee_id', employeeId);
-                })
-                .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('employee_programs').where('employee_id', employeeId);
-                })                                                         
-        });
-    //}
+    model
+    .andWhere(function() {
+        this.whereIn('activities.program_id', programIds)
+        .orWhereNull('activities.program_id')
+    })
+    .andWhere(function() {
+        this.where('assigned_by', employeeId)
+            .orWhereIn('activities.program_id', function() {
+                this.select('program_id').from('program_directors').where('employee_id', employeeId);
+            })
+            .orWhereIn('activities.program_id', function() {
+                this.select('program_id').from('employee_programs').where('employee_id', employeeId)
+                .whereIn('activity_courses.course_id', courseIds );
+            })                                                         
+    });
 
-
-    let logModel = knex.select([
+    let logModel = knex
+    .select([
         'log_activities.log_activity_id as activityId', 
         'log_activities.program_id as programId', 
         'log_activities.name',
@@ -1668,33 +1673,30 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     ])
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status');
-    
-    //if(!userHasAdminRole(user)) {
-        logModel
-        .andWhere(function() {
-            this.whereIn('log_activities.program_id', programIds)
-            .orWhereNull('log_activities.program_id')
+
+    logModel
+    .andWhere(function() {
+        this.whereIn('log_activities.program_id', programIds)
+        .orWhereNull('log_activities.program_id')
+        .orWhereIn('log_activities.log_activity_id', function() {
+            this.select('log_activity_id').from('log_activity_supervisors').where('employee_id', employeeId);
+        })
+    })
+    .andWhere(function() {
+        this.where('logged_by', employeeId)
             .orWhereIn('log_activities.log_activity_id', function() {
                 this.select('log_activity_id').from('log_activity_supervisors').where('employee_id', employeeId);
             })
-        })
-        .andWhere(function() {
-            this.where('logged_by', employeeId)
-                .orWhereIn('log_activities.log_activity_id', function() {
-                    this.select('log_activity_id').from('log_activity_supervisors').where('employee_id', employeeId);
-                })
-                .orWhereIn('log_activities.program_id', function() {
-                    this.select('program_id').from('program_directors').where('employee_id', employeeId);
-                })
-        });
-    //}
+            .orWhereIn('log_activities.program_id', function() {
+                this.select('program_id').from('program_directors').where('employee_id', employeeId);
+            })
+    });
    
     model.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
 
     logModel.whereIn('log_activities.program_id', function() {
         this.select('program_id').from('programs').where('organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
     });
-
 
     let repeatingActivities = [];
     repeatingActivities = await getRepeatActivities(user, programIds, courseIds, selectedOrganizationId);
