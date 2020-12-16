@@ -228,7 +228,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         'activities.total_points as totalPoints',
         'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
-        knex.raw('NULL as rrule'),
+        knex.raw('NULL as rrule')
     ])
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
@@ -257,7 +257,6 @@ async function getAll(user, from, to, selectedOrganizationId) {
         });
     }
 
-
     let logModel = knex.select([
         'log_activities.log_activity_id as activityId', 
         'log_activities.program_id as programId', 
@@ -275,7 +274,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
         knex.raw('? as totalPoints', ['0']),
         'log_activities.is_public as isPublic',  
         knex.raw('? as source', ['logged']),
-        knex.raw('NULL as rrule'),
+        knex.raw('NULL as rrule')
     ])
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
@@ -285,7 +284,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     if(userHasAdminRole(user)) {
         logModel.andWhere('log_activities.is_public', true)
     }
-    
+
     if(!userHasAdminRole(user)) {
         logModel
         .andWhere(function() {
@@ -422,6 +421,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         activityDetails.replies = await getReplies(activityId, user);
         activityDetails.files = await knex("activities_files")
             .where("activity_id", activityId)
+            .andWhere("activity_reply_id" , null)
             .select([
             "activities_files.name",
             "activities_files.size",
@@ -430,6 +430,7 @@ async function getById(activityId, user, selectedOrganizationId) {
 
         activityDetails.links = await knex("activities_links")
             .where("activity_id", activityId)
+            .andWhere("activity_reply_id" , null)
             .select([
                 "activities_links.url",
                 "activities_links.activity_link_id as activityLinkId"
@@ -1125,9 +1126,31 @@ async function getReplies(activityId, user) {
     
     const response = await replyModel.orderBy('activity_replies.modified_at', 'asc');
 
+    let tempResponse = response.map( async(res) => {   
+        res.files = await knex("activities_files")
+            .where("activity_reply_id", res.activityReplyId)
+            .select([
+            "activities_files.name",
+            "activities_files.size",
+            "activities_files.activity_file_id as activityFileId"
+            ]);
+        
+        res.links = await knex("activities_links")
+            .where("activity_reply_id", res.activityReplyId)
+            .select([
+                "activities_links.url",
+                "activities_links.activity_link_id as activityLinkId"
+            ]);
+
+        return res;
+    });    
+
+
+    let finalResponse = await Promise.all(tempResponse);
+
     let replies = [];
-    if(response && response.length > 0) {
-        replies =  response.filter(x => (x.isPublic == true) || (user.role !== 'Learner') || (user.role == 'Learner' &&  x.isPublic == false && ((x.isLearner == true && x.employeeId == user.employeeId ) || (x.isLearner == false))))
+    if(finalResponse && finalResponse.length > 0) {
+        replies =  finalResponse.filter(x => (x.isPublic == true) || (user.role !== 'Learner') || (user.role == 'Learner' &&  x.isPublic == false && ((x.isLearner == true && x.employeeId == user.employeeId ) || (x.isLearner == false))))
         .map(r => {
             return {
                 activityReplyId: r.activityReplyId,
@@ -1139,7 +1162,9 @@ async function getReplies(activityId, user) {
                 points : r.points,
                 startingDate: r.startingDate,
                 status: r.status,
-                statusId : r.statusId
+                statusId : r.statusId,
+                activitiesReplyFiles : r.files,
+                activitiesReplyLinks : r.links
             }
         });    
     }
@@ -1233,16 +1258,32 @@ async function deleteReply(replyId, user) {
 async function addActivityFile(loggedInUser, data) {
     console.log('addActivityFile', data);
   
-    return await knex('activities_files')
-      .insert({
-        activity_id: data.activityId,
-        file: Buffer.from(data.file),
-        name: data.name,
-        type: data.type,
-        extension: data.extension,
-        size: data.size
-      })
-      .returning('activity_file_id');
+    if(data && data.activityReplyId)
+    {
+        return await knex('activities_files')
+        .insert({
+            activity_id: data.activityId,
+            activity_reply_id: data.activityReplyId,
+            file: Buffer.from(data.file),
+            name: data.name,
+            type: data.type,
+            extension: data.extension,
+            size: data.size
+        })
+        .returning('activity_file_id');
+    }
+    else {
+        return await knex('activities_files')
+        .insert({
+            activity_id: data.activityId,
+            file: Buffer.from(data.file),
+            name: data.name,
+            type: data.type,
+            extension: data.extension,
+            size: data.size
+        })
+        .returning('activity_file_id');
+    }
   }
   
   async function deleteActivityFile(loggedInUser, id) {
@@ -1318,14 +1359,24 @@ async function addActivityFile(loggedInUser, data) {
   }
 
   async function addActivityLink(loggedInUser, data) {
-    //console.log('addLogActivityFile', data);
-  
-    return await knex('activities_links')
-      .insert({
-        activity_id: data.activityId,
-        url: data.url
-      })
-      .returning('activity_link_id');
+
+    if(data && data.activityReplyId) {
+        return await knex('activities_links')
+        .insert({
+          activity_id: data.activityId,
+          activity_reply_id: data.activityReplyId,
+          url: data.url
+        })
+        .returning('activity_link_id');
+    }
+    else {
+        return await knex('activities_links')
+        .insert({
+          activity_id: data.activityId,
+          url: data.url
+        })
+        .returning('activity_link_id');
+    }
   }
   
   async function deleteActivityLink(loggedInUser, id) {
