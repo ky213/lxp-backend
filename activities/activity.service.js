@@ -108,7 +108,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
                 })
                 .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
-                    .whereIn('activity_courses.course_id', courseIds );
+                    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
                 })                
         });
     }
@@ -188,7 +188,8 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
                     this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
                 })
                 .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
+                    this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
+                    .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
                 })                
         });
     }
