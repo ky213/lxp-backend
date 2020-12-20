@@ -29,6 +29,7 @@ router.post("/reset/:token", resetPassowrd); // public route
 router.options("/authToken", cors() ); // public route
 router.post("/authToken", cors(corsOptions) , authToken); // public route
 router.get('/downloadPDF', authorize(), downloadCertificateAsPDF);
+router.post('/speechToText', authorize(), convertSpeechToText);
 
 module.exports = router;
 
@@ -224,4 +225,10 @@ async function downloadCertificateAsPDF(req, res, next) {
    userService.downloadCertificateAsPDF(req.query.organizationId, req.query.userId, req.query.courseId)
   .then(data => res.send(data))
   .catch(err => next(err));
+}
+
+async function convertSpeechToText(req, res, next) {
+  userService.convertSpeechToText(req.body.audioStream, req.body.textToCheck)
+ .then(data => res.send(data))
+ .catch(err => next(err));
 }

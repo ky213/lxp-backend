@@ -4,8 +4,14 @@ const Role = require('helpers/role');
 const bcrypt = require('bcrypt');
 const knex = require('../db'); 
 const htmlPdf  = require('html-pdf');
+const fs = require('fs').promises;
 const { listenerCount } = require('nodemailer/lib/mailer');
 const organizationService = require('../organizations/organization.service');
+const {Storage} = require('@google-cloud/storage');
+const speech = require('@google-cloud/speech');
+
+// Creates a client
+const client = new speech.SpeechClient();
 
 module.exports = {
     authenticate,
@@ -24,7 +30,8 @@ module.exports = {
     findResetPasswordToken,
     authToken,
     getByUserEmail,
-    downloadCertificateAsPDF
+    downloadCertificateAsPDF,
+    convertSpeechToText
 };
 
 async function authenticate({ email, password }) {
@@ -849,7 +856,6 @@ async function getByUserEmail(email) {
         return userData
 }
 
-
 async function downloadCertificateAsPDF(organizationId,  userId , courseId) {
 
     let userCourseData  = knex.select(['courses.course_id as courseId',
@@ -899,4 +905,54 @@ async function downloadCertificateAsPDF(organizationId,  userId , courseId) {
     let coursesData = await Promise.all(tempCourses);
 
     return coursesData && coursesData.length > 0 ? coursesData[0] : coursesData;
+}
+
+async function convertSpeechToText(audioStream, textToCheck) {    
+
+    // The audio file's encoding, sample rate in hertz, and BCP-47 language code
+    const audio = {
+        content: audioStream,
+    };
+      
+    //[8000, 12000, 16000, 24000, 48000]
+    // [LINEAR16, FLAC,MULAW,AMR,AMR_WB,OGG_OPUS,SPEEX_WITH_HEADER_BYTE]
+  
+    const config =  {
+        //enableAutomaticPunctuation: true,
+        //enableSpeakerDiarization: true,
+        audioChannelCount: 2,
+        //enableSeparateRecognitionPerChannel: true,
+        encoding: "FLAC",
+        sampleRateHertz: 48000,
+        languageCode: "ar-SA",
+        model: "default"
+      };
+  
+    const request = {
+        audio: audio,
+        config: config,
+    };
+    
+    // Detects speech in the audio file
+    const [response] = await client.recognize(request);
+
+    const transcription = response.results
+        .map(result => result.alternatives[0].transcript)
+        .join('\n');
+  
+    console.log(`Transcription: ${transcription} `);
+  
+    let found = false;
+    let message = '';
+    
+    if (textToCheck == transcription){
+        found = true;
+        message = transcription;
+    }
+    else {
+        found = false;
+        message = 'Try again';
+    }
+  
+    return { transcription , found , message  };
 }
