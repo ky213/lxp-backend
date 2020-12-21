@@ -43,7 +43,7 @@ async function updateUserCourse(courses, userId) {
             .insert(insertcourseIds)
             .catch(error => console.log(error));
 
-        return { userId: userId, courses: courses,  isValid: true };     
+        return { userId: userId, courses: courses,  isValid: true  };     
     }
 }
 
@@ -574,6 +574,7 @@ async function update(loggedInUser, user, organizationId) {
         return {
             userId: user.userId,
             courses: user.joinedCourses,
+            isActive: user.isActive,
             isValid: true
         };
     });

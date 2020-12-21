@@ -416,7 +416,8 @@ async function update(loggedInUser, user, organizationId) {
         await updateRoleQuery;
 
         return {
-            isValid: true
+            isValid: true,
+            isActive: user.isActive
         };
     });
 }

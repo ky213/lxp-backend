@@ -34,9 +34,6 @@ router.post('/speechToText', authorize(), convertSpeechToText);
 module.exports = router;
 
 function authenticate(req, res, next) {
-  //res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
-  //res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  //console.log(JSON.stringify(req.headers));
   userService
     .authenticate(req.body)
     .then(user => {

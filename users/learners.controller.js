@@ -110,10 +110,10 @@ function update(req, res, next) {
   learnerService
     .update(req.user, req.body.user, req.body.organizationId)
     .then(d => { 
-      learnerService.updateUserCourse( d.courses, d.userId )
+      learnerService.updateUserCourse( d.courses, d.userId)
       .then(data => { 
-        learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId);
-        res.json(data)})
+        learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId );
+        res.json({...data , isActive: d.isActive })})
         .catch(err => {
           console.log("errror", err);
         });
