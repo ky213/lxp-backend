@@ -3,9 +3,6 @@ const jwt = require('jsonwebtoken');
 const Role = require('helpers/role');
 const bcrypt = require('bcrypt');
 const knex = require('../db'); 
-const htmlPdf  = require('html-pdf');
-const fs = require('fs').promises;
-const { listenerCount } = require('nodemailer/lib/mailer');
 const organizationService = require('../organizations/organization.service');
 const {Storage} = require('@google-cloud/storage');
 const speech = require('@google-cloud/speech');
@@ -193,7 +190,8 @@ async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isL
             'users.surname',
             'users.gender',
             'users.start_date as startDate',
-            'users.profile_photo as profilePhoto',       
+            'users.profile_photo as profilePhoto', 
+            'users.is_active as isActiveUser',      
             'employees.employee_id as employeeId',
             'employees.is_active as isActive',
             'employees.exp_level_id as expLevelId',
@@ -287,6 +285,7 @@ async function getByEmployeeId(user, employeeId, programId) {
         'users.pager_number as pagerNumber',
         'users.start_date as startDate',        
         'users.profile_photo as profilePhoto', 
+        'users.is_active as isActiveUser',
         'employees.is_active as isActive',      
         'employees.employee_id as employeeId',
         'employees.exp_level_id as expLevelId',
@@ -767,6 +766,7 @@ async function authToken(token) {
     console.log(userId , 'userId')
     const user = await knex('users')
             .where('users.user_id', userId)
+            .andWhere('users.is_active', true)
             .select(['users.user_id',
                 'user_id as userId',
                 'email',
@@ -775,6 +775,7 @@ async function authToken(token) {
                 'surname as lastName', 
                 'is_super_admin',
                 'password',
+                'is_active',
                 'profile_photo as profilePhoto'            
                 ]
             )
