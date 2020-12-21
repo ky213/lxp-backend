@@ -37,6 +37,7 @@ module.exports = {
 async function authenticate({ email, password }) {
     const user = await knex('users')
         .where('users.email', email.toLowerCase())
+        .andWhere('users.is_active', true)
         .select(['users.user_id',
             'user_id as userId',
             'email',
@@ -45,6 +46,7 @@ async function authenticate({ email, password }) {
             'surname as lastName', 
             'is_super_admin',
             'password',
+            'is_active',
             'profile_photo as profilePhoto'            
             ]
         )

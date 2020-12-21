@@ -534,7 +534,8 @@ async function update(loggedInUser, user, organizationId) {
                 surname: user.surname.trim(),
                 gender: user.gender,
                 start_date: user.startDate,
-                email: user.email.trim()
+                email: user.email.trim(),
+                is_active : user.isActive
             })
             .catch(error => console.log(error));
 
