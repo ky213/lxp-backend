@@ -61,6 +61,8 @@ app.use('/xapi/activities/state', require('./xapi/state.controller'));
 app.use('/api/group_type', require('./group_type/group_type.controller'));
 app.use('/api/groups', require('./groups/groups.controller'));
 app.use('/api/dashboards', require('./dashboard/dashboard.controller'));
+app.use('/api/competencyType', require('./competency_type/competency_type.controller'));
+app.use('/api/competencies', require('./competencies/competencies.controller'));
 
 // global error handler
 app.use(errorHandler);
