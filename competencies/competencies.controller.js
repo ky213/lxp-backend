@@ -25,7 +25,7 @@ function getAll(req, res, next) {
 }
 
 function getById(req, res, next) {
-    competenciesService.getById(req.params.id)
+    competenciesService.getById(req.params.id, req.query.organizationId)
         .then(competencies => competencies ? res.json(competencies) : res.status(404).json({message: "Not found"}))
         .catch(err => next(err));
 }

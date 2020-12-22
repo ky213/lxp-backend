@@ -53,10 +53,11 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     };
 }
 
-async function getById(competencyTypeId) {
+async function getById(competencyTypeId , selectedOrganizationId) {
     return await knex
     .table("competency_type")
     .where("competency_type.competency_type_id", competencyTypeId)
+    .andWhere('competency_type.organization_id', selectedOrganizationId )
     .select([
       "competency_type.competency_type_id as competencyTypeId",
       "competency_type.name",

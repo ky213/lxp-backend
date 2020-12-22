@@ -66,7 +66,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     return { competencies, totalNumberOfRecords: totalNumberOfRecords[0].count };
 }
 
-async function getById(competencyId) {
+async function getById(competencyId , selectedOrganizationId) {
     return knex.select([
         'competencies.competency_id as competencyId', 
         'competencies.code', 
@@ -85,6 +85,7 @@ async function getById(competencyId) {
     .from('competencies')
     .join('competency_type', 'competency_type.competency_type_id', 'competencies.competency_type_id')
     .where('competencies.competency_id', competencyId)
+    .andWhere('competencies.organization_id', selectedOrganizationId )
     .limit(1)
     .first()
     .then(function(output){
