@@ -253,9 +253,6 @@ async function getAll(user, from, to, selectedOrganizationId) {
         .andWhere(function() {
             this.where('assigned_by', user.employeeId)
                 .orWhereIn('activities.program_id', function() {
-                    this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
-                })
-                .orWhereIn('activities.program_id', function() {
                     this.select('program_id').from('employee_programs').where('employee_id', user.employeeId)
                     .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
                 })                                                         
@@ -359,11 +356,6 @@ async function getById(activityId, user, selectedOrganizationId) {
     .leftJoin('users', 'users.user_id', 'employees.user_id')
     .leftJoin('activities_repetitions', 'activities_repetitions.activity_id', 'activities.activity_id')
     .where('activities.activity_id', activityId)
-    /*.andWhere('activities.assigned_by', user.employeeId)
-    .orWhereIn('activities.activity_id', function() {
-        this.select('activity_id').from('activity_participants').where('employee_id', user.employeeId);
-    })
-    */
     .limit(1)
     .first();
 
@@ -402,8 +394,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         .join('employees', 'employees.employee_id', 'activity_participants.employee_id')
         .join('users', 'users.user_id', 'employees.user_id')
         .where('activity_participants.activity_id', activityId);
-        //.andWhere('users.active', true);
-        
+
         if(participants && participants.length > 0) {
             activityDetails.participants = participants.map(p => {
                 return {
@@ -441,6 +432,22 @@ async function getById(activityId, user, selectedOrganizationId) {
                 "activities_links.url",
                 "activities_links.activity_link_id as activityLinkId"
             ]);
+        
+        const competencies = await knex.table('competencies_tags')
+            .leftJoin('activities', 'competencies_tags.activity_id' , 'activities.activity_id')
+            .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
+            .andWhere('activities.activity_id', activityId)
+            .select([
+                'competencies.competency_id as competencyId',
+                'competencies.code as competencyCode', 
+                'competencies.title as competencyTitle', 
+             ]);
+
+        activityDetails.competencyIds = competencies.map(d => ({
+            competencyId: d.competencyId,
+            competencyCode: d.competencyCode,
+            competencyTitle: d.competencyTitle
+        }));      
     }
     
     return activityDetails;
@@ -621,6 +628,26 @@ async function create(activity, user) {
                 modified_by: user.employeeId || user.sub
             }).returning('activity_id');
 
+        if (activity.competencyIds) {
+                const insertCompetencyIds = activity.competencyIds.map(competency => {
+                    return {
+                        activity_id: activityId[0],
+                        organization_id : activity.organizationId || user.organization,
+                        competency_id: competency.competencyId
+                    }
+                });
+        
+                await t('competencies_tags').where('activity_id', activityId[0]).del().catch(error => console.log(error));
+                await t('competencies_tags')
+                .insert(insertCompetencyIds)
+                .catch(error => { 
+                    if (error && error.code == '23505')
+                        throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each activity' })) 
+                    else
+                        throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+                });
+        }    
+
         if(activity.repeat) {
             await t('activities_repetitions')
             .insert({rrule: activity.rrule, activity_id: activityId[0], created_by: user.employeeId  || user.sub, modified_by: user.employeeId  || user.sub});
@@ -781,6 +808,26 @@ async function update(activity, user) {
         console.log("Update activity: ", updateModel.toSQL().toNative())
         await updateModel;
 
+        if (activity.competencyIds) {
+            const insertCompetencyIds = activity.competencyIds.map(competency => {
+                return {
+                    activity_id: activity.activityId,
+                    organization_id : activity.organizationId || user.organization,
+                    competency_id: competency.competencyId
+                }
+            });
+    
+            await knex('competencies_tags').where('activity_id', activity.activityId).del().catch(error => console.log(error));
+            await knex('competencies_tags')
+            .insert(insertCompetencyIds)
+            .catch(error => { 
+                if (error && error.code == '23505')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each activity' })) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+            });
+        }   
+
         const notificationMessage = `There have been some changes to the ${activity.repeat && 'repeating'} activity <strong>${activity.name}</strong> 
         that's starting at ${moment(activity.start).format('L')} and ending at ${moment(activity.end).format('L')}, please take a look.`
 
@@ -909,6 +956,8 @@ async function updateStatus(activityId, statusId, user)
 
 async function logActivity(activity, user)
 {
+    let organizationId = (user.role == Role.SuperAdmin && activity.organizationId) ? activity.organizationId : user.organization;
+
     return knex.transaction(async function(t) {
         let notifications = [];
 
@@ -932,6 +981,27 @@ async function logActivity(activity, user)
 
 
         const loggedBy = await userService.getByEmployeeId(user, user.employeeId);
+
+        if (activity.competencyIds) {
+            const insertCompetencyIds = activity.competencyIds.map(competency => {
+                return {
+                    log_activity_id: activityId[0],
+                    organization_id : organizationId,
+                    competency_id: competency.competencyId
+                }
+            });
+    
+            await knex('competencies_tags').transacting(t).where('log_activity_id', activityId[0]).del().catch(error => console.log(error));
+            await knex('competencies_tags')
+            .transacting(t)
+            .insert(insertCompetencyIds)
+            .catch(error => { 
+                if (error && error.code == '23505')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each activity' })) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+            });
+        }
 
         const insertActivitySupervisors = activity.supervisors.map(p => {
             notifications.push(notificationService.create({
@@ -963,14 +1033,14 @@ async function logActivity(activity, user)
 
 async function updateLogActivity(activity, user)
 {
+    let organizationId = (user.role == Role.SuperAdmin && activity.organizationId) ? activity.organizationId : user.organization;
+
     return knex.transaction(async function(t) {
 
         const res = await knex('log_activities')
             .transacting(t)
             .where('log_activity_id', activity.activityId)
-            //.andWhere('logged_by', user.employeeId)
             .update({
-                //program_id: activity.programId, 
                 name: activity.name,
                 start: activity.start,      
                 end: activity.end,      
@@ -982,6 +1052,26 @@ async function updateLogActivity(activity, user)
                 modified_by: user.employeeId,
                 modified_at: knex.fn.now(),
             });
+
+            if (activity.competencyIds) {
+                const insertCompetencyIds = activity.competencyIds.map(competency => {
+                    return {
+                        log_activity_id: activity.activityId,
+                        organization_id : organizationId,
+                        competency_id: competency.competencyId
+                    }
+                });
+        
+                await knex('competencies_tags').where('log_activity_id', activity.activityId).del().catch(error => console.log(error));
+                await knex('competencies_tags')
+                .insert(insertCompetencyIds)
+                .catch(error => { 
+                    if (error && error.code == '23505')
+                        throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each activity' })) 
+                    else
+                        throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+                });
+            }
 
             const insertActivitySupervisors = activity.supervisors.map(p => {
                 return {
@@ -1086,7 +1176,23 @@ async function getLogActivityById(activityId, user) {
                 "log_activities_links.log_activity_link_id as logActivityLinkId"
             ]);
         
-            activityDetails.replies = await getLogActivityReplies(activityId, user);
+        const competencies = await knex.table('competencies_tags')
+            .leftJoin('log_activities', 'competencies_tags.log_activity_id' , 'log_activities.log_activity_id')
+            .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
+            .andWhere('log_activities.log_activity_id', activityId)
+            .select([
+                'competencies.competency_id as competencyId',
+                'competencies.code as competencyCode', 
+                'competencies.title as competencyTitle', 
+             ]);
+
+        activityDetails.competencyIds = competencies.map(d => ({
+            competencyId: d.competencyId,
+            competencyCode: d.competencyCode,
+            competencyTitle: d.competencyTitle
+        }));  
+
+        activityDetails.replies = await getLogActivityReplies(activityId, user);
     }
     
     return activityDetails;
@@ -1632,8 +1738,8 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
-    .where('activities.repeat', false)
     .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
+    .andWhere('activities.repeat', false)
     .andWhere('activity_participants.employee_id', employeeId ).orWhereNull('activity_participants.employee_id');
 
     model
@@ -1648,7 +1754,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
             })
             .orWhereIn('activities.program_id', function() {
                 this.select('program_id').from('employee_programs').where('employee_id', employeeId)
-                .whereIn('activity_courses.course_id', courseIds );
+                .whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id');
             })                                                         
     });
 

@@ -7,8 +7,7 @@ module.exports = {
     create,
     update,
     getByCode,
-    deleteCompetencies,
-    checkIfCompetencyExists
+    deleteCompetencies
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
@@ -160,13 +159,13 @@ async function getByCode(name, user) {
 
 async function deleteCompetencies(competencies, user)
 {
-    /*let competencyTagCount = await knex('competencies_tags')
+    let competencyTagCount = await knex('competencies_tags')
     .whereIn('competency_id', competencies)
     .count();    
   
     let competencyExists = competencyTagCount[0].count > 0;
 
-    if (!competencyExists){*/
+    if (!competencyExists){
         return knex('competencies')
             .whereIn('competency_id', competencies)
             .del()
@@ -174,21 +173,10 @@ async function deleteCompetencies(competencies, user)
                 let errorObj = {isValid: false, status: "error", code: error.code, message :  error.message};
                 throw new Error(JSON.stringify(errorObj));
             });
-    /*}
+    }
     else
     {
         let errorObj = {isValid: false, status: "error", code: 1, message :  'Foreign key constraint'};
         throw new Error(JSON.stringify(errorObj));
-    }*/
+    }
 }
-
-async function checkIfCompetencyExists(competencyId, tagId) {
-    let model = knex("competencies_tags")
-      .where('competencies_tags.tag_id', tagId)
-      .andWhere('competencies_tags.competency_id', competencyId);
-
-    let x = await model.count().first();
-
-    if (x.count == 0) return true;
-    else return false;
-  }

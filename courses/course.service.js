@@ -12,6 +12,7 @@ const organizationService = require('../organizations/organization.service');
 module.exports = {
     getAll,
     getById,
+    getByUser,
     create,
     update,
     addFile,
@@ -121,7 +122,18 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
             'courses.content_path as contentPath',
             'courses.course_code as courseCode',
             'programs.program_id as programId',
-            'programs.name as programName',
+            'programs.name as programName'
+        ]);
+
+        const allCourseCompetencies = await knex.table('competencies_tags')
+        .leftJoin('courses', 'competencies_tags.course_id' , 'courses.course_id')
+        .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
+        .whereIn('courses.course_id', coursesIds.map(c => c.courseId))
+        .select([
+            'courses.course_id as courseId',
+            'competencies.competency_id as competencyId',
+            'competencies.code as competencyCode', 
+            'competencies.title as competencyTitle', 
         ]);
 
         let tempCourse = coursesIds.map(async (course) => {
@@ -149,36 +161,69 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
                 throw err;
             });
 
-    return {
-        courses,
-        totalNumberOfRecords,
-        totalNumberOfCourses
-    }
+        return {
+            courses: courses.map(course => {
+                return {
+                    ...course,
+                    competencyIds: allCourseCompetencies.filter(c => c.courseId == course.courseId).map(d => {
+                        return {
+                            competencyId: d.competencyId,
+                            competencyCode: d.competencyCode,
+                            competencyTitle: d.competencyTitle
+                        }
+                    }),
+                }
+            }),     
+            totalNumberOfRecords,
+            totalNumberOfCourses
+        };     
 }
 
 async function getById(loggedInUser, courseId, selectedOrganizationId) {
     if (!loggedInUser)
         return;
 
-    return knex('courses')
-        .join('programs', 'programs.program_id', 'courses.program_id')
-        .where('courses.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
-        .andWhere('courses.course_id', courseId)
-        .select([
-            'courses.course_id as courseId',
-            'courses.organization_id as organizationId',
-            'courses.name as name',
-            'courses.image',
-            'courses.description as description',
-            'courses.period_days as periodDays',
-            'courses.starting_date as startingDate',
-            'courses.program_id as programId',
-            'courses.content_path as contentPath',
-            'courses.course_code as courseCode',
-            'programs.name as programName',
-        ])
-        .limit(1)
-        .first();
+    let selectCourse = knex.select([
+        'courses.course_id as courseId',
+        'courses.organization_id as organizationId',
+        'courses.name as name',
+        'courses.image',
+        'courses.description as description',
+        'courses.period_days as periodDays',
+        'courses.starting_date as startingDate',
+        'courses.program_id as programId',
+        'courses.content_path as contentPath',
+        'courses.course_code as courseCode',
+        'programs.name as programName'
+    ])
+    .from('courses')
+    .join('programs', 'programs.program_id', 'courses.program_id');
+
+    let courseData = await selectCourse
+    .where('courses.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
+    .andWhere('courses.course_id', courseId)
+    .limit(1)
+    .first();
+
+    if(courseData) {
+        const competencies = await knex.table('competencies_tags')
+            .leftJoin('courses', 'competencies_tags.course_id' , 'courses.course_id')
+            .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
+            .andWhere('courses.course_id', courseId)
+            .select([
+                'competencies.competency_id as competencyId',
+                'competencies.code as competencyCode', 
+                'competencies.title as competencyTitle', 
+             ]);
+
+        courseData.competencyIds = competencies.map(d => ({
+            competencyId: d.competencyId,
+            competencyCode: d.competencyCode,
+            competencyTitle: d.competencyTitle
+        }));     
+    }
+
+    return courseData
 }
 
 async function addFile(loggedInUser, data) {
@@ -206,13 +251,14 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
         .where('course_id', courseId);
 }
 
-async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath, courseCode) {
+async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath, courseCode , competencyIds) {
     if (!loggedInUser)
         return;
 
     let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
-    return knex("courses")
+    return knex.transaction(async function (t) {
+        const courseId = await knex("courses")
         .insert({
             organization_id: organizationId,
             program_id: programId,
@@ -231,17 +277,40 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Course Code already taken, it should be unique' })) 
             else
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
-            });     
+            });  
+            
+        if (competencyIds) {
+            const insertCompetencyIds = competencyIds.map(competency => {
+                return {
+                    course_id: courseId,
+                    organization_id : organizationId,
+                    competency_id: competency.competencyId
+                }
+            });
+    
+            await knex('competencies_tags').where('course_id', courseId).del().catch(error => console.log(error));
+            await knex('competencies_tags')
+            .insert(insertCompetencyIds)
+            .catch(error => { 
+                if (error && error.code == '23505')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each course' })) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+            });
+        }
+    });       
 }
 
-async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo, courseCode) {
+async function update(loggedInUser, selectedOrganizationId, courseId, programId, name, description, periodDays, startingDate, logo, courseCode , competencyIds) {
     if (!loggedInUser)
         return;
 
     let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
-
-    return knex("courses")
+    
+    return knex.transaction(async function (t) {
+        await knex("courses")
         .where('course_id', courseId)
+        .andWhere('organization_id' , organizationId)
         .update({
             program_id: programId,
             name: name,
@@ -258,6 +327,27 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
             else
                 throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
+
+        if (competencyIds) {
+            const insertCompetencyIds = competencyIds.map(competency => {
+                return {
+                    course_id: courseId,
+                    organization_id : organizationId,
+                    competency_id: competency.competencyId
+                }
+            });
+
+            await knex('competencies_tags').where('course_id', courseId).del().catch(error => console.log(error));
+            await knex('competencies_tags')
+            .insert(insertCompetencyIds)
+            .catch(error => { 
+                if (error && error.code == '23505')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Competency Id should be unique for each course' })) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+            });
+        }
+    });
 }
 
 async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
