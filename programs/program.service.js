@@ -308,17 +308,6 @@ async function getByCurrentUser(user, organizationId) {
     let model = knex.table('programs')
         .where('programs.organization_id', organizationId)
         .andWhere('programs.is_active', true);
-
-    /*if(user.role == Role.ProgramDirector || user.role == Role.Learner) {
-        model.whereIn('programs.program_id', function() {
-            if(user.role == Role.ProgramDirector) {
-                this.select('program_id').from('program_directors').where('employee_id', user.employeeId);
-            }
-            else {
-                this.select('program_id').from('employee_programs').where('employee_id', user.employeeId);
-            }
-        });
-    }*/
         
     const programs = await model.select([
         'programs.program_id as programId',
