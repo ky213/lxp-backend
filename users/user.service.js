@@ -925,7 +925,7 @@ async function convertSpeechToText(audioStream, textToCheck) {
         //enableSpeakerDiarization: true,
         audioChannelCount: 2,
         //enableSeparateRecognitionPerChannel: true,
-        sampleRateHertz: 48000,
+        sampleRateHertz: 16000,
         encoding: "LINEAR16",
         languageCode: "pl-PL",
         model: "default"
