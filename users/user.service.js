@@ -924,11 +924,10 @@ async function convertSpeechToText(audioStream, textToCheck) {
         //enableAutomaticPunctuation: true,
         //enableSpeakerDiarization: true,
         audioChannelCount: 2,
-        enableSeparateRecognitionPerChannel: true,
         //enableSeparateRecognitionPerChannel: true,
-        sampleRateHertz: 16000,
-        encoding: "LINEAR16",
-        languageCode: "pl-PL",
+        encoding: "FLAC",
+        sampleRateHertz: 48000,
+        languageCode: "ar-SA",
         model: "default"
       };
   
