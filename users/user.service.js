@@ -925,7 +925,7 @@ async function convertSpeechToText(audioStream, textToCheck) {
         //enableSpeakerDiarization: true,
         audioChannelCount: 2,
         //enableSeparateRecognitionPerChannel: true,
-        encoding: "WAV",
+        encoding: "LINEAR16",
         // languageCode: "ar-SA",
         model: "default"
       };
