@@ -925,9 +925,8 @@ async function convertSpeechToText(audioStream, textToCheck) {
         //enableSpeakerDiarization: true,
         audioChannelCount: 2,
         //enableSeparateRecognitionPerChannel: true,
-        encoding: "FLAC",
-        sampleRateHertz: 48000,
-        languageCode: "ar-SA",
+        encoding: "WAV",
+        // languageCode: "ar-SA",
         model: "default"
       };
   
