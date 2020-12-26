@@ -924,6 +924,7 @@ async function convertSpeechToText(audioStream, textToCheck) {
         //enableAutomaticPunctuation: true,
         //enableSpeakerDiarization: true,
         audioChannelCount: 2,
+        enableSeparateRecognitionPerChannel: true,
         //enableSeparateRecognitionPerChannel: true,
         sampleRateHertz: 16000,
         encoding: "LINEAR16",
