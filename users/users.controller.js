@@ -29,7 +29,7 @@ router.post("/reset/:token", resetPassowrd); // public route
 router.options("/authToken", cors() ); // public route
 router.post("/authToken", cors(corsOptions) , authToken); // public route
 router.get('/downloadPDF', authorize(), downloadCertificateAsPDF);
-router.post('/speechToText', authorize(), convertSpeechToText);
+router.post('/speechToText', cors(corsOptions), convertSpeechToText);
 
 module.exports = router;
 
