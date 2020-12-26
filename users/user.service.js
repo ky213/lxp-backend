@@ -5,7 +5,8 @@ const bcrypt = require('bcrypt');
 const knex = require('../db'); 
 const organizationService = require('../organizations/organization.service');
 const {Storage} = require('@google-cloud/storage');
-const speech = require('@google-cloud/speech');
+const speech = require('@google-cloud/speech').v1p1beta1;
+
 
 // Creates a client
 const client = new speech.SpeechClient();
@@ -923,9 +924,9 @@ async function convertSpeechToText(audioStream, textToCheck) {
     const config =  {
         //enableAutomaticPunctuation: true,
         //enableSpeakerDiarization: true,
-        audioChannelCount: 2,
-        //enableSeparateRecognitionPerChannel: true,
-        encoding: "FLAC",
+        // audioChannelCount: 1,
+        // enableSeparateRecognitionPerChannel: true,
+        encoding: 'MP3' ,
         sampleRateHertz: 48000,
         languageCode: "ar-SA",
         model: "default"
