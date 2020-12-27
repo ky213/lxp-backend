@@ -44,7 +44,7 @@ async function authenticate({ email, password }) {
             'surname as lastName', 
             'is_super_admin',
             'password',
-            'is_active',
+            'is_active as isActive',
             'profile_photo as profilePhoto'            
             ]
         )
@@ -91,7 +91,7 @@ async function authenticate({ email, password }) {
                 .select(['users.user_id',
                     'users.user_id as userId', 'employees.employee_id as employeeId', 'email', 'users.name', 
                     'users.name as firstName', 'surname as lastName', 
-                    'is_super_admin', 'password', 
+                    'is_super_admin', 'password', 'users.is_active as isActive',
                     'users.profile_photo as profilePhoto',
                     'employees.organization_id as organizationId', 'organizations.name as organizationName', 'roles.role_id as role', 
                     'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
@@ -380,7 +380,8 @@ async function getByUserId(user, userId) {
             'phone_number as phoneNumber',
             'pager_number as pagerNumber',
             'start_date as startDate',
-            'profile_photo as profilePhoto'
+            'profile_photo as profilePhoto',
+            'is_active as isActive'
         ])
         .from('users');
 

@@ -160,11 +160,12 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
         'activities.is_public as isPublic',  
         knex.raw('? as source', ['assigned']),
         'activities_repetitions.rrule',
-        knex.raw('NULL as activityTypeName')
+        'activity_types.name as activityTypeName'
     ])
     .from('activities_repetitions')
     .join('activities', 'activities_repetitions.activity_id', 'activities.activity_id')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
+    .join('activity_types', 'activity_types.activity_type_id', 'activities.activity_type_id')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
