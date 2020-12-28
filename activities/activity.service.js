@@ -168,8 +168,7 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
     .join('activity_types', 'activity_types.activity_type_id', 'activities.activity_type_id')
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
-    .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
-    .andWhere('activities.repeat', true);
+    .where('activities.repeat', true);
 
     if(!userHasAdminRole(user)) {
         repeatingActivitiesModel

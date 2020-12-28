@@ -572,6 +572,7 @@ async function update(loggedInUser, user, organizationId) {
         }
 
         return {
+            user : user,
             userId: user.userId,
             courses: user.joinedCourses,
             isActive: user.isActive,

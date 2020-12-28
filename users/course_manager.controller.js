@@ -103,7 +103,7 @@ function update(req, res, next) {
     .then((data) => {
         console.log('CM update data', data);
         res.json(data);
-        })
+      })
     .catch(err => next(err));
 }
 

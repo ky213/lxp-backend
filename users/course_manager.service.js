@@ -417,6 +417,7 @@ async function update(loggedInUser, user, organizationId) {
 
         return {
             isValid: true,
+            user : user,
             isActive: user.isActive
         };
     });

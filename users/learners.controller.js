@@ -113,7 +113,7 @@ function update(req, res, next) {
       learnerService.updateUserCourse( d.courses, d.userId)
       .then(data => { 
         learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId );
-        res.json({...data , isActive: d.isActive })})
+        res.json({...data , isActive: d.isActive , user : d.user })})
         .catch(err => {
           console.log("errror", err);
         });
