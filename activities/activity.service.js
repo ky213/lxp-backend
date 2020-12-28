@@ -8,6 +8,7 @@ const programService = require('../programs/program.service');
 const courseService = require('../courses/course.service');
 const userService = require('../users/user.service');
 const { RRule, RRuleSet, rrulestr } = require('rrule');
+var _ = require('lodash');
 
 module.exports = {
     getAll,
@@ -1795,7 +1796,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
 
     let repeatingActivities = [];
     repeatingActivities = await getRepeatActivities(user, programIds, courseIds, selectedOrganizationId);
-
+    repeatingActivities = _.uniqBy(repeatingActivities, 'activityId')
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
 
     return activities.concat(repeatingActivities);
