@@ -21,10 +21,12 @@ module.exports = {
 };
 
 async function sendEmailForCourse(loggedInUser, courses, userId, organizationId) {
-    await courses.forEach(course => {
-        var email = {CourseId: course.courseId, organizationId: organizationId, UserId: userId};
-        organizationService.sendEmail(email, loggedInUser);
-    });
+    if (courses) {
+        await courses.forEach(course => {
+            var email = {CourseId: course.courseId, organizationId: organizationId, UserId: userId};
+            organizationService.sendEmail(email, loggedInUser);
+        });
+    }
 }
 
 async function updateUserCourse(courses, userId) {
@@ -44,6 +46,11 @@ async function updateUserCourse(courses, userId) {
             .catch(error => console.log(error));
 
         return { userId: userId, courses: courses,  isValid: true  };     
+    }
+    else {
+        console.log(userId , courses)
+        await knex('user_courses').where('user_id', userId).del().catch(error => console.log(error));
+        return { userId: userId, courses: null,  isValid: true  }
     }
 }
 

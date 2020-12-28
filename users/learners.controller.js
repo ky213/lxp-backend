@@ -109,14 +109,17 @@ function addBulk(req, res, next) {
 function update(req, res, next) {
   learnerService
     .update(req.user, req.body.user, req.body.organizationId)
-    .then(d => { 
+    .then(d => {
       learnerService.updateUserCourse( d.courses, d.userId)
       .then(data => { 
-        learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId );
-        res.json({...data , isActive: d.isActive , user : d.user })})
-        .catch(err => {
+        if(data)  {
+          learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId );
+          res.json({...data , isActive: d.isActive , user : d.user })
+        }
+      })
+      .catch(err => {
           console.log("errror", err);
-        });
+      });
     })
     .catch(err => {
       console.log("errror", err);
