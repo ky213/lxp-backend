@@ -524,14 +524,19 @@ async function changePassword({oldPassword, newPassword}, user) {
             .del()
             .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related groups'}))});
 
+            /*await knex("user_courses")
+            .transacting(t)
+            .whereIn("user_id", userIds)
+            .del();*/
+
             await knex("users")
             .transacting(t)
             .whereIn("user_id", userIds)
             .del()
             .catch(error => {
-                if(error.code == '23503')
-                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) 
-                else
+                //if(error.code == '23503')
+                //    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) 
+                //else
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message : error.message})) 
             });
 
