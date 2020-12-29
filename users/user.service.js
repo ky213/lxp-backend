@@ -473,7 +473,25 @@ async function changePassword({oldPassword, newPassword}, user) {
         .select(['user_id']);
     
     let userIds = userIdsList.map(t => t.user_id);   
-        
+    
+    let notificationsList = await knex('notifications')
+        .whereIn('user_id', userIds)
+        .select(['notification_id']);
+    
+    let notificationsIds = notificationsList.map(t => t.notification_id);
+
+    let activityReplyList = await knex('activity_replies')
+        .whereIn('employee_id', employees)
+        .select(['activity_id']);
+    
+    let activityReplyIds = activityReplyList.map(t => t.activity_id);
+
+    let activityLinksList = await knex('activities_links')
+        .whereIn('activity_id', activityReplyIds)
+        .select(['activity_id']);
+    
+    let activityLinksIds = activityLinksList.map(t => t.activity_id);
+
     return knex
     .transaction(async function(t) {
         return knex.transaction(async function(t) {
@@ -505,6 +523,16 @@ async function changePassword({oldPassword, newPassword}, user) {
             await knex("log_activity_supervisors")
             .transacting(t)
             .whereIn("employee_id", employeeIds)
+            .del();            
+            
+            await knex("activities_links")
+            .transacting(t)
+            .whereIn('activity_id', activityLinksIds)
+            .del();
+            
+            await knex("activity_points")
+            .transacting(t)
+            .whereIn("employee_id", employeeIds)
             .del();
 
             await knex("activity_replies")
@@ -524,19 +552,24 @@ async function changePassword({oldPassword, newPassword}, user) {
             .del()
             .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related groups'}))});
 
+            await knex("notification_channels")
+            .transacting(t)
+            .whereIn("notification_id", notificationsIds)
+            .del();
+
             await knex("notifications")
             .transacting(t)
             .whereIn("user_id", userIds)
-            .del();
-
+            .del(); 
+            
             await knex("users")
             .transacting(t)
             .whereIn("user_id", userIds)
             .del()
             .catch(error => {
-                //if(error.code == '23503')
-                //    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) 
-                //else
+                if(error.code == '23503')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) 
+                else
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message : error.message})) 
             });
 
