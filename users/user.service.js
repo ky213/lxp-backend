@@ -515,7 +515,8 @@ async function changePassword({oldPassword, newPassword}, user) {
             await knex("employee_announcement_reads")
             .transacting(t)
             .whereIn("employee_id", employeeIds)
-            .del();
+            .del()
+            .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message : error.message}))});
 
             await knex("employees")
             .transacting(t)
@@ -527,7 +528,12 @@ async function changePassword({oldPassword, newPassword}, user) {
             .transacting(t)
             .whereIn("user_id", userIds)
             .del()
-            .catch(error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) });
+            .catch(error => {
+                if(error.code == '23503')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete user with related courses'})) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message : error.message})) 
+            });
 
         });        
     });
