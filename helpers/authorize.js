@@ -1,6 +1,7 @@
 const expressJwt = require('express-jwt');
 const { secret } = require('config.json');
 const Role = require('helpers/role');
+const knex = require('../db'); 
 
 module.exports = authorize;
 
@@ -16,19 +17,29 @@ function authorize(roles = []) {
         expressJwt({ secret }),
 
         // authorize based on user role
-        (req, res, next) => {
-            //console.log("Req session token:", req.cookies && req.cookies.sessionToken)
+        async (req, res, next) => {
+   
+            const userData = await getUserActiveStatus(req.user.userId) ;
 
             if(req.user && req.user.role != Role.SuperAdmin) {
                 if (roles.length && !roles.includes(req.user.role)) {
                     // user's role is not authorized
                     return res.status(401).json({ message: 'Unauthorized' });
                 }
+                else if(userData && userData.isActive == false) {
+                    return res.status(401).json({ message: 'Unauthorized' });
+                }
             }
- 
 
-            // authentication and authorization successful
             next();
         }
     ];
+}
+
+async function getUserActiveStatus(userId)
+{
+    return await knex('users')
+        .where('users.user_id', userId)
+        .select([ 'user_id as userId', 'is_active as isActive'  ] )
+        .first();   
 }
