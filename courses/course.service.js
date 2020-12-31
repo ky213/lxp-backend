@@ -298,6 +298,8 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
         }
+
+        return { courseId }
     });       
 }
 
@@ -347,6 +349,8 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
         }
+
+        return { courseId }
     });
 }
 
@@ -507,7 +511,6 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
 
     console.log(" activityCount => ", activityCount);
 
-    console.log('courseId => ' , courseId);
     await knex("courses")
         .where('course_id', courseId)
         .update({

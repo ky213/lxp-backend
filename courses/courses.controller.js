@@ -63,8 +63,9 @@ async function create(req, res, next) {
         req.body.name, req.body.description, req.body.periodDays, req.body.startingDate,
         req.body.logo, contentPath, req.body.courseCode , req.body.competencyIds)
         .then(data => { 
+            var courseId = 0;
             if(data)
-                courseId = data[0];
+                courseId = data.courseId[0];
             data = {
                 uploadUrl: cloudFileURL
             };
