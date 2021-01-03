@@ -20,8 +20,8 @@ module.exports = {
     updateUserCourse
 };
 
-async function sendEmailForCourse(loggedInUser, courses, userId, organizationId) {
-    if (courses) {
+async function sendEmailForCourse(loggedInUser, courses, userId, organizationId , isActive) {
+    if (courses && isActive) {
         await courses.forEach(course => {
             var email = {CourseId: course.courseId, organizationId: organizationId, UserId: userId};
             organizationService.sendEmail(email, loggedInUser);

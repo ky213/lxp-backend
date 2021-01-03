@@ -93,7 +93,7 @@ function add(req, res, next) {
   learnerService
     .add(req.user, req.body.user, req.body.organizationId)
     .then(data => { 
-      learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId);
+      learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId , true);
       res.json(data)
     })
     .catch(err => next(err));
@@ -113,7 +113,7 @@ function update(req, res, next) {
       learnerService.updateUserCourse( d.courses, d.userId)
       .then(data => { 
         if(data)  {
-          learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId );
+          learnerService.sendEmailForCourse(req.user, data.courses, data.userId , req.body.organizationId , d.isActive);
           res.json({...data , isActive: d.isActive , user : d.user })
         }
       })
