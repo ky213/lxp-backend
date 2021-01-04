@@ -369,9 +369,6 @@ async function deleteAllInactive() {
 }
 
 async function deletePrograms(programs, user) {
-    const academicYears = await knex("academic_years")
-            .whereIn("program_id", programs)
-            .select('academic_year_id').map(s => s.academic_year_id);
 
     await knex.transaction(async function(t) {
         await knex("program_directors")
