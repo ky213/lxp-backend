@@ -109,7 +109,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
     let offset = (pageId - 1) * recordsPerPage;
 
     var coursesIds = await model.clone()
-        .orderBy('name', 'asc')
+        .orderBy('course_code', 'asc')
         .offset(offset)
         .limit(recordsPerPage)
         .select([
