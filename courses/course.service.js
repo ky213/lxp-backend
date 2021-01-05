@@ -135,11 +135,34 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
             'competencies.code as competencyCode', 
             'competencies.title as competencyTitle', 
         ]);
+        
+        const allUserCourses = await knex.table('user_courses')
+        .join('courses', 'courses.course_id', 'user_courses.course_id')
+        .whereIn('user_courses.course_id', coursesIds.map(c => c.courseId))
+        .select([
+                'user_courses.course_id as courseId',
+                'user_courses.user_id as userId',
+                'user_courses.activity_numbers_completed as activityNumbersCompleted',
+                'user_courses.is_completed as isCompleted'
+        ]); 
 
+        // Need to be updated to be called from user_join
         let tempCourse = coursesIds.map(async (course) => {
-            let result = await dashboardService.progressDistrubitionData(loggedInUser, organizationId, programId, course.courseId);
-            course.inProgress = (result && result.inProgress) > 0 ? true : false;
-            course.NumofUsersInProgress = result.inProgress;
+            let allUsers = allUserCourses.filter(c => c.courseId == course.courseId);
+            
+            let progress = false;
+            let progressCounter = 0;
+            let completedCounter = 0;
+            allUsers.forEach(user => {
+                progress = user && user.isCompleted == false &&  user.activityNumbersCompleted > 0 ? true : false;
+                progressCounter += user && user.isCompleted == false &&  user.activityNumbersCompleted > 0 ? 1 : 0;
+                completedCounter += user && user.isCompleted == true  ? 1 : 0 ;
+            })
+
+            course.inProgress = progress;
+            course.NumofUsersInProgress = progressCounter;
+            course.NumofUsersCompleted = completedCounter;
+            
             return course;
         });
 
