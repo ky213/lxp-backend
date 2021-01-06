@@ -9,6 +9,10 @@ const courseService = require('../courses/course.service');
 const userService = require('../users/user.service');
 const { RRule, RRuleSet, rrulestr } = require('rrule');
 var _ = require('lodash');
+const {v4: uuidv4} = require('uuid');
+const {Storage} = require('@google-cloud/storage');
+var cloudStorage = new Storage();
+var bucket = process.env.STORAGE_BUCKET;
 
 module.exports = {
     getAll,
@@ -1357,15 +1361,28 @@ async function deleteReply(replyId, user) {
 }
 
 async function addActivityFile(loggedInUser, data) {
-    console.log('addActivityFile', data);
-  
+
+    let model = knex.select(['activities_files.file']).from('activities_files');
+
+    let fileData = await model
+    .where('activities_files.activity_id' , data.activityId)
+    .limit(1)
+    .first();
+
+    let uuid = `${uuidv4()}/`;
+    if(fileData)
+        uuid = fileData.file;
+
+    const contentPath = uuid +  `${data.name}`;
+
+    let activityFileId = 0;
     if(data && data.activityReplyId)
     {
-        return await knex('activities_files')
+        activityFileId = await knex('activities_files')
         .insert({
             activity_id: data.activityId,
             activity_reply_id: data.activityReplyId,
-            file: Buffer.from(data.file),
+            file: uuid,
             name: data.name,
             type: data.type,
             extension: data.extension,
@@ -1374,10 +1391,10 @@ async function addActivityFile(loggedInUser, data) {
         .returning('activity_file_id');
     }
     else {
-        return await knex('activities_files')
+        activityFileId =  await knex('activities_files')
         .insert({
             activity_id: data.activityId,
-            file: Buffer.from(data.file),
+            file: uuid,
             name: data.name,
             type: data.type,
             extension: data.extension,
@@ -1385,11 +1402,23 @@ async function addActivityFile(loggedInUser, data) {
         })
         .returning('activity_file_id');
     }
+
+    return { ... activityFileId , ContentPath : contentPath}
+
   }
   
   async function deleteActivityFile(loggedInUser, id) {
     console.log('deleteActivityFile => ', id);
     
+    let model = knex.select(['activities_files.file' , 'activities_files.name']).from('activities_files');
+
+    let fileData = await model
+    .where('activities_files.activity_file_id' , id)
+    .limit(1)
+    .first();
+
+    deleteFileFromCloudStorage(fileData.file + fileData.name);
+
     return knex("activities_files")
       .where("activity_file_id", id)
       .del();
@@ -1397,13 +1426,28 @@ async function addActivityFile(loggedInUser, data) {
   
   async function downloadActivityFile(loggedInUser, id) {
     console.log('downloadFile => ', id);
-    return knex("activities_files")
+
+    let data = await knex("activities_files")
       .where("activity_file_id", id)
       .select([
         "activities_files.name",
         "activities_files.file"      
       ])
       .first();
+
+    const chunks = []
+    const fstream = cloudStorage
+            .bucket(bucket)
+            .file(data.file + data.name)
+            .createReadStream()
+
+    for await (const chunk of fstream) {        
+        chunks.push(chunk);
+    }
+
+    bin = Buffer.concat(chunks).toString('utf8')
+
+    return {...data , file : bin}
   }
 
   async function addLogActivityFile(loggedInUser, data) {
@@ -1801,4 +1845,18 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
 
     return activities.concat(repeatingActivities);
     
+}
+
+function deleteFileFromCloudStorage(filePath) {
+    cloudStorage
+        .bucket(bucket)
+        .file(filePath)
+        .delete((err) => {
+            if (!err) {
+                console.log("deleting files in path gs://", bucket + "/" + filePath);
+            } else {
+                console.log("error : " + err);
+                throw err;
+            }
+        });
 }

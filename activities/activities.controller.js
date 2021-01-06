@@ -5,6 +5,10 @@ const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 const converter = require("helpers/converter");
 
+const {Storage} = require('@google-cloud/storage');
+var cloudStorage = new Storage();
+var bucket = process.env.STORAGE_BUCKET;
+
 // routes
  
 router.post('/', authorize(), create); 
@@ -143,9 +147,37 @@ function deleteReply(req, res, next) {
 }
 
 async function addActivityFile(req, res, next)  {
-    console.log('addActivityFile', req.body);
     activityService.addActivityFile(req.user, req.body)
-        .then(data => res.json(data));
+    .then(data => {
+        if(data && data.ContentPath) {
+
+            const type = req.body.type;
+            const buckets =  cloudStorage.bucket(bucket);
+            const blob = buckets.file(data.ContentPath);
+
+            const stream = blob.createWriteStream({
+                resumable: true,
+                contentType: type,
+                predefinedAcl: 'publicRead',
+            });
+
+            stream.on('error', err => {
+                next(err);
+            });
+
+            stream.on('finish', () => {
+                res.status(200).json({
+                    data: {
+                        url: `https://storage.googleapis.com/${buckets.name}/${blob.name}`,
+                    },
+                });
+            });
+
+            stream.end(Buffer.from(req.body.file));
+        }
+
+        res.json(data);
+    });
 }
 
 async function deleteActivityFile(req, res, next)  {
