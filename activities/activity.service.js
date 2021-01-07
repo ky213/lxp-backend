@@ -47,7 +47,8 @@ module.exports = {
     getActivityStatusIds,
     getActivityStatusDetails,
     evaluate,
-    getAllByLearner
+    getAllByLearner,
+    getAllFiles
 };
 
 
@@ -442,7 +443,7 @@ async function getById(activityId, user, selectedOrganizationId) {
             competencyTitle: d.competencyTitle
         }));      
     }
-    
+
     return activityDetails;
 }
 
@@ -1860,3 +1861,62 @@ function deleteFileFromCloudStorage(filePath) {
             }
         });
 }
+
+async function getAllFiles(user , organizationId) {
+    console.log('getAllActivityFiles => ' ,  user);
+
+    const contentPath = 'GlobalFolder' + organizationId + '/' ;
+
+    const [files] = await  cloudStorage.bucket(bucket).getFiles({directory: contentPath});
+    let allGlobalFiles = files.map(file => {
+        return {
+            file: contentPath ,
+            name : file.name.substring(file.name.indexOf('/') + 1)}
+    });
+
+    let tempCloudFiles = allGlobalFiles.map(async (data) => {    
+        const chunks = []
+        const fstream = cloudStorage
+                .bucket(bucket)
+                .file(data.file + data.name)
+                .createReadStream()
+
+        for await (const chunk of fstream) {        
+            chunks.push(chunk);
+        }
+
+        bin = Buffer.concat(chunks).toString('utf8')
+        
+        data.fileStream = bin;
+        return data;
+    });
+
+    let allFiles = await knex("activities_files")
+      .where("activity_reply_id", null)
+      .andWhereNot("activities_files.file", null)
+      .select(["activities_files.file" , "activities_files.name"]);
+
+    let tempFiles = allFiles.map(async (data) => {
+        const chunks = []
+        const fstream = cloudStorage
+                .bucket(bucket)
+                .file(data.file + data.name)
+                .createReadStream()
+
+        for await (const chunk of fstream) {        
+            chunks.push(chunk);
+        }
+
+        bin = Buffer.concat(chunks).toString('utf8')
+        
+        data.fileStream = bin;
+        return data;
+
+    });
+
+    const combined = [...tempFiles, ...tempCloudFiles] 
+
+    let allFilesData = await Promise.all(combined);
+
+    return allFilesData;
+  }

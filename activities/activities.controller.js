@@ -4,7 +4,7 @@ const activityService = require('./activity.service');
 const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 const converter = require("helpers/converter");
-
+const {v4: uuidv4} = require('uuid');
 const {Storage} = require('@google-cloud/storage');
 var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
@@ -50,6 +50,9 @@ router.post('/addLogActivityLink', authorize(), addLogActivityLink);
 router.delete('/deleteLogActivityLink/:id', authorize(), deleteLogActivityLink);
 
 router.post('/evaluate/:id', authorize(), evaluate);
+
+router.get('/allFiles/:id', authorize(), getAllFiles);
+router.post('/upload/:id', authorize(), uploadFileToCloud);
 
 module.exports = router;
 
@@ -273,4 +276,38 @@ function getAllByLearner(req, res, next) {
     activityService.getAllByLearner(req.user, req.query.userId , req.query.employeeId , req.query.organizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
+}
+
+function getAllFiles(req, res, next) {console.log('getAllActivityFiles => ' );
+    activityService.getAllFiles(req.user, req.params.id)
+        .then(files => res.json(files))
+        .catch(err => next(err));
+}
+
+async function uploadFileToCloud(req, res, next)  {
+    const contentPath = 'GlobalFolder' + req.params.id + '/' + req.body.name ; //`${uuidv4()}/` + req.body.name ;
+    const type = req.body.type;
+    const buckets =  cloudStorage.bucket(bucket);
+    const blob = buckets.file(contentPath);
+
+    const stream = blob.createWriteStream({
+        resumable: true,
+        contentType: type,
+        predefinedAcl: 'publicRead',
+    });
+
+    stream.on('error', err => {
+        next(err);
+    });
+
+    stream.on('finish', () => {
+        res.status(200).json({
+            data: {
+                url: `https://storage.googleapis.com/${buckets.name}/${blob.name}`,
+            },
+        });
+    });
+
+    stream.end(Buffer.from(req.body.file));
+
 }
