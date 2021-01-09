@@ -1865,6 +1865,7 @@ function deleteFileFromCloudStorage(filePath) {
 async function getAllFiles(user , organizationId) {
     console.log('getAllActivityFiles => ' ,  user);
 
+    const buckets =  cloudStorage.bucket(bucket);
     const contentPath = 'GlobalFolder' + organizationId + '/' ;
 
     const [files] = await  cloudStorage.bucket(bucket).getFiles({directory: contentPath});
@@ -1874,8 +1875,11 @@ async function getAllFiles(user , organizationId) {
             name : file.name.substring(file.name.indexOf('/') + 1)}
     });
 
-    let tempCloudFiles = allGlobalFiles.map(async (data) => {    
-        const chunks = []
+    let tempCloudFiles = allGlobalFiles.map(async (data) => {  
+        
+        data.url = `https://storage.googleapis.com/${buckets.name}/${data.file}/${data.name}`;
+
+        /*const chunks = []
         const fstream = cloudStorage
                 .bucket(bucket)
                 .file(data.file + data.name)
@@ -1886,8 +1890,8 @@ async function getAllFiles(user , organizationId) {
         }
 
         bin = Buffer.concat(chunks).toString('utf8')
-        
-        data.fileStream = bin;
+        */
+        //data.fileStream = bin;
         return data;
     });
 
@@ -1897,7 +1901,10 @@ async function getAllFiles(user , organizationId) {
       .select(["activities_files.file" , "activities_files.name"]);
 
     let tempFiles = allFiles.map(async (data) => {
-        const chunks = []
+        
+        data.url = `https://storage.googleapis.com/${buckets.name}/${data.file}/${data.name}`;
+
+        /*const chunks = []
         const fstream = cloudStorage
                 .bucket(bucket)
                 .file(data.file + data.name)
@@ -1908,8 +1915,8 @@ async function getAllFiles(user , organizationId) {
         }
 
         bin = Buffer.concat(chunks).toString('utf8')
-        
-        data.fileStream = bin;
+        */
+        //data.fileStream = bin;
         return data;
 
     });
