@@ -291,7 +291,7 @@ async function uploadFileToCloud(req, res, next)  {
     const blob = buckets.file(contentPath);
 
     const stream = blob.createWriteStream({
-        resumable: true,
+        resumable: false,
         contentType: type,
         predefinedAcl: 'publicRead',
     });
