@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const activityService = require('./activity.service');
+const courseService = require('../courses/course.service');
 const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 const converter = require("helpers/converter");
@@ -285,11 +286,11 @@ function getAllFiles(req, res, next) {console.log('getAllActivityFiles => ' );
 }
 
 async function uploadFileToCloud(req, res, next)  {
-    const contentPath = 'GlobalFolder' + req.params.id + '/' ;
+    let contentPath = 'GlobalFolder' + req.params.id + '/' ;
     let cloudFileURL = ""
     if (req.body.file) {
         let fileName = req.body.file;
-        cloudFileURL = await activityService.genetateCloudStorageUploadURL(contentPath, fileName)
+        cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName)
         .then(data => res.json({ name : req.body.file , url : data}))
         .catch(err => next(err));
     }

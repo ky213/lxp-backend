@@ -4,6 +4,7 @@ require('moment-timezone');
 const converter = require("helpers/converter");
 const Role = require('helpers/role');
 const notificationService = require('../notifications/notification.service');
+const organizationService = require('../organizations/organization.service');
 const programService = require('../programs/program.service');
 const courseService = require('../courses/course.service');
 const userService = require('../users/user.service');
@@ -48,8 +49,7 @@ module.exports = {
     getActivityStatusDetails,
     evaluate,
     getAllByLearner,
-    getAllFiles,
-    genetateCloudStorageUploadURL
+    getAllFiles
 };
 
 
@@ -1876,23 +1876,11 @@ async function getAllFiles(user , organizationId) {
             name : file.name.substring(file.name.indexOf('/') + 1)}
     });
 
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
+
     let tempCloudFiles = allGlobalFiles.map(async (data) => {  
         
-        data.url = `https://storage.googleapis.com/${buckets.name}/${data.file}/${data.name}`;
-
-        /*const chunks = []
-        const fstream = cloudStorage
-                .bucket(bucket)
-                .file(data.file + data.name)
-                .createReadStream()
-
-        for await (const chunk of fstream) {        
-            chunks.push(chunk);
-        }
-
-        bin = Buffer.concat(chunks).toString('utf8')
-        */
-        //data.fileStream = bin;
+        data.url = `${assetsDomain}/${data.file}${data.name}`;
         return data;
     });
 
@@ -1903,21 +1891,7 @@ async function getAllFiles(user , organizationId) {
 
     let tempFiles = allFiles.map(async (data) => {
         
-        data.url = `https://storage.googleapis.com/${buckets.name}/${data.file}/${data.name}`;
-
-        /*const chunks = []
-        const fstream = cloudStorage
-                .bucket(bucket)
-                .file(data.file + data.name)
-                .createReadStream()
-
-        for await (const chunk of fstream) {        
-            chunks.push(chunk);
-        }
-
-        bin = Buffer.concat(chunks).toString('utf8')
-        */
-        //data.fileStream = bin;
+        data.url = `${assetsDomain}/${data.file}${data.name}`;
         return data;
 
     });
@@ -1929,24 +1903,10 @@ async function getAllFiles(user , organizationId) {
     return allFilesData;
   }
 
-  async function genetateCloudStorageUploadURL(dirPath, filename) {
+async function getOrganizationAssetsDomain(organizationId) {
+    settings = await organizationService.getOrganizationSettingsByOrgId(organizationId);
 
-    const options = {
-        version: 'v4',
-        action: 'write',
-        expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-    };
+    let assetsDomain = settings && settings.assetsDomain ?  settings.assetsDomain :  process.env.UPLOADS_URL;
+    return assetsDomain;
 
-    const [url] = await cloudStorage
-        .bucket(bucket)
-        .file(dirPath + filename)
-        .getSignedUrl(options).catch((err)=>{
-            console.log(err);
-            throw err
-        });
-
-    console.log('Generated PUT signed URL:');
-    console.log(url);
-
-    return url;
 }
