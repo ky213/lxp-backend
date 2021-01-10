@@ -285,29 +285,12 @@ function getAllFiles(req, res, next) {console.log('getAllActivityFiles => ' );
 }
 
 async function uploadFileToCloud(req, res, next)  {
-    const contentPath = 'GlobalFolder' + req.params.id + '/' + req.body.name ; //`${uuidv4()}/` + req.body.name ;
-    const type = req.body.type;
-    const buckets =  cloudStorage.bucket(bucket);
-    const blob = buckets.file(contentPath);
-
-    const stream = blob.createWriteStream({
-        resumable: false,
-        contentType: type,
-        predefinedAcl: 'publicRead',
-    });
-
-    stream.on('error', err => {
-        next(err);
-    });
-
-    stream.on('finish', () => {
-        res.status(200).json({
-            data: {
-                url: `https://storage.googleapis.com/${buckets.name}/${blob.name}`,
-            },
-        });
-    });
-
-    stream.end(Buffer.from(req.body.file));
-
+    const contentPath = 'GlobalFolder' + req.params.id + '/' ;
+    let cloudFileURL = ""
+    if (req.body.file) {
+        let fileName = req.body.file;
+        cloudFileURL = await activityService.genetateCloudStorageUploadURL(contentPath, fileName)
+        .then(data => res.json({ name : req.body.file , url : data}))
+        .catch(err => next(err));
+    }
 }

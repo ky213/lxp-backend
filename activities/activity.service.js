@@ -48,7 +48,8 @@ module.exports = {
     getActivityStatusDetails,
     evaluate,
     getAllByLearner,
-    getAllFiles
+    getAllFiles,
+    genetateCloudStorageUploadURL
 };
 
 
@@ -1927,3 +1928,25 @@ async function getAllFiles(user , organizationId) {
 
     return allFilesData;
   }
+
+  async function genetateCloudStorageUploadURL(dirPath, filename) {
+
+    const options = {
+        version: 'v4',
+        action: 'write',
+        expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+    };
+
+    const [url] = await cloudStorage
+        .bucket(bucket)
+        .file(dirPath + filename)
+        .getSignedUrl(options).catch((err)=>{
+            console.log(err);
+            throw err
+        });
+
+    console.log('Generated PUT signed URL:');
+    console.log(url);
+
+    return url;
+}
