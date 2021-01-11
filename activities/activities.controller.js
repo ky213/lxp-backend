@@ -279,7 +279,7 @@ function getAllByLearner(req, res, next) {
         .catch(err => next(err));
 }
 
-function getAllFiles(req, res, next) {console.log('getAllActivityFiles => ' );
+function getAllFiles(req, res, next) {
     activityService.getAllFiles(req.user, req.params.id)
         .then(files => res.json(files))
         .catch(err => next(err));

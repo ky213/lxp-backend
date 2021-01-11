@@ -1882,7 +1882,7 @@ async function getAllFiles(user , organizationId) {
             file: contentPath ,
             name : file.name.substring(file.name.indexOf('/') + 1)}
     });
-
+    console.log('allGlobalFiles => ' ,  allGlobalFiles);
     let assetsDomain = await getOrganizationAssetsDomain(organizationId);
 
     let tempCloudFiles = allGlobalFiles.map(async (data) => {  
@@ -1897,7 +1897,7 @@ async function getAllFiles(user , organizationId) {
       .andWhereNot("activities_files.file", null)
       .andWhere("activities.organization_id" , organizationId)
       .select(["activities_files.file" , "activities_files.name"]);
-
+      console.log('allFiles => ' ,  allFiles);
     let tempFiles = allFiles.map(async (data) => {
         
         data.url = `${assetsDomain}/${data.file}${data.name}`;
@@ -1906,7 +1906,7 @@ async function getAllFiles(user , organizationId) {
     });
 
     const combined = [...tempFiles, ...tempCloudFiles] 
-
+    console.log('combined => ' ,  combined);
     let allFilesData = await Promise.all(combined);
 
     return allFilesData;
