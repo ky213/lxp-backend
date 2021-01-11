@@ -1866,10 +1866,17 @@ function deleteFileFromCloudStorage(filePath) {
 async function getAllFiles(user , organizationId) {
     console.log('getAllActivityFiles => ' ,  user);
 
-    const buckets =  cloudStorage.bucket(bucket);
     const contentPath = 'GlobalFolder' + organizationId + '/' ;
 
-    const [files] = await  cloudStorage.bucket(bucket).getFiles({directory: contentPath});
+    const [files] = await 
+    cloudStorage
+    .bucket(bucket)
+    .getFiles({directory: contentPath})
+    .catch((err)=>{
+        console.log(err);
+        throw err
+    });
+
     let allGlobalFiles = files.map(file => {
         return {
             file: contentPath ,
@@ -1885,8 +1892,10 @@ async function getAllFiles(user , organizationId) {
     });
 
     let allFiles = await knex("activities_files")
+      .join('activities', 'activities_files.activity_id', 'activities.activity_id')
       .where("activity_reply_id", null)
       .andWhereNot("activities_files.file", null)
+      .andWhere("activities.organization_id" , organizationId)
       .select(["activities_files.file" , "activities_files.name"]);
 
     let tempFiles = allFiles.map(async (data) => {
