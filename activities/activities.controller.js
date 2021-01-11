@@ -152,56 +152,25 @@ function deleteReply(req, res, next) {
 
 async function addActivityFile(req, res, next)  {
     activityService.addActivityFile(req.user, req.body)
-    .then(data => {
-        if(data && data.ContentPath) {
-
-            const type = req.body.type;
-            const buckets =  cloudStorage.bucket(bucket);
-            const blob = buckets.file(data.ContentPath);
-
-            const stream = blob.createWriteStream({
-                resumable: true,
-                contentType: type,
-                predefinedAcl: 'publicRead',
-            });
-
-            stream.on('error', err => {
-                next(err);
-            });
-
-            stream.on('finish', () => {
-                res.status(200).json({
-                    data: {
-                        url: `https://storage.googleapis.com/${buckets.name}/${blob.name}`,
-                    },
-                });
-            });
-
-            stream.end(Buffer.from(req.body.file));
-        }
-
-        res.json(data);
-    });
+    .then(data => {res.json(data)})
+    .catch(err => next(err));
 }
 
 async function deleteActivityFile(req, res, next)  {
     console.log('deleteActivityFile', req.params.id);
     activityService.deleteActivityFile(req.user, req.params.id)
-        .then(data => res.json(data));
+    .then(data => res.json(data));
 }
 
 async function downloadActivityFile(req, res, next)  {
     console.log('downloadActivityFile', req.params.id);
-    activityService.downloadActivityFile(req.user, req.params.id)
-        .then(data => {
-            res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})        
-        });
+    activityService.downloadActivityFile(req.user, req.params.id, req.query.organizationId)
+    .then(data => { res.json(data) });
 }
 
 async function addLogActivityFile(req, res, next)  {
-    console.log('addLogActivityFile', req.body);
     activityService.addLogActivityFile(req.user, req.body)
-        .then(data => res.json(data));
+    .then(data => res.json(data));
 }
 
 async function deleteLogActivityFile(req, res, next)  {
@@ -212,10 +181,8 @@ async function deleteLogActivityFile(req, res, next)  {
 
 async function downloadLogActivityFile(req, res, next)  {
     console.log('downloadLogActivityFile', req.params.id);
-    activityService.downloadLogActivityFile(req.user, req.params.id)
-        .then(data => {
-            res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})        
-        });
+    activityService.downloadLogActivityFile(req.user, req.params.id , req.query.organizationId)
+        .then(data => {res.json(data)  });
 }
 
 async function addActivityLink(req, res, next)  {
@@ -261,7 +228,6 @@ function updateLogActivityReply(req, res, next) {
 }
 
 function deleteLogActivityReply(req, res, next) {
-    //console.log("Got to delete reply:", req.params.id, req.user)
     activityService.deleteLogActivityReply(req.params.id, req.user)
         .then(() => res.json(true))
         .catch(next);
@@ -287,10 +253,9 @@ function getAllFiles(req, res, next) {
 
 async function uploadFileToCloud(req, res, next)  {
     let contentPath = 'GlobalFolder' + req.params.id + '/' ;
-    let cloudFileURL = ""
     if (req.body.file) {
         let fileName = req.body.file;
-        cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName)
+        let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName)
         .then(data => res.json({ name : req.body.file , url : data}))
         .catch(err => next(err));
     }

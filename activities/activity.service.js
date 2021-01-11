@@ -1371,11 +1371,9 @@ async function addActivityFile(loggedInUser, data) {
     .limit(1)
     .first();
 
-    let uuid = `${uuidv4()}/`;
+    let contentPath = `${uuidv4()}/`;
     if(fileData)
-        uuid = fileData.file;
-
-    const contentPath = uuid +  `${data.name}`;
+        contentPath = fileData.file;
 
     let activityFileId = 0;
     if(data && data.activityReplyId)
@@ -1384,7 +1382,7 @@ async function addActivityFile(loggedInUser, data) {
         .insert({
             activity_id: data.activityId,
             activity_reply_id: data.activityReplyId,
-            file: uuid,
+            file: contentPath,
             name: data.name,
             type: data.type,
             extension: data.extension,
@@ -1396,7 +1394,7 @@ async function addActivityFile(loggedInUser, data) {
         activityFileId =  await knex('activities_files')
         .insert({
             activity_id: data.activityId,
-            file: uuid,
+            file: contentPath,
             name: data.name,
             type: data.type,
             extension: data.extension,
@@ -1405,7 +1403,10 @@ async function addActivityFile(loggedInUser, data) {
         .returning('activity_file_id');
     }
 
-    return { ... activityFileId , ContentPath : contentPath}
+    let cloudFileURL = "";
+    cloudFileURL = await courseService.genetateCloudStorageUploadURL (contentPath ,data.name)
+
+    return { ... activityFileId , url : cloudFileURL}
 
   }
   
@@ -1426,7 +1427,7 @@ async function addActivityFile(loggedInUser, data) {
       .del();
   }
   
-  async function downloadActivityFile(loggedInUser, id) {
+  async function downloadActivityFile(loggedInUser, id , organizationId) {
     console.log('downloadFile => ', id);
 
     let data = await knex("activities_files")
@@ -1437,58 +1438,78 @@ async function addActivityFile(loggedInUser, data) {
       ])
       .first();
 
-    const chunks = []
-    const fstream = cloudStorage
-            .bucket(bucket)
-            .file(data.file + data.name)
-            .createReadStream()
-
-    for await (const chunk of fstream) {        
-        chunks.push(chunk);
-    }
-
-    bin = Buffer.concat(chunks).toString('utf8')
-
-    return {...data , file : bin}
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    url = `${assetsDomain}/${data.file}${data.name}`;
+    
+    return {...data , url : url}
   }
 
   async function addLogActivityFile(loggedInUser, data) {
-    //console.log('addLogActivityFile', data);
-  
-    return await knex('log_activities_files')
+    
+    let model = knex.select(['log_activities_files.file']).from('log_activities_files');
+
+    let fileData = await model
+    .where('log_activities_files.log_activity_id' , data.logActivityId)
+    .limit(1)
+    .first();
+
+    let contentPath = `${uuidv4()}/`;
+    if(fileData)
+        contentPath = fileData.file;
+
+    let activityFileId = await knex('log_activities_files')
       .insert({
         log_activity_id: data.logActivityId,
-        file: Buffer.from(data.file),
+        file: contentPath,
         name: data.name,
         type: data.type,
         extension: data.extension,
         size: data.size
       })
       .returning('log_activity_file_id');
+
+    let cloudFileURL = "";
+    cloudFileURL = await courseService.genetateCloudStorageUploadURL (contentPath ,data.name)
+
+    return { ... activityFileId , url : cloudFileURL}
+  
   }
   
   async function deleteLogActivityFile(loggedInUser, id) {
     console.log('deleteLogActivityFile => ', id);
-    
+       
+    let model = knex.select(['log_activities_files.file' , 'log_activities_files.name']).from('log_activities_files');
+
+    let fileData = await model
+    .where('log_activities_files.log_activity_file_id' , id)
+    .limit(1)
+    .first();
+
+    deleteFileFromCloudStorage(fileData.file + fileData.name);
+
     return knex("log_activities_files")
       .where("log_activity_file_id", id)
       .del();
   }
   
-  async function downloadLogActivityFile(loggedInUser, id) {
-    console.log('downloadLogActivityFile => ', id);
-    return knex("log_activities_files")
+  async function downloadLogActivityFile(loggedInUser, id , organizationId) {
+    console.log('downloadLogActivityFile => ', id);    
+    let data = await knex("log_activities_files")
       .where("log_activity_file_id", id)
       .select([
         "log_activities_files.name",
         "log_activities_files.file"      
       ])
       .first();
+
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    url = `${assetsDomain}/${data.file}${data.name}`;
+    
+    return {...data , url : url}
   }
 
   async function addLogActivityLink(loggedInUser, data) {
-    //console.log('addLogActivityFile', data);
-  
+
     return await knex('log_activities_links')
       .insert({
         log_activity_id: data.logActivityId,
