@@ -1385,7 +1385,7 @@ async function deleteReply(replyId, user) {
 
 }
 
-async function addActivityFile(loggedInUser, data) {
+async function addActivityFile(loggedInUser, data , organizationId) {
 
     let model = knex.select(['activities_files.file']).from('activities_files');
 
@@ -1428,7 +1428,10 @@ async function addActivityFile(loggedInUser, data) {
 
     let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
 
-    return { activityFileId : activityFileId[0] , url : cloudFileURL}
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`; 
+
+    return { activityFileId: activityFileId[0] , url : cloudFileURL , assetsDomainURL : assetsDomainURL}
 
   }
   
@@ -1466,7 +1469,7 @@ async function addActivityFile(loggedInUser, data) {
     return {...data , url : url}
   }
 
-  async function addLogActivityFile(loggedInUser, data) {
+  async function addLogActivityFile(loggedInUser, data , organizationId) {
     
     let model = knex.select(['log_activities_files.file']).from('log_activities_files');
 
@@ -1491,8 +1494,11 @@ async function addActivityFile(loggedInUser, data) {
       .returning('log_activity_file_id');
 
     let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
+   
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`; 
 
-    return { activityFileId: activityFileId[0] , url : cloudFileURL}
+    return { activityFileId: activityFileId[0] , url : cloudFileURL , assetsDomainURL : assetsDomainURL}
   
   }
   

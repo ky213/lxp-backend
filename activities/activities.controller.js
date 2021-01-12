@@ -151,7 +151,7 @@ function deleteReply(req, res, next) {
 }
 
 async function addActivityFile(req, res, next)  {
-    activityService.addActivityFile(req.user, req.body)
+    activityService.addActivityFile(req.user, req.body, req.query.organizationId)
     .then(data => {res.json(data)})
     .catch(err => next(err));
 }
@@ -169,7 +169,7 @@ async function downloadActivityFile(req, res, next)  {
 }
 
 async function addLogActivityFile(req, res, next)  {
-    activityService.addLogActivityFile(req.user, req.body)
+    activityService.addLogActivityFile(req.user, req.body, req.query.organizationId)
     .then(data => res.json(data));
 }
 
