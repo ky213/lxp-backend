@@ -1115,7 +1115,7 @@ async function getParticipationLevels(user) {
         });
 }
 
-async function getLogActivityById(activityId, user) {
+async function getLogActivityById(activityId, user , organizationId) {
     const activityDetails = await knex.select([
         'log_activities.log_activity_id as activityId', 
         'log_activities.program_id as programId', 
@@ -1173,7 +1173,7 @@ async function getLogActivityById(activityId, user) {
             "log_activities_files.log_activity_file_id as logActivityFileId"
             ]);
 
-        let assetsDomain = await getOrganizationAssetsDomain(user.organization);      
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
         activityDetails.files.map(file => {
             file.url = `${assetsDomain}/${file.file}${file.name}`;            
             return file;

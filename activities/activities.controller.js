@@ -113,7 +113,7 @@ function getParticipationLevels(req, res, next) {
 }
 
 function getLogActivityById(req, res, next) {
-    activityService.getLogActivityById(req.params.id, req.user)
+    activityService.getLogActivityById(req.params.id, req.user , req.query.organizationId)
         .then(event => event ? res.json(event) : res.status(404).json({message: "Activity not found"}))
         .catch(err => next(err));
 }
