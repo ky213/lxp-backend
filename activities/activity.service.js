@@ -354,6 +354,7 @@ async function getById(activityId, user, selectedOrganizationId) {
     .limit(1)
     .first();
 
+    let organizationId = user.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : user.organization;
     if(user.role == Role.SuperAdmin && selectedOrganizationId) {
         activityDetailsModel.andWhere('activities.organization_id', selectedOrganizationId);
     }
@@ -417,8 +418,15 @@ async function getById(activityId, user, selectedOrganizationId) {
             .select([
             "activities_files.name",
             "activities_files.size",
+            "activities_files.file",
             "activities_files.activity_file_id as activityFileId"
             ]);
+
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
+        activityDetails.files.map(file => {
+            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            return file;
+        });    
 
         activityDetails.links = await knex("activities_links")
             .where("activity_id", activityId)
@@ -1161,8 +1169,15 @@ async function getLogActivityById(activityId, user) {
             .select([
             "log_activities_files.name",
             "log_activities_files.size",
+            "log_activities_files.file",
             "log_activities_files.log_activity_file_id as logActivityFileId"
             ]);
+
+        let assetsDomain = await getOrganizationAssetsDomain(user.organization);      
+        activityDetails.files.map(file => {
+            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            return file;
+        }); 
 
         activityDetails.links = await knex("log_activities_links")
             .where("log_activity_id", activityId)
@@ -1221,6 +1236,7 @@ async function getReplies(activityId, user) {
         'activity_statuses.name as status',
         'activity_statuses.activity_status_id as statusId',
         'activities.is_public as isPublic',
+        'activities.is_public as isPublic',
     ])
     .from('activity_replies')
     .join('employees', 'employees.employee_id', 'activity_replies.employee_id')
@@ -1239,9 +1255,16 @@ async function getReplies(activityId, user) {
             .select([
             "activities_files.name",
             "activities_files.size",
+            "activities_files.file",
             "activities_files.activity_file_id as activityFileId"
             ]);
         
+        let assetsDomain = await getOrganizationAssetsDomain(user.organization);      
+        res.files.map(file => {
+            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            return file;
+        });
+
         res.links = await knex("activities_links")
             .where("activity_reply_id", res.activityReplyId)
             .select([
