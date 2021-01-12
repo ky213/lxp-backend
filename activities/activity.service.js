@@ -1429,7 +1429,7 @@ async function addActivityFile(loggedInUser, data) {
     let cloudFileURL = "";
     cloudFileURL = await courseService.genetateCloudStorageUploadURL (contentPath ,data.name)
 
-    return { ... activityFileId , url : cloudFileURL}
+    return { activityFileId : activityFileId[0] , url : cloudFileURL}
 
   }
   
@@ -1594,11 +1594,10 @@ async function addActivityFile(loggedInUser, data) {
     .leftJoin('users', 'users.user_id', 'employees.user_id')
     .where('log_activity_replies.activity_id', activityId)
     .where('log_activity_replies.active', true);
-    
-    
-
+      
     const response = await replyModel.orderBy('modified_at', 'asc');
     let replies = [];
+
     if(response && response.length > 0) {
         replies = response.map(r => {
             return {
