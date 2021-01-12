@@ -1426,8 +1426,7 @@ async function addActivityFile(loggedInUser, data) {
         .returning('activity_file_id');
     }
 
-    let cloudFileURL = "";
-    cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.name)
+    let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
 
     return { activityFileId : activityFileId[0] , url : cloudFileURL}
 
@@ -1491,10 +1490,9 @@ async function addActivityFile(loggedInUser, data) {
       })
       .returning('log_activity_file_id');
 
-    let cloudFileURL = "";
-    cloudFileURL = await courseService.genetateCloudStorageUploadURL (contentPath ,data.name)
+    let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
 
-    return { ... activityFileId , url : cloudFileURL}
+    return { activityFileId: activityFileId[0] , url : cloudFileURL}
   
   }
   
