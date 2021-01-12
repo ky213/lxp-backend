@@ -126,7 +126,7 @@ function updateLogActivityStatus(req, res, next) {
 }
 
 function getReplies(req, res, next) {
-    activityService.getReplies(req.params.id, req.user)
+    activityService.getReplies(req.params.id, req.user , req.query.organizationId)
         .then(events => res.json(events))
         .catch(err => next(err));
 }

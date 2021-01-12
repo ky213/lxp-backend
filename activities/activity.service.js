@@ -411,7 +411,7 @@ async function getById(activityId, user, selectedOrganizationId) {
         .join('courses', 'courses.course_id', 'activity_courses.course_id')
         .where('activity_courses.activity_id', activityId);
      
-        activityDetails.replies = await getReplies(activityId, user);
+        activityDetails.replies = await getReplies(activityId, user , organizationId);
         activityDetails.files = await knex("activities_files")
             .where("activity_id", activityId)
             .andWhere("activity_reply_id" , null)
@@ -1220,7 +1220,7 @@ async function updateLogActivityStatus(activityId, statusId, user)
         });
 }
 
-async function getReplies(activityId, user) {
+async function getReplies(activityId, user , organizationId) {
     console.log("Entered get replies:", activityId, user)
     let replyModel = knex.select([
         'activity_replies.activity_reply_id as activityReplyId',
@@ -1258,8 +1258,8 @@ async function getReplies(activityId, user) {
             "activities_files.file",
             "activities_files.activity_file_id as activityFileId"
             ]);
-        
-        let assetsDomain = await getOrganizationAssetsDomain(user.organization);      
+
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
         res.files.map(file => {
             file.url = `${assetsDomain}/${file.file}${file.name}`;            
             return file;
@@ -1427,7 +1427,7 @@ async function addActivityFile(loggedInUser, data) {
     }
 
     let cloudFileURL = "";
-    cloudFileURL = await courseService.genetateCloudStorageUploadURL (contentPath ,data.name)
+    cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.name)
 
     return { activityFileId : activityFileId[0] , url : cloudFileURL}
 
