@@ -10,6 +10,8 @@ router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Ro
 router.get('/', authorize(), getAll); 
 router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getById); 
 
+router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deleteActivityTypes); 
+
 module.exports = router;
 
 function getAll(req, res, next) {       
@@ -44,6 +46,12 @@ function create(req, res, next) {
 
 function update(req, res, next) {      
     activityTypeService.update(req.body, req.user)
+        .then(() => res.json(true))
+        .catch(err => next(err));
+}
+
+function deleteActivityTypes(req, res, next) {      
+    activityTypeService.deleteActivityTypes(req.body, req.user)
         .then(() => res.json(true))
         .catch(err => next(err));
 }

@@ -7,7 +7,8 @@ module.exports = {
     getAll,
     getById,
     create,
-    update
+    update,
+    deleteActivityTypes
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
@@ -36,6 +37,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
 
     const activityTypes = await model.clone()
         .orderBy('activity_types.activity_type_id', 'desc')
+        .offset(offset)
         .limit(recordsPerPage || 15)
         .select([
             "activity_types.activity_type_id as activityTypeId",
@@ -185,5 +187,9 @@ async function update(activityType) {
     }); 
 }
 
-
+async function deleteActivityTypes(ids, user) {
+    await knex('activity_types')
+        .whereIn('activity_type_id', ids)
+        .del();
+}
 
