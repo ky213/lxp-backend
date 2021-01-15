@@ -1,6 +1,7 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
+const permissions = require('permissions/permissions')
 const knex = require('../db');
 const academicYearService = require("../academic_years/academic_year.service");
 
@@ -22,13 +23,13 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
 
     let model = knex.table('programs');
 
-    if (user.role == Role.ProgramDirector) {
+    if (PermissionsService.hasPermission(user, permissions.api.programs.get.adminaccess)) {
         model.join('program_directors', 'program_directors.program_id', 'programs.program_id')
             .join('employees', 'employees.employee_id', 'program_directors.employee_id')
             .where('employees.employee_id', user.employeeId);
     }    
 
-    if (user.role != Role.SuperAdmin) {
+    if (!PermissionsService.isSuperAdmin(user)) {
         model.where('programs.organization_id', user.organization);
     }
     else {
@@ -131,7 +132,7 @@ async function getById(id, user, selectedorganizationId) {
     ])
     .from('programs');
 
-    if (user.role == Role.SuperAdmin && selectedorganizationId) {
+    if (PermissionsService.isSuperAdmin(user) && selectedorganizationId) {
         select.where('programs.organization_id', selectedorganizationId);
     }
     else {
@@ -201,7 +202,7 @@ async function getDefaultProgram(user, selectedorganizationId) {
     ])
     .from('programs');
 
-    if (user.role == Role.SuperAdmin && selectedorganizationId) {
+    if (PermissionsService.isSuperAdmin(user) && selectedorganizationId) {
         select.where('programs.organization_id', selectedorganizationId);
     }
     else {
@@ -302,7 +303,9 @@ async function getBlockTypes() {
         }
     });
 }
-
+//TODO: this function needs to be redesigned. In current form this code generates N+1 queries
+// where N is the number of active programs for given organization. We should use SQL subquery
+// to get total learners count for each program
 async function getByCurrentUser(user, organizationId) {
     
     let model = knex.table('programs')

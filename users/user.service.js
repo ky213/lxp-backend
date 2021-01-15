@@ -1,6 +1,7 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+const Permissions = require('permissions/permissions');
+const PermissionsService = require('permissions/permissions.service');
 const bcrypt = require('bcrypt');
 const knex = require('../db'); 
 const organizationService = require('../organizations/organization.service');
@@ -49,9 +50,14 @@ async function authenticate({ email, password }) {
             ]
         )
         .first();
-    console.log("Got user:", user)
+    console.log("Got user:", user.userId)
     if (user)
     {
+        if(!user.isActive){
+            console.log('user ',email,'is not active')
+            return
+        }
+
         const passIsValid = await bcrypt.compare(password, user.password);
         if (passIsValid)
         {
@@ -65,9 +71,11 @@ async function authenticate({ email, password }) {
 
             if(user.is_super_admin) {
 
+                let perms = {}
+                perms[Permissions.api.superadmins.isSuperAdmin] = 1
+
                 // necu mijenjati sub s user_id pa sam dodao userId
-                    token = jwt.sign({ sub: user.user_id, userId: user.user_id, role: Role.SuperAdmin}, config.secret);
-                
+                token = jwt.sign({ sub: user.user_id, userId: user.user_id, permissions: perms}, config.secret);
 
                 user.role = 'SuperAdmin';
                 user.roleDescription = 'Super Admin';
@@ -78,27 +86,20 @@ async function authenticate({ email, password }) {
             }
             else
             {
-                const [employee] = await knex('users')
-                    .join('employees', 'employees.user_id', 'users.user_id')
-                    .join('organizations', 'organizations.organization_id', 'employees.organization_id')
-                    .leftJoin('employee_roles', 'employee_roles.employee_id', 'employees.employee_id')
-                    .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')                    
+
+                const [employee] = await knex('employees')
+                    .leftJoin('organizations', 'organizations.organization_id', 'employees.organization_id')
                     .leftJoin('employee_programs', 'employee_programs.employee_id', 'employees.employee_id')
                     .leftJoin('program_directors', 'program_directors.employee_id', 'employees.employee_id')
-                .where('employees.user_id', user.userId)
+                    .where('employees.user_id', user.userId)
                     .andWhere('organizations.is_active', true)
-                .limit(1)
-                .select(['users.user_id',
-                    'users.user_id as userId', 'employees.employee_id as employeeId', 'email', 'users.name', 
-                    'users.name as firstName', 'surname as lastName', 
-                    'is_super_admin', 'password', 'users.is_active as isActive',
-                    'users.profile_photo as profilePhoto',
-                    'employees.organization_id as organizationId', 'organizations.name as organizationName', 'roles.role_id as role', 
-                    'roles.name as roleDescription', 'organizations.color_code as organizationForegroundColor',
-                    'organizations.background_color_code as organizationBackgroundColor', 'employee_programs.program_id as programId',
-                    'program_directors.program_id as directorProgramId', 'employees.exp_level_id as experienceLevelId',
-                    'organizations.logo as organizationLogo']
-                );
+                    .select([
+                        'employees.employee_id as employeeId',
+                        'employees.organization_id as organizationId',
+                        'employee_programs.program_id as programId',
+                        'program_directors.program_id as directorProgramId',
+                        'employees.exp_level_id as experienceLevelId']
+                    );
 
                 if(!employee.programId) {
                     employee.programId = user.directorProgramId;
@@ -106,14 +107,37 @@ async function authenticate({ email, password }) {
 
                 if(employee.firstName && employee.lastName) {
                     employee.fullName = `${user.firstName} ${user.lastName}`;
-                }                
+                }
 
-                
-                    // necu mijenjati sub s user_id pa sam dodao userId
-                    token = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, role: employee.role, 
-                    organization: employee.organizationId, programId: employee.programId, experienceLevelId: employee.experienceLevelId
-                    }, config.secret);
-                
+
+                const rolesDb = await knex('employees')
+                    .leftJoin('organizations', 'organizations.organization_id', 'employees.organization_id')
+                    .leftJoin('employee_roles', 'employee_roles.employee_id', 'employees.employee_id')
+                    .leftJoin('roles', 'roles.role_id', 'employee_roles.role_id')
+                    .where('employees.user_id', user.userId)
+                    .andWhere('organizations.is_active', true)
+                    .select([ 'employees.employee_id as employeeId',
+                        'roles.role_id as role',
+                        'roles.permissions as permissions',
+                        ]
+                    );
+
+
+                var roles = []
+                var permissions = {}
+
+                for (let i=0; i < rolesDb.length; i++) {
+                    r = rolesDb[i];
+                    roles.push(r.role)
+                    for(let i=0; i<r.permissions.length;i++){
+                        permissions[r.permissions[i]] = 1;
+                    }
+                }
+
+                // necu mijenjati sub s user_id pa sam dodao userId
+                token = jwt.sign({ sub: user.user_id, userId: user.user_id, employeeId: employee.employeeId, roles: roles,permissions: permissions,
+                    organization: employee.organizationId, programId: employee.programId, experienceLevelId: employee.experienceLevelId}, config.secret);
+
                 const { password, is_super_admin, directorProgramId, ...userWithoutPassword } = employee;
                 //const { password, ...userWithoutPassword } = user; // we shouldnt need super admin flag
                 return {user: userWithoutPassword, token};
@@ -127,7 +151,7 @@ async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isL
 
     let offset = ((pageId || 1) - 1) * recordsPerPage;
 
-    organizationId = (user.role == Role.SuperAdmin && organizationId) ? organizationId : user.organization;
+    organizationId = (PermissionsService.isSuperAdmin(user) && organizationId) ? organizationId : user.organization;
 
     var model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
@@ -141,7 +165,7 @@ async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isL
     model.where('employees.organization_id', organizationId);
     model.andWhere('users.is_super_admin', 0);
 
-    if (user.role != Role.SuperAdmin)
+    if (!PermissionsService.isSuperAdmin(user))
         model.where('employees.employee_id', "<>", user.employeeId);
 
     if (!includeInactive) {
@@ -251,7 +275,7 @@ async function getAll(user, pageId, recordsPerPage, filterName, filterEmail, isL
 }
 
 async function getAllUsers(loggedInUser, organizationId, includeInactive) {
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let model = knex.table('employees')
         .innerJoin('users','users.user_id','employees.user_id')
@@ -302,8 +326,8 @@ async function getByEmployeeId(user, employeeId, programId) {
     .leftJoin('employee_programs','employees.employee_id','employee_programs.employee_id')
     .leftJoin('employee_roles','employees.employee_id','employee_roles.employee_id')
     .leftJoin('roles','roles.role_id','employee_roles.role_id');
-    
-    if(user.role != Role.SuperAdmin) {
+
+    if(!PermissionsService.isSuperAdmin(user)) {
         selectEmployee.andWhere('employees.organization_id', user.organization);
     }
 
@@ -459,7 +483,7 @@ async function changePassword({oldPassword, newPassword}, user) {
 
   async function deleteEmployees(loggedInUser, organizationId, employees) {
     console.log("Delete employees service: ", employees); 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let employeeIdList = await knex('employees')
         .whereIn('employee_id', employees)
@@ -590,7 +614,7 @@ async function changePassword({oldPassword, newPassword}, user) {
 
   async function updateBulk(loggedInUser, data, organizationId) {
 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
   
     let updates = [];
     let output = [];
@@ -802,6 +826,7 @@ async function findResetPasswordToken(userData){
 
 async function authToken(token) {
 
+    console.log('TOKEN: ',token);
     var decoded = jwt.verify(token, config.secret);
 
     if(!decoded)

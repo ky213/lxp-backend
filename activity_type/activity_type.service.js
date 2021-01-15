@@ -1,6 +1,6 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
 const knex = require('../db');
 
 module.exports = {
@@ -18,7 +18,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     let model = knex.table("activity_types")
         .join('organizations', 'organizations.organization_id', 'activity_types.organization_id');
 
-    if(user.role == Role.SuperAdmin && organizationId) {
+    if(PermissionsService.isSuperAdmin(user) && organizationId) {
         model.andWhere('activity_types.organization_id', organizationId);
     }
     else {
@@ -50,7 +50,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
         .leftJoin('activity_types', 'competencies_tags.activity_type_id' , 'activity_types.activity_type_id')
         .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
         .whereIn('activity_types.activity_type_id', activityTypes.map(c => c.activityTypeId))
-        .andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && organizationId || user.organization)
+        .andWhere('activity_types.organization_id', PermissionsService.isSuperAdmin(user) && organizationId || user.organization)
         .select([
             'activity_types.activity_type_id as activityTypeId',
             'competencies.competency_id as competencyId',
@@ -85,7 +85,7 @@ async function getById(activityTypeId, user, organizationId) {
 
     let activityData = await selectActivity    
     .where('activity_types.activity_type_id', activityTypeId)
-    .andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && organizationId ? organizationId : user.organization)
+    .andWhere('activity_types.organization_id', PermissionsService.isSuperAdmin(user) && organizationId ? organizationId : user.organization)
     .limit(1)
     .first();
    
@@ -94,7 +94,7 @@ async function getById(activityTypeId, user, organizationId) {
             .leftJoin('activity_types', 'competencies_tags.activity_type_id' , 'activity_types.activity_type_id')
             .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
             .andWhere('activity_types.activity_type_id', activityTypeId)
-            .andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && organizationId || user.organization)
+            .andWhere('activity_types.organization_id', PermissionsService.isSuperAdmin(user) && organizationId || user.organization)
             .select([
                 'competencies.competency_id as competencyId',
                 'competencies.code as competencyCode', 

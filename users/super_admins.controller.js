@@ -2,16 +2,15 @@ const express = require('express');
 const router = express.Router();
 const superAdminService = require('./super_admin.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
 const converter = require('helpers/converter');
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get('/', authorize([Role.SuperAdmin]), getAll);
-router.get('/getByUserId', authorize([Role.SuperAdmin]), getByUserId);
-
-router.post('/', authorize([Role.SuperAdmin]), add);
-
-router.put('/', authorize([Role.SuperAdmin]), update);
+router.get('/', authorize(Permissions.api.superadmins.get), getAll);
+router.get('/getByUserId', authorize(Permissions.api.superadmins.get), getByUserId);
+router.post('/', authorize(Permissions.api.superadmins.create), add);
+router.put('/', authorize(Permissions.api.superadmins.update), update);
 
 module.exports = router;
 

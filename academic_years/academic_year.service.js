@@ -1,5 +1,5 @@
 const knex = require('../db'); 
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service');
 
 module.exports = {
   getByLoggedInUser,
@@ -13,7 +13,7 @@ module.exports = {
 
 async function getByLoggedInUser(loggedInUser, organizationId) {
 
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')    
@@ -29,7 +29,7 @@ async function getByLoggedInUser(loggedInUser, organizationId) {
 }
 
 async function getById(loggedInUser, academicYearId, organizationId) {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')
@@ -47,7 +47,7 @@ async function getById(loggedInUser, academicYearId, organizationId) {
 }
 
 async function getByProgramId(loggedInUser, programId, organizationId) {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   return await knex.table('academic_years')
     .join('programs', 'programs.program_id', 'academic_years.program_id')
@@ -64,7 +64,7 @@ async function getByProgramId(loggedInUser, programId, organizationId) {
 }
 
 async function create(loggedInUser, data, organizationId) {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
   
   data.programs.forEach(p => {
     insertAcademicYear({
@@ -82,7 +82,7 @@ async function create(loggedInUser, data, organizationId) {
 }
 
 async function update(loggedInUser, data, organizationId) {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   let ay = {
     name: data.name,
@@ -111,7 +111,7 @@ async function deleteAcademicYear(loggedInUser, organizationId, academicYearId) 
 }
 
 async function deleteAcademicYears(loggedInUser, organizationId, academicYears) {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   return knex.transaction(async function(t) {
     await knex.table('blocks')

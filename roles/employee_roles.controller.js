@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const employeeRoleService = require('./employee_role.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
 const converter = require('helpers/converter')
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getAll);
-router.get('/', createEmployeeRole);
+router.get('/', authorize(Permissions.api.employeeRoles.get), getAll);
+router.get('/', authorize(Permissions.api.employeeRoles.create),createEmployeeRole);
 
 module.exports = router;
 

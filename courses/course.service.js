@@ -1,6 +1,6 @@
 const knex = require('../db');
 const moment = require('moment');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
 const fs = require('fs');
 const path = require('path');
 var xpath   = require('xpath');
@@ -93,7 +93,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
         return;
     }
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     console.log('=>', selectedOrganizationId, programId, pageId, recordsPerPage);
 
@@ -223,7 +223,7 @@ async function getById(loggedInUser, courseId, selectedOrganizationId) {
     .join('programs', 'programs.program_id', 'courses.program_id');
 
     let courseData = await selectCourse
-    .where('courses.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
+    .where('courses.organization_id', PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
     .andWhere('courses.course_id', courseId)
     .limit(1)
     .first();
@@ -268,7 +268,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
     if (!loggedInUser || !loggedInUser.employeeId)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     return knex('courses')
         .where('course_id', courseId);
@@ -278,7 +278,7 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
     if (!loggedInUser)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     return knex.transaction(async function (t) {
         const courseId = await knex("courses")
@@ -330,7 +330,7 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
     if (!loggedInUser)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
     
     return knex.transaction(async function (t) {
         await knex("courses")
@@ -381,7 +381,7 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
     if (!loggedInUser)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     let contentPaths = await knex('courses').whereIn("course_id", courseIds).select(['content_path as contentPath']);
 
@@ -433,7 +433,7 @@ async function checkIfCourseExists(courseId, userId) {
     if (!loggedInUser)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     let model = knex.table('user_courses')
     .join('users', 'users.user_id', 'user_courses.user_id')
@@ -550,7 +550,7 @@ async function getAllUserCourses(loggedInUser, userId , selectedOrganizationId )
     if (!loggedInUser)
         return;
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     let model = knex.table('user_courses')
     .join('users', 'users.user_id', 'user_courses.user_id')

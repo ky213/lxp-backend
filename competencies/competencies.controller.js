@@ -2,14 +2,15 @@
 const router = express.Router();
 const competenciesService = require('./competencies.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post('/', authorize(), create); 
-router.put('/', authorize(), update); 
-router.delete('/', authorize(), deleteCompetencies); 
-router.get('/', authorize(), getAll); 
-router.get('/:id', authorize(), getById);  
+router.post('/', authorize(Permissions.api.competencies.create), create);
+router.put('/', authorize(Permissions.api.competencies.update), update);
+router.delete('/', authorize(Permissions.api.competencies.delete), deleteCompetencies);
+router.get('/', authorize(Permissions.api.competencies.get), getAll);
+router.get('/:id', authorize(Permissions.api.competencies.get), getById);
 module.exports = router;
 
 function getAll(req, res, next) {

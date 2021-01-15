@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const statementService = require('./statement.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
 router.get('/experiences', getExperiences)
-router.get('/', authorize(), getAll); 
+router.get('/', authorize(Permissions.api.xapi.statements.get), getAll);
 router.post('/', create); 
 router.put('/', create); 
 

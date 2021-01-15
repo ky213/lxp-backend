@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const knex = require("../db");
-const Role = require("helpers/role");
+const PermissionsService = require('permissions/permissions.service')
 const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
 const programService = require('../programs/program.service');
@@ -60,7 +60,7 @@ async function add(loggedInUser, userData, organizationId) {
         email: userData.email && userData.email.toLowerCase() || userData.email
     };
 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let validationOutput = await validateBulk(loggedInUser, [userData], organizationId);
     if (validationOutput.hasErrors) {
@@ -122,11 +122,12 @@ async function add(loggedInUser, userData, organizationId) {
                     });
             }
 
+
             await knex("employee_roles")
                 .transacting(t)
                 .insert({
                     employee_id: employeeIds[0],
-                    role_id: Role.Learner
+                    role_id: 'Learner'          //TODO: this is workaround. We should allow to define custom learner role or roles for each organization
                 });
 
             const userProgram = await programService.getDefaultProgram(loggedInUser, organizationId);
@@ -161,7 +162,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
         email: d.email && d.email.toLowerCase() || d.email
     }));
 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
     let validationOutput = await validateBulk(loggedInUser, data, organizationId);
 
     let output = [];
@@ -333,7 +334,7 @@ async function addBulk(loggedInUser, data, exitData, organizationId) {
 
         let employeeRoles = employeesIds.map(employeeId => ({
             employee_id: employeeId,
-            role_id: Role.Learner
+            role_id: 'Learner'
         }));
 
         await t.into("employee_roles")
@@ -522,7 +523,7 @@ async function update(loggedInUser, user, organizationId) {
         email: user.email && user.email.toLowerCase() || user.email
     };
 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
     let validationOutput = await validateBulk(loggedInUser, [user], organizationId);
 
     if (validationOutput.hasErrors) {
@@ -594,7 +595,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
         email: d.email && d.email.toLowerCase().trim() || d.email
     }));
 
-    organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let groups = await groupsvc.getAllGroupsIds(organizationId).then(r => {
         return r;

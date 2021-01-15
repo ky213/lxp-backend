@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const calendarService = require('./calendar.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.put('/event/:id/status', authorize(), updateStatus);  
-router.post('/event', authorize(), create); 
-router.put('/event', authorize(), update); 
-router.get('/', authorize(), getAll); 
-router.get('/event/:id', authorize(), getById);  
+router.put('/event/:id/status', authorize(Permissions.api.calendar.update), updateStatus);
+router.post('/event', authorize(Permissions.api.calendar.create), create);
+router.put('/event', authorize(Permissions.api.calendar.update), update);
+router.get('/', authorize(Permissions.api.calendar.get), getAll);
+router.get('/event/:id', authorize(Permissions.api.calendar.get), getById);
+
 module.exports = router;
 
 function getAll(req, res, next) {

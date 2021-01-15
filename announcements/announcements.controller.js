@@ -3,22 +3,20 @@ const router = express.Router();
 const announcementService = require('./announcement.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get('/getById', authorize(), getById);
-router.get('/getAll', authorize(), getAll);
-router.get('/getByUser', authorize(), getByUser);
-router.get('/getByUserAll', authorize(), getByUserAll);
-router.get('/downloadFile/:id', authorize(), downloadFile);
-
-router.post('/', authorize(), create);
-router.post('/addFile', authorize(), addFile);
-router.post('/markAnnouncementAsRead/:announcementId', authorize(), markAnnouncementAsRead);
-
-router.put('/', authorize(), update);
-
-router.delete('/deleteFile/:id', authorize(), deleteFile);
-router.delete('/deleteAnnouncements', authorize(), deleteAnnouncements);
+router.get('/getById', authorize(Permissions.api.announcements.get), getById);
+router.get('/getAll', authorize(Permissions.api.announcements.get), getAll);
+router.get('/getByUser', authorize(Permissions.api.announcements.get), getByUser);
+router.get('/getByUserAll', authorize(Permissions.api.announcements.get), getByUserAll);
+router.get('/downloadFile/:id', authorize(Permissions.api.announcements.get), downloadFile);
+router.post('/', authorize(Permissions.api.announcements.create), create);
+router.post('/addFile', authorize(Permissions.api.announcements.create), addFile);
+router.post('/markAnnouncementAsRead/:announcementId', authorize(Permissions.api.announcements.create), markAnnouncementAsRead);
+router.put('/', authorize(Permissions.api.announcements.update), update);
+router.delete('/deleteFile/:id', authorize(Permissions.api.announcements.delete), deleteFile);
+router.delete('/deleteAnnouncements', authorize(Permissions.api.announcements.delete), deleteAnnouncements);
 
 module.exports = router;
 

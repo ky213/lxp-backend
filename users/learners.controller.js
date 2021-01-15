@@ -3,18 +3,17 @@ const router = express.Router();
 const userService = require("./user.service");
 const learnerService = require("./learner.service");
 const authorize = require("helpers/authorize");
-const Role = require("helpers/role");
+
 const converter = require("helpers/converter");
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get("/filterActive", authorize(), getAllActive);
-router.get("/filter", authorize([]), getAll);
-    
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), addBulk);
-router.post("/validateBulk", authorize(), validateBulk);
-
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update);
+router.get("/filterActive", authorize(Permissions.api.learners.get), getAllActive);
+router.get("/filter", authorize(Permissions.api.learners.get), getAll);
+router.post("/add", authorize(Permissions.api.learners.create), add);
+router.post("/addBulk", authorize(Permissions.api.learners.bulk.create), addBulk);
+router.post("/validateBulk", authorize(Permissions.api.learners.bulk.validate), validateBulk);
+router.put("/update", authorize(Permissions.api.learners.update), update);
 
 
 module.exports = router;

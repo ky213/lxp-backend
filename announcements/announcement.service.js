@@ -1,6 +1,7 @@
 const knex = require('../db');
 const converter = require("helpers/converter");
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
+const Permissions = require('permissions/permissions')
 
 module.exports = {
   getAll,
@@ -18,7 +19,7 @@ module.exports = {
 async function getAll(loggedInUser, selectedOrganizationId) {
   return knex('announcements')
     .leftJoin('announcement_files', 'announcement_files.announcement_id', 'announcements.announcement_id')
-    .where('announcements.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
+    .where('announcements.organization_id', PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
     .groupBy('announcements.announcement_id')
     .select([
       'announcements.announcement_id as announcementId',
@@ -35,7 +36,7 @@ async function getById(loggedInUser, announcementId, organizationId) {
 
   // console.log('announcements.getById', loggedInUser, announcementId, organizationId);
 
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   if (!announcementId)
     return null;
@@ -86,7 +87,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
     return;
   }
 
-  let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+  let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
   
   includeRead = includeRead || false;
 
@@ -116,7 +117,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
       this.orWhere('announcements.date_to', '>=', currentDate)
     });    
 
-    if (loggedInUser.role == Role.SuperAdmin) {
+    if (PermissionsService.isSuperAdmin(loggedInUser)) {
       query.andWhere(function() {
         this.whereNotExists(function() {
           this.from("announcement_roles")
@@ -159,7 +160,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
       })
     }
 
-    if (loggedInUser.role == Role.Learner) {
+    if (PermissionsService.hasPermission(loggedInUser, Permissions.api.announcements.for.learners)) {
       // provjeravamo da li je announcement za neki Program
       query.andWhere(function() {
         this.whereNotExists(function() {
@@ -182,7 +183,7 @@ async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
       })
     }
 
-    if (loggedInUser.role == Role.ProgramDirector) {
+    if (PermissionsService.hasPermission(loggedInUser, Permissions.api.announcements.for.programmanegers)) {
       // provjeravamo da li je announcement za neki Program
       query.andWhere(function() {
         this.whereNotExists(function() {
@@ -248,7 +249,7 @@ async function create(loggedInUser, data) {
       })
       .returning("announcement_id");
     
-    if (!ids || ids.length != 1)
+    if (!ids || ids.length !== 1)
       throw "Failed to insert announcement";
       
     /* PROGRAMS */

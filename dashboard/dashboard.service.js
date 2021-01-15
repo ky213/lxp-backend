@@ -1,6 +1,6 @@
 const knex = require('../db');
 const moment = require('moment');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
 const fs = require('fs');
 const path = require('path');
 const {Storage} = require('@google-cloud/storage');
@@ -20,16 +20,8 @@ var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
 
 async function findProgressDistrubitionCompletedUserData(loggedInUser,selectedOrganizationId, programId, courseId, offset, pageSize) {
-    if (!loggedInUser) {
-        console.log("not authenticated")
-        return;
-    }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
     let result = await progressDistrubitionData(loggedInUser, organizationId, programId, courseId);
 
     let completedUsers = knex.raw("select * from (select a.email, " +
@@ -113,16 +105,8 @@ async function findProgressDistrubitionCompletedUserData(loggedInUser,selectedOr
 }
 
 async function findProgressDistrubitionAttemptedUserData(loggedInUser, selectedOrganizationId, programId, courseId, offset, pageSize) {
-    if (!loggedInUser) {
-        console.log("not authenticated")
-        return;
-    }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
 
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
     let result = await progressDistrubitionData(loggedInUser, organizationId, programId, courseId);
 
     let attemptedUsers = knex.raw("select * from (select a.email, " +
@@ -204,16 +188,8 @@ async function findProgressDistrubitionAttemptedUserData(loggedInUser, selectedO
 }
 
 async function findProgressDistrubitionNotAttemptedUserData(loggedInUser, selectedOrganizationId, programId, courseId, offset, pageSize) {
-    if (!loggedInUser) {
-        console.log("not authenticated")
-        return;
-    }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
-    
-    let organizationId = (loggedInUser.role == Role.SuperAdmin && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
     let pdAll = knex.raw( "select * from users u " +
     "         left join employees e on e.user_id = u.user_id " +
@@ -336,17 +312,8 @@ async function progressDistrubitionData(loggedInUser, organizationId, programId,
 
 
 async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
-    if (!loggedInUser) {
-        console.log("not authenticated")
-        return;
-    }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
 
     console.log("breakdownDistrubitionData:", programId, courseId);
-
 
     var dateOffset = (24 * 60 * 60 * 1000) * 0; //for now we set 0 days but we should consider to change to 14 or 30 days
     var breakdownDate = new Date();
@@ -439,14 +406,6 @@ async function breakdownDistrubitionData(loggedInUser, programId, courseId) {
 }
 
 async function breakdownDistrubitionUsersSearch(loggedInUser, programId, courseId, minAnswers, maxAnswers, offset, pageSize) {
-    if (!loggedInUser) {
-        console.log("not authenticated")
-        return;
-    }
-    if (loggedInUser.role === Role.Learner) {
-        console.log("not authorized")
-        return;
-    }
 
     if (!minAnswers) {
         minAnswers = 0

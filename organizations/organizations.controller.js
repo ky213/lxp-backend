@@ -2,17 +2,18 @@
 const router = express.Router();
 const organizationService = require('./organization.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), create); 
-router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), update); 
-router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), deleteOrganizations); 
-router.get('/', authorize([Role.SuperAdmin]), getAll); 
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), getById);
-router.post('/email', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendEmail); 
-router.post('/testEmail', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), sendTestEmail);
-router.get('/:id/assetsDomain', authorize(), getOrganizationAssetsDomain);
+router.post('/', authorize(Permissions.api.organizations.create), create);
+router.put('/', authorize(Permissions.api.organizations.update), update);
+router.delete('/', authorize(Permissions.api.organizations.delete), deleteOrganizations);
+router.get('/', authorize(Permissions.api.organizations.get.superadminaccess), getAll);
+router.get('/:id', authorize(Permissions.api.organizations.get.useraccess), getById);
+router.post('/email', authorize(Permissions.api.organizations.email.send), sendEmail);
+router.post('/testEmail', authorize(Permissions.api.organizations.email.send), sendTestEmail);
+router.get('/:id/assetsDomain', authorize(Permissions.api.organizations.assetsDomain.get), getOrganizationAssetsDomain);
 
 module.exports = router;
 

@@ -2,15 +2,16 @@
 const router = express.Router();
 const activityTypeService = require('./activity_type.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), create); 
-router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update);
-router.get('/', authorize(), getAll); 
-router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getById); 
+router.post('/', authorize(Permissions.api.activityTypes.create), create);
+router.put('/', authorize(Permissions.api.activityTypes.update), update);
+router.get('/', authorize(Permissions.api.activityTypes.get.useraccess), getAll);
+router.get('/:id', authorize(Permissions.api.activityTypes.get.adminaccess), getById);
 
-router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deleteActivityTypes); 
+router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deleteActivityTypes);
 
 module.exports = router;
 
@@ -50,8 +51,9 @@ function update(req, res, next) {
         .catch(err => next(err));
 }
 
-function deleteActivityTypes(req, res, next) {      
+function deleteActivityTypes(req, res, next) {
     activityTypeService.deleteActivityTypes(req.body, req.user)
         .then(() => res.json(true))
         .catch(err => next(err));
 }
+

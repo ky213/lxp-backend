@@ -3,18 +3,17 @@ const router = express.Router();
 const userService = require("./user.service");
 const cmService = require("./course_manager.service");
 const authorize = require("helpers/authorize");
-const Role = require("helpers/role");
+
 const converter = require("helpers/converter");
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post("/add", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), add);
-router.post("/addBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), addBulk);
-router.post("/validateBulk", authorize(), validateBulk);
-
-router.get("/filter", authorize(), getAll); // admin only
-router.get("/filterActive", authorize(), getAllActive);
-
-router.put("/update", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), update);
+router.post("/add", authorize(Permissions.api.courseManagers.create), add);
+router.post("/addBulk", authorize(Permissions.api.courseManagers.bulk.create), addBulk);
+router.post("/validateBulk", authorize(Permissions.api.courseManagers.bulk.validate), validateBulk);
+router.get("/filter", authorize(Permissions.api.courseManagers.get.adminaccess), getAll); // admin only
+router.get("/filterActive", authorize(Permissions.api.courseManagers.get.useraccess), getAllActive);
+router.put("/update", authorize(Permissions.api.courseManagers.update), update);
 
 module.exports = router;
 
@@ -87,14 +86,14 @@ function add(req, res, next) {
   cmService
     .add(req.user, req.body.user, req.body.organizationId)
     .then(data => res.json(data))
-    .catch(err => next(err));
+    .catch(err =>next(err));
 }
 
 function addBulk(req, res, next) {
   cmService
     .addBulk(req.user, req.body.users, req.body.organizationId)
     .then(() => res.json(true))
-    .catch(err => next(err));
+    .catch(err =>next(err));
 }
 
 function update(req, res, next) {
@@ -104,7 +103,8 @@ function update(req, res, next) {
         console.log('CM update data', data);
         res.json(data);
       })
-    .catch(err => next(err));
+    .catch(err =>next(err));
+
 }
 
 function validateBulk(req, res, next) {
@@ -113,5 +113,5 @@ function validateBulk(req, res, next) {
     .then(data => {
       res.json(data);
     })
-    .catch(err => next(err));
+    .catch(err =>next(err));
 }

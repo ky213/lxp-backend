@@ -1,6 +1,6 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
 const knex = require('../db');
 
 module.exports = {
@@ -18,7 +18,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     let model = knex.table("group_types")
     .join('organizations', 'organizations.organization_id', 'group_types.organization_id');
 
-    if(user.role == Role.SuperAdmin && organizationId) {
+    if(PermissionsService.isSuperAdmin(user) && organizationId) {
         model.andWhere('group_types.organization_id', organizationId);
     }
     else {

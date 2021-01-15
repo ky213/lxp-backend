@@ -2,14 +2,15 @@
 const router = express.Router();
 const groupsService = require('./groups.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post('/', authorize(), create); 
-router.put('/', authorize(), update); 
-router.delete('/', authorize(), deletegroups); 
-router.get('/', authorize(), getAll); 
-router.get('/:id', authorize(), getById);  
+router.post('/', authorize(Permissions.api.groups.create), create);
+router.put('/', authorize(Permissions.api.groups.update), update);
+router.delete('/', authorize(Permissions.api.groups.delete), deletegroups);
+router.get('/', authorize(Permissions.api.groups.get), getAll);
+router.get('/:id', authorize(Permissions.api.groups.get), getById);
 module.exports = router;
 
 function getAll(req, res, next) {

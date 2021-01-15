@@ -3,6 +3,7 @@ const router = express.Router();
 const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
 const converter = require("helpers/converter");
+const Permissions = require("permissions/permissions")
 
 const {v4: uuidv4} = require('uuid');
 var AdmZip = require('adm-zip');
@@ -10,20 +11,20 @@ var fs = require('fs');
 
 // routes
 //router.get('/:id', authorize(), getById);
-router.get('/', authorize(), getAll);
-router.get('/downloadFile/:id', authorize(), downloadFile);
+router.get('/', authorize(Permissions.api.courses.get), getAll);
+router.get('/downloadFile/:id', authorize(Permissions.api.courses.get), downloadFile);
 
-router.delete('/deleteCourses', authorize(), deleteCourses);
-router.get('/getById', authorize(), getById);
-router.get('/getByUser', authorize(), getByUser);
-router.get('/getByUserAll', authorize(), getByUserAll);
-router.get('/allCourseUsers', authorize(), getAllCourseUsers);
+router.delete('/deleteCourses', authorize(Permissions.api.courses.delete), deleteCourses);
+router.get('/getById', authorize(Permissions.api.courses.get), getById);
+router.get('/getByUser', authorize(Permissions.api.courses.get), getByUser);
+router.get('/getByUserAll', authorize(Permissions.api.courses.get), getByUserAll);
+router.get('/allCourseUsers', authorize(Permissions.api.courses.get), getAllCourseUsers);
 
-router.post('/', authorize(), create);
-router.put('/', authorize(), update);
-router.post('/uploadFile', authorize(), uploadFile);
-router.post('/joinCourse', authorize(), requestToJoinCourse);
-router.delete('/unjoinCourse', authorize(), unJoinCourse);
+router.post('/', authorize(Permissions.api.courses.create), create);
+router.put('/', authorize(Permissions.api.courses.update), update);
+router.post('/uploadFile', authorize(Permissions.api.courses.create), uploadFile);
+router.post('/joinCourse', authorize(Permissions.api.courses.create), requestToJoinCourse);
+router.delete('/unjoinCourse', authorize(Permissions.api.courses.delete), unJoinCourse);
 
 module.exports = router;
 

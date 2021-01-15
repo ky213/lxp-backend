@@ -1,6 +1,6 @@
 const knex = require('../db'); 
 const moment = require('moment');
-const Role = require('helpers/role');
+
 require('moment-timezone');
 
 module.exports = {

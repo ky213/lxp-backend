@@ -4,9 +4,10 @@ const router = express.Router();
 const userService = require("./user.service");
 const authorize = require("helpers/authorize");
 const converter = require("helpers/converter");
-const Role = require("helpers/role");
+
 const crypto = require('crypto');
 var async = require('async');
+const Permissions = require("permissions/permissions")
 
 var corsOptions = {
   origin: '*',
@@ -14,21 +15,21 @@ var corsOptions = {
   methods: "POST"
 }
 
-router.get("/getAllActive", authorize(), getAllActiveUsers);
-router.get("/getByEmployeeId/:id", authorize(), getByEmployeeId);
-router.get("/getByUserId/:id", authorize(), getByUserId);
+router.get("/getAllActive", authorize(Permissions.api.users.get), getAllActiveUsers);
+router.get("/getByEmployeeId/:id", authorize(Permissions.api.users.get), getByEmployeeId);
+router.get("/getByUserId/:id", authorize(Permissions.api.users.get), getByUserId);
 router.options("/authenticate", cors() ); // public route
 router.post("/authenticate", cors(corsOptions) , authenticate); // public route
-router.put("/change-password", authorize(), changePassword);
-router.put("/updateProfilePhoto", authorize(), updateProfilePhoto);
-router.put("/updateProfileData", authorize(), updateProfileData);
-router.delete("/deleteEmployees", authorize(), deleteEmployees);
-router.put("/updateBulk", authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), updateBulk);
+router.put("/change-password", authorize(Permissions.api.users.password.update), changePassword);
+router.put("/updateProfilePhoto", authorize(Permissions.api.users.update), updateProfilePhoto);
+router.put("/updateProfileData", authorize(Permissions.api.users.update), updateProfileData);
+router.delete("/deleteEmployees", authorize(Permissions.api.users.delete), deleteEmployees);
+router.put("/updateBulk", authorize( Permissions.api.users.bulk.update), updateBulk);
 router.post("/forgot", forgotPassowrd); // public route
 router.post("/reset/:token", resetPassowrd); // public route
 router.options("/authToken", cors() ); // public route
 router.post("/authToken", cors(corsOptions) , authToken); // public route
-router.get('/downloadPDF', authorize(), downloadCertificateAsPDF);
+router.get('/downloadPDF', authorize(Permissions.api.users.certificate.get), downloadCertificateAsPDF);
 router.post('/speechToText', cors(corsOptions), convertSpeechToText);
 
 module.exports = router;
@@ -39,6 +40,7 @@ function authenticate(req, res, next) {
     .then(user => {
       if (user) {
         try {
+          console.log("User: ", user);
           res.cookie("sessionToken", user.token, {
             maxAge: 900000,
             httpOnly: true
@@ -214,6 +216,7 @@ function authToken(req, res, next) {
       }
     })
     .catch(err => {
+        console.log('Error: ',err)
       next(err);
     })
 }

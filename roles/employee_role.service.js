@@ -1,6 +1,6 @@
 const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
 const knex = require('../db');
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
 
 async function getAll(loggedInUser, role_id, organizationId)
 {
-  organizationId = (loggedInUser.role == Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+  organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
   let employee_roles = await knex('employee_roles')
     .innerJoin('employees','employees.employee_id','employee_roles.employee_id')

@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const notificationService = require('./notification.service');
 const authorize = require('helpers/authorize')
+const Permissions = require("permissions/permissions")
 
 // routes
  
-router.post('/', authorize(), create); 
-router.get('/', authorize(), getAll); 
-router.get('/unread', authorize(), getAllUnread);  
-router.get('/unread-count', authorize(), getUnreadCount);  
-router.put('/:id/read', authorize(), setRead); 
-router.get('/:id', authorize(), getById);  
+router.post('/', authorize(Permissions.api.notifications.create), create);
+router.get('/', authorize(Permissions.api.notifications.get), getAll);
+router.get('/unread', authorize(Permissions.api.notifications.get), getAllUnread);
+router.get('/unread-count', authorize(Permissions.api.notifications.get), getUnreadCount);
+router.put('/:id/read', authorize(Permissions.api.notifications.update), setRead);
+router.get('/:id', authorize(Permissions.api.notifications.get), getById);
 
 
 module.exports = router;

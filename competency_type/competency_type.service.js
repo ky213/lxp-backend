@@ -1,4 +1,4 @@
-﻿const Role = require('helpers/role');
+﻿const PermissionsService = require('permissions/permissions.service')
 const knex = require('../db');
 
 module.exports = {
@@ -16,7 +16,7 @@ async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
     let model = knex.table("competency_type")
     .join('organizations', 'organizations.organization_id', 'competency_type.organization_id');
 
-    if(user.role == Role.SuperAdmin && organizationId) {
+    if(PermissionsService.isSuperAdmin(user) && organizationId) {
         model.andWhere('competency_type.organization_id', organizationId);
     }
     else {

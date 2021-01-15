@@ -3,6 +3,8 @@
 const express = require('express');
 const fileupload = require('express-fileupload')
 const cookieParser = require('cookie-parser'); 
+const RoleService = require('roles/role.service');
+
 const app = express();
 app.use(cookieParser());
 
@@ -66,6 +68,9 @@ app.use('/api/competencies', require('./competencies/competencies.controller'));
 
 // global error handler
 app.use(errorHandler);
+
+//updateRolesCache
+// RoleService.updateRolesCache()
 
 // start server
 const port = process.env.PORT||4001;

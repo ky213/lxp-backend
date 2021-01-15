@@ -2,7 +2,8 @@ const knex = require('../db');
 const moment = require('moment');
 require('moment-timezone');
 const converter = require("helpers/converter");
-const Role = require('helpers/role');
+const PermissionsService = require('permissions/permissions.service')
+const Permissions = require('permissions/permissions')
 const notificationService = require('../notifications/notification.service');
 const organizationService = require('../organizations/organization.service');
 const programService = require('../programs/program.service');
@@ -53,8 +54,12 @@ module.exports = {
 };
 
 
-function userHasAdminRole(user) {
-    return user.role == Role.SuperAdmin || user.role == Role.LearningManager || user.role == Role.ProgramDirector  || user.role == Role.Admin;
+function userHasAdminAccess(user) {
+    return PermissionsService.hasPermission(user, Permissions.api.activities.adminaccess)
+}
+
+function userHasUserAccess(user) {
+    return PermissionsService.hasPermission(user, Permissions.api.activities.useraccess)
 }
 
 async function getActivityTypes(user, selectedOrganizationId) {
@@ -65,7 +70,8 @@ async function getActivityTypes(user, selectedOrganizationId) {
         ])
         .from('activity_types')
 
-    model.andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    model.andWhere('activity_types.organization_id', PermissionsService.isSuperAdmin(user)
+        && selectedOrganizationId || user.organization);
 
     return await model.orderBy('activity_type_id', 'asc');
 }
@@ -100,7 +106,7 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
     .andWhere('activities.repeat', true);
 
-    if(!userHasAdminRole(user)) {
+    if(userHasUserAccess(user)) {
         repeatingActivitiesModel
         .andWhere(function() {
             this.whereIn('activities.program_id', programIds)
@@ -114,7 +120,8 @@ async function getRepeatingActivities(user, programIds, courseIds, from, to, sel
         }); 
     }
 
-    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    repeatingActivitiesModel.andWhere('activities.organization_id', PermissionsService.isSuperAdmin(user)
+        && selectedOrganizationId || user.organization);
 
     const repeatingActivities = await repeatingActivitiesModel;
     console.log('repeatingActivities => ' , repeatingActivities);
@@ -177,7 +184,7 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
     .where('activities.repeat', true);
 
-    if(!userHasAdminRole(user)) {
+    if(userHasUserAccess(user)) {
         repeatingActivitiesModel
         .andWhere(function() {
             this.whereIn('activities.program_id', programIds)
@@ -191,7 +198,7 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
         }); 
     }
 
-    repeatingActivitiesModel.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    repeatingActivitiesModel.andWhere('activities.organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
 
     const repeatingActivities = await repeatingActivitiesModel;  
     
@@ -200,7 +207,7 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
 
 async function getAll(user, from, to, selectedOrganizationId) {
 
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
+    const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     const userCourses = await courseService.getAllUserCourses(user, user.userId,selectedOrganizationId);
@@ -239,7 +246,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .andWhere('activities.repeat', false)    
     .andWhereBetween('activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()])
 
-    if(!userHasAdminRole(user)) {
+    if(userHasUserAccess(user)) {
         model
         .andWhere(function() {
             this.whereIn('activities.program_id', programIds)
@@ -279,11 +286,11 @@ async function getAll(user, from, to, selectedOrganizationId) {
     .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
     .andWhereBetween('log_activities.start', [moment(from, 'DDMMYYYY').startOf('day').toDate(), moment(to, 'DDMMYYYY').endOf('day').toDate()]);
     
-    if(userHasAdminRole(user)) {
+    if(userHasAdminAccess(user)) {
         logModel.andWhere('log_activities.is_public', true)
     }
 
-    if(!userHasAdminRole(user)) {
+    if(userHasUserAccess(user)) {
         logModel
         .andWhere(function() {
             this.whereIn('log_activities.program_id', programIds)
@@ -303,10 +310,10 @@ async function getAll(user, from, to, selectedOrganizationId) {
         });
     }
    
-    model.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    model.andWhere('activities.organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
 
     logModel.whereIn('log_activities.program_id', function() {
-        this.select('program_id').from('programs').where('organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+        this.select('program_id').from('programs').where('organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
     });
 
 
@@ -354,8 +361,8 @@ async function getById(activityId, user, selectedOrganizationId) {
     .limit(1)
     .first();
 
-    let organizationId = user.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : user.organization;
-    if(user.role == Role.SuperAdmin && selectedOrganizationId) {
+    let organizationId = PermissionsService.isSuperAdmin(user) && selectedOrganizationId ? selectedOrganizationId : user.organization;
+    if(PermissionsService.isSuperAdmin(user) && selectedOrganizationId) {
         activityDetailsModel.andWhere('activities.organization_id', selectedOrganizationId);
     }
     else {
@@ -422,11 +429,11 @@ async function getById(activityId, user, selectedOrganizationId) {
             "activities_files.activity_file_id as activityFileId"
             ]);
 
-        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);
         activityDetails.files.map(file => {
-            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            file.url = `${assetsDomain}/${file.file}${file.name}`;
             return file;
-        });    
+        });
 
         activityDetails.links = await knex("activities_links")
             .where("activity_id", activityId)
@@ -458,10 +465,10 @@ async function getById(activityId, user, selectedOrganizationId) {
 
 async function getExistingActivities(activity, user) {
     console.log("Activity start/end", activity )
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
+    const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, user.userId, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
+    const userCourses = await courseService.getAllUserCourses(user, user.userId, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     let existingActivitiesModel =  knex.select([
@@ -481,7 +488,7 @@ async function getExistingActivities(activity, user) {
     .andWhere('activities.repeat', false)
     .andWhereBetween('activities.start', [moment(activity.start).toDate(), moment(activity.end).toDate()]);
 
-    if(user.role != Role.SuperAdmin) {
+    if(!PermissionsService.isSuperAdmin(user)) {
         existingActivitiesModel.andWhere(function() {
             this.whereIn('activities.program_id', programIds)
             .orWhereNull('activities.program_id')
@@ -492,7 +499,7 @@ async function getExistingActivities(activity, user) {
         existingActivitiesModel.andWhere('activities.activity_id', '<>', activity.activityId);
     }
 
-    if(user.role == Role.SuperAdmin && activity.organizationId) {
+    if(PermissionsService.isSuperAdmin(user) && activity.organizationId) {
         existingActivitiesModel.andWhere('activities.organization_id', activity.organizationId);
     }
     else {
@@ -527,7 +534,7 @@ async function calculateStatus(activity, existingActivities, user) {
 
 async function checkConflicts(activity, user) {
     console.log("Activity conflict start/end", activity )
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
+    const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     let existingActivities = [];
@@ -548,7 +555,7 @@ async function checkConflicts(activity, user) {
         .where('activity_statuses.activity_status_id', '<>', 3) // not deleted
         .whereBetween('activities.start', [moment(activity.start).toDate(), moment(activity.end).toDate()]);
 
-        if(user.role != Role.SuperAdmin) {
+        if(!PermissionsService.isSuperAdmin(user)) {
             existingActivitiesModel
             .where(function() {
                 this.whereIn('activities.program_id', programIds)
@@ -564,7 +571,7 @@ async function checkConflicts(activity, user) {
             existingActivitiesModel.andWhere('activities.activity_id', '<>', activity.activityId);
         }
 
-        if(user.role == Role.SuperAdmin && activity.organizationId) {
+        if(PermissionsService.isSuperAdmin(user) && activity.organizationId) {
             existingActivitiesModel.andWhere('activities.organization_id', activity.organizationId);
         }
         else {
@@ -941,7 +948,7 @@ async function updateStatus(activityId, statusId, user)
     let model = knex('activities')
         .where('activity_id', activityId);
 
-    if(user.role != Role.SuperAdmin) {
+    if(!PermissionsService.isSuperAdmin(loggedInUser)) {
         model.where(function() {
             this.where('activities.assigned_by', user.employeeId || user.sub)
             .orWhereIn('activities.activity_id', function() {
@@ -959,7 +966,7 @@ async function updateStatus(activityId, statusId, user)
 
 async function logActivity(activity, user)
 {
-    let organizationId = (user.role == Role.SuperAdmin && activity.organizationId) ? activity.organizationId : user.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(user) && activity.organizationId) ? activity.organizationId : user.organization;
 
     return knex.transaction(async function(t) {
         let notifications = [];
@@ -1036,7 +1043,7 @@ async function logActivity(activity, user)
 
 async function updateLogActivity(activity, user)
 {
-    let organizationId = (user.role == Role.SuperAdmin && activity.organizationId) ? activity.organizationId : user.organization;
+    let organizationId = (PermissionsService.isSuperAdmin(user) && activity.organizationId) ? activity.organizationId : user.organization;
 
     return knex.transaction(async function(t) {
 
@@ -1173,11 +1180,11 @@ async function getLogActivityById(activityId, user , organizationId) {
             "log_activities_files.log_activity_file_id as logActivityFileId"
             ]);
 
-        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);
         activityDetails.files.map(file => {
-            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            file.url = `${assetsDomain}/${file.file}${file.name}`;
             return file;
-        }); 
+        });
 
         activityDetails.links = await knex("log_activities_links")
             .where("log_activity_id", activityId)
@@ -1259,9 +1266,9 @@ async function getReplies(activityId, user , organizationId) {
             "activities_files.activity_file_id as activityFileId"
             ]);
 
-        let assetsDomain = await getOrganizationAssetsDomain(organizationId);      
+        let assetsDomain = await getOrganizationAssetsDomain(organizationId);
         res.files.map(file => {
-            file.url = `${assetsDomain}/${file.file}${file.name}`;            
+            file.url = `${assetsDomain}/${file.file}${file.name}`;
             return file;
         });
 
@@ -1428,8 +1435,8 @@ async function addActivityFile(loggedInUser, data , organizationId) {
 
     let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
 
-    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
-    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`; 
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
+    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`;
 
     return { activityFileId: activityFileId[0] , url : cloudFileURL , assetsDomainURL : assetsDomainURL}
 
@@ -1463,14 +1470,14 @@ async function addActivityFile(loggedInUser, data , organizationId) {
       ])
       .first();
 
-    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
     url = `${assetsDomain}/${data.file}${data.name}`;
-    
+
     return {...data , url : url}
   }
 
   async function addLogActivityFile(loggedInUser, data , organizationId) {
-    
+
     let model = knex.select(['log_activities_files.file']).from('log_activities_files');
 
     let fileData = await model
@@ -1494,17 +1501,17 @@ async function addActivityFile(loggedInUser, data , organizationId) {
       .returning('log_activity_file_id');
 
     let cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath ,data.file)
-   
-    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
-    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`; 
+
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
+    assetsDomainURL = `${assetsDomain}/${contentPath}${data.name}`;
 
     return { activityFileId: activityFileId[0] , url : cloudFileURL , assetsDomainURL : assetsDomainURL}
-  
+
   }
   
   async function deleteLogActivityFile(loggedInUser, id) {
     console.log('deleteLogActivityFile => ', id);
-       
+
     let model = knex.select(['log_activities_files.file' , 'log_activities_files.name']).from('log_activities_files');
 
     let fileData = await model
@@ -1520,7 +1527,7 @@ async function addActivityFile(loggedInUser, data , organizationId) {
   }
   
   async function downloadLogActivityFile(loggedInUser, id , organizationId) {
-    console.log('downloadLogActivityFile => ', id);    
+    console.log('downloadLogActivityFile => ', id);
     let data = await knex("log_activities_files")
       .where("log_activity_file_id", id)
       .select([
@@ -1529,9 +1536,9 @@ async function addActivityFile(loggedInUser, data , organizationId) {
       ])
       .first();
 
-    let assetsDomain = await getOrganizationAssetsDomain(organizationId);  
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
     url = `${assetsDomain}/${data.file}${data.name}`;
-    
+
     return {...data , url : url}
   }
 
@@ -1598,7 +1605,7 @@ async function addActivityFile(loggedInUser, data , organizationId) {
     .leftJoin('users', 'users.user_id', 'employees.user_id')
     .where('log_activity_replies.activity_id', activityId)
     .where('log_activity_replies.active', true);
-      
+
     const response = await replyModel.orderBy('modified_at', 'asc');
     let replies = [];
 
@@ -1788,7 +1795,7 @@ async function evaluate(activityReply , user , activityId) {
 }
 
 async function getAllByLearner(user, userId, employeeId, selectedOrganizationId) {
-    const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
+    const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
     const userCourses = await courseService.getAllUserCourses(user, userId , selectedOrganizationId);
@@ -1823,7 +1830,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     .leftJoin('activity_courses', 'activity_courses.activity_id', 'activities.activity_id')
     .leftJoin('activity_participants', 'activity_participants.activity_id', 'activities.activity_id')
     .where('activities.repeat', false)
-    .andWhere('activity_types.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    .andWhere('activity_types.organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
 
     model
     .andWhere(function() {
@@ -1861,7 +1868,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     .from('log_activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
     .join('activity_types', 'activity_types.activity_type_id', 'log_activities.activity_type_id')
-    .where('activity_types.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    .where('activity_types.organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
 
     logModel
     .andWhere(function() {
@@ -1881,10 +1888,10 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
             })
     });
    
-    model.andWhere('activities.organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+    model.andWhere('activities.organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
 
     logModel.whereIn('log_activities.program_id', function() {
-        this.select('program_id').from('programs').where('organization_id', user.role == Role.SuperAdmin && selectedOrganizationId || user.organization);
+        this.select('program_id').from('programs').where('organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
     });
 
     let repeatingActivities = [];
@@ -1915,7 +1922,7 @@ async function getAllFiles(user , organizationId) {
 
     const contentPath = 'GlobalFolder' + organizationId + '/' ;
 
-    const [files] = await 
+    const [files] = await
     cloudStorage
     .bucket(bucket)
     .getFiles({directory: contentPath})
@@ -1932,8 +1939,8 @@ async function getAllFiles(user , organizationId) {
 
     let assetsDomain = await getOrganizationAssetsDomain(organizationId);
 
-    let tempCloudFiles = allGlobalFiles.map(async (data) => {  
-        
+    let tempCloudFiles = allGlobalFiles.map(async (data) => {
+
         data.url = `${assetsDomain}/${data.file}${data.name}`;
         return data;
     });
@@ -1945,12 +1952,12 @@ async function getAllFiles(user , organizationId) {
       .andWhere("activities.organization_id" , organizationId)
       .select(["activities_files.file" , "activities_files.name"]);
 
-    let tempFiles = allFiles.map(async (data) => {        
+    let tempFiles = allFiles.map(async (data) => {
         data.url = `${assetsDomain}/${data.file}${data.name}`;
         return data;
     });
 
-    const combined = [...tempFiles, ...tempCloudFiles] 
+    const combined = [...tempFiles, ...tempCloudFiles]
     let allFilesData = await Promise.all(combined);
 
     return allFilesData;

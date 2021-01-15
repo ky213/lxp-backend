@@ -1,7 +1,6 @@
 ﻿const config = require('config.json');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const Role = require('helpers/role');
 const knex = require('../db'); 
 const htmlPdf  = require('html-pdf');
 const groupTypeService = require('../group_type/group_type.service');

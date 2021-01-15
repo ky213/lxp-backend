@@ -1,56 +1,56 @@
 const express = require('express');
 const router = express.Router();
 const activityService = require('./activity.service');
-const courseService = require('../courses/course.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
 const converter = require("helpers/converter");
 const {v4: uuidv4} = require('uuid');
 const {Storage} = require('@google-cloud/storage');
 var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
+const Permissions = require("permissions/permissions")
 
 // routes
  
-router.post('/', authorize(), create); 
-router.post('/log', authorize(), logActivity); 
-router.put('/log', authorize(), updateLogActivity); 
-router.get('/log/:id', authorize(), getLogActivityById);  
-router.put('/log/:id/status', authorize(), updateLogActivityStatus); 
-router.put('/', authorize(), update); 
-router.get('/', authorize(), getAll); 
-router.get('/types', authorize(), getActivityTypes);  
-router.get('/participation-levels', authorize(), getParticipationLevels);  
-router.get('/byLearner', authorize(), getAllByLearner); 
+router.post('/', authorize(Permissions.api.activities.create), create);
+router.post('/log', authorize(Permissions.api.activities.create), logActivity);
+router.put('/log', authorize(Permissions.api.activities.update), updateLogActivity);
+router.get('/log/:id', authorize(Permissions.api.activities.get), getLogActivityById);
+router.put('/log/:id/status', authorize(Permissions.api.activities.update), updateLogActivityStatus);
+router.put('/', authorize(Permissions.api.activities.update), update);
+router.get('/', authorize(Permissions.api.activities.get), getAll);
+router.get('/types', authorize(Permissions.api.activities.get), getActivityTypes);
+router.get('/participation-levels', authorize(Permissions.api.activities.get), getParticipationLevels);
+router.get('/byLearner', authorize(Permissions.api.activities.get), getAllByLearner);
 
-router.put('/:id/status', authorize(), updateStatus); 
-router.get('/:id', authorize(), getById);  
+router.put('/:id/status', authorize(Permissions.api.activities.update), updateStatus);
+router.get('/:id', authorize(Permissions.api.activities.get), getById);
 
-router.get('/:id/replies', authorize(), getReplies);  
-router.post('/reply', authorize(), addReply);
-router.put('/reply/:id', authorize(), updateReply);
-router.delete('/reply/:id', authorize(), deleteReply);
+router.get('/:id/replies', authorize(Permissions.api.activities.get), getReplies);
+router.post('/reply', authorize(Permissions.api.activities.create), addReply);
+router.put('/reply/:id', authorize(Permissions.api.activities.update), updateReply);
+router.delete('/reply/:id', authorize(Permissions.api.activities.delete), deleteReply);
 
-router.get('/:id/log-activity/replies', authorize(), getLogActivityReplies);  
-router.post('/log-activity/reply', authorize(), addLogActivityReply);
-router.put('/log-activity/reply/:id', authorize(), updateLogActivityReply);
-router.delete('/log-activity/reply/:id', authorize(), deleteLogActivityReply);
+router.get('/:id/log-activity/replies', authorize(Permissions.api.activities.get), getLogActivityReplies);
+router.post('/log-activity/reply', authorize(Permissions.api.activities.create), addLogActivityReply);
+router.put('/log-activity/reply/:id', authorize(Permissions.api.activities.update), updateLogActivityReply);
+router.delete('/log-activity/reply/:id', authorize(Permissions.api.activities.delete), deleteLogActivityReply);
 
-router.post('/addActivityFile', authorize(), addActivityFile);
-router.delete('/deleteActivityFile/:id', authorize(), deleteActivityFile);
-router.get('/downloadActivityFile/:id', authorize(), downloadActivityFile);
+router.post('/addActivityFile', authorize(Permissions.api.activities.create), addActivityFile);
+router.delete('/deleteActivityFile/:id', authorize(Permissions.api.activities.delete), deleteActivityFile);
+router.get('/downloadActivityFile/:id', authorize(Permissions.api.activities.get), downloadActivityFile);
 
-router.post('/addLogActivityFile', authorize(), addLogActivityFile);
-router.delete('/deleteLogActivityFile/:id', authorize(), deleteLogActivityFile);
-router.get('/downloadLogActivityFile/:id', authorize(), downloadLogActivityFile);
+router.post('/addLogActivityFile', authorize(Permissions.api.activities.create), addLogActivityFile);
+router.delete('/deleteLogActivityFile/:id', authorize(Permissions.api.activities.delete), deleteLogActivityFile);
+router.get('/downloadLogActivityFile/:id', authorize(Permissions.api.activities.get), downloadLogActivityFile);
 
-router.post('/addActivityLink', authorize(), addActivityLink);
-router.delete('/deleteActivityLink/:id', authorize(), deleteActivityLink);
+router.post('/addActivityLink', authorize(Permissions.api.activities.create), addActivityLink);
+router.delete('/deleteActivityLink/:id', authorize(Permissions.api.activities.delete), deleteActivityLink);
 
-router.post('/addLogActivityLink', authorize(), addLogActivityLink);
-router.delete('/deleteLogActivityLink/:id', authorize(), deleteLogActivityLink);
+router.post('/addLogActivityLink', authorize(Permissions.api.activities.create), addLogActivityLink);
+router.delete('/deleteLogActivityLink/:id', authorize(Permissions.api.activities.delete), deleteLogActivityLink);
 
-router.post('/evaluate/:id', authorize(), evaluate);
+router.post('/evaluate/:id', authorize(Permissions.api.activities.create), evaluate);
 
 router.get('/allFiles/:id', authorize(), getAllFiles);
 router.post('/upload/:id', authorize(), uploadFileToCloud);
@@ -113,7 +113,7 @@ function getParticipationLevels(req, res, next) {
 }
 
 function getLogActivityById(req, res, next) {
-    activityService.getLogActivityById(req.params.id, req.user , req.query.organizationId)
+    activityService.getLogActivityById(req.params.id, req.user)
         .then(event => event ? res.json(event) : res.status(404).json({message: "Activity not found"}))
         .catch(err => next(err));
 }

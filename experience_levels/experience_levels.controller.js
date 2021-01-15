@@ -2,18 +2,16 @@ const express = require('express');
 const router = express.Router();
 const experienceLevelService = require('./experience_level.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get('/', authorize(), getAll);
-router.get('/getByExpLevelId', authorize(), getByExpLevelId);
-router.get('/getByProgramId', authorize(), getByProgramId);
-
-router.post('/', authorize(), add);
-
-router.put('/', authorize(), update);
-
-router.delete('/:expLevelId', authorize(), deleteExpLevel);
+router.get('/', authorize(Permissions.api.experienceLevels.get), getAll);
+router.get('/getByExpLevelId', authorize(Permissions.api.experienceLevels.get), getByExpLevelId);
+router.get('/getByProgramId', authorize(Permissions.api.experienceLevels.get), getByProgramId);
+router.post('/', authorize(Permissions.api.experienceLevels.create), add);
+router.put('/', authorize(Permissions.api.experienceLevels.update), update);
+router.delete('/:expLevelId', authorize(Permissions.api.experienceLevels.delete), deleteExpLevel);
 
 module.exports = router;
 

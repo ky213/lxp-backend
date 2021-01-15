@@ -2,20 +2,14 @@ const bcrypt = require("bcrypt");
 const knex = require("../db");
 const validator = require("email-validator");
 const {checkIfEmailExists} = require("./user.service");
-const {getCmRoles} = require("../roles/role.service");
+const {getCmRolesMap} = require("../roles/role.service");
 const groupsvc = require("../groups/groups.service");
 const organizationService = require("../organizations/organization.service");
 const programService = require('../programs/program.service');
+const PermissionsService = require('permissions/permissions.service')
+const Permissions = require('permissions/permissions')
+
 var generator = require('generate-password');
-const Role = require("helpers/role");
-
-let cmRolesP = async function () {
-    return await getCmRoles().then(r => {
-        cmRoles = r;
-    });
-}()
-
-var cmRoles = []
 
 module.exports = {
     add,
@@ -30,7 +24,7 @@ async function add(loggedInUser, userData, organizationId) {
         email: userData.email && userData.email.toLowerCase() || userData.email
     };
 
-    organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let validationOutput = await validateBulk(
         loggedInUser,
@@ -50,7 +44,7 @@ async function add(loggedInUser, userData, organizationId) {
 
     var password = generator.generate({length: 10, numbers: true});
 
-    return knex
+    return await knex
         .transaction(async function (t) {
 
             let userIds = await knex("users")
@@ -128,7 +122,7 @@ async function addBulk(loggedInUser, data, organizationId) {
         email: d.email && d.email.toLowerCase() || d.email
     }));
 
-    organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
 
     let output = [];
@@ -325,7 +319,7 @@ async function update(loggedInUser, user, organizationId) {
         email: user.email && user.email.toLowerCase() || user.email
     };
 
-    organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let validationOutput = await validateBulk(loggedInUser, [user], organizationId);
     if (validationOutput.hasErrors) {
@@ -429,8 +423,7 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
         email: d.email && d.email.toLowerCase().trim() || d.email
     }));
 
-    organizationId = (loggedInUser.role === Role.SuperAdmin && organizationId) ? organizationId : loggedInUser.organization;
-
+    organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && organizationId) ? organizationId : loggedInUser.organization;
 
     let groups = await groupsvc.getAllGroupsIds(organizationId).then(r => {
         return r;
@@ -520,15 +513,19 @@ async function validateBulk(loggedInUser, usersData, organizationId) {
             continue;
         }
 
+        cmRoles = await getCmRolesMap(organizationId);
+
         if (cmRoles) {
             let valid = false;
-            cmRoles.forEach(item => {
-                if (item.roleId === user.roleId || item.name === user.roleId) {
-                    valid = true;
-                    usersData[i].roleId = item.roleId;
-                    usersData[i].roleName = item.name;
-                }
-            })
+
+            role = cmRoles[user.roleId];
+            console.log('searching: ',user.roleId);
+
+            if(role){
+                valid = true;
+                usersData[i].roleId = role.roleId;
+                usersData[i].roleName = role.name;
+            }
 
             if (!valid) {
                 addError(user, "Role is not valid");

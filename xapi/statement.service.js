@@ -1,6 +1,6 @@
 const config = require('config.json');
 const jwt = require('jsonwebtoken');
-const Role = require('helpers/role');
+
 const knex = require('../db'); 
 const moment = require('moment');
 require('moment-timezone');

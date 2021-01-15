@@ -2,13 +2,15 @@
 const router = express.Router();
 const competencyTypeService = require('./competency_type.service');
 const authorize = require('helpers/authorize')
+const Permissions = require("permissions/permissions")
+
 
 // routes
-router.post('/', authorize(), create); 
-router.put('/', authorize(), update);
-router.get('/', authorize(), getAll); 
-router.get('/:id', authorize(), getById); 
-router.delete('/', authorize(), deleteCompetencyType); 
+router.post('/', authorize(Permissions.api.competencyType.create), create);
+router.put('/', authorize(Permissions.api.competencyType.update), update);
+router.get('/', authorize(Permissions.api.competencyType.get), getAll);
+router.get('/:id', authorize(Permissions.api.competencyType.get), getById);
+router.delete('/', authorize(Permissions.api.competencyType.delete), deleteCompetencyType);
 
 module.exports = router;
 

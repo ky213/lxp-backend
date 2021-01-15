@@ -2,19 +2,17 @@ const express = require("express");
 const router = express.Router();
 const academicYearService = require("./academic_year.service");
 const authorize = require("helpers/authorize");
-const Role = require("helpers/role");
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.get("/", authorize(), getByLoggedInUser);
-router.get("/getById", authorize(), getById);
-router.get("/getByProgramId", authorize(), getByProgramId);
-
-router.post("/", authorize(), create);
-
-router.put("/", authorize(), update);
-
-router.delete("/", authorize(), deleteAcademicYear);
-router.delete('/deleteAcademicYears', authorize(), deleteAcademicYears);
+router.get("/", authorize(Permissions.api.academicYears.get.useraccess), getByLoggedInUser);
+router.get("/getById", authorize(Permissions.api.academicYears.get.useraccess), getById);
+router.get("/getByProgramId", authorize(Permissions.api.academicYears.get.useraccess), getByProgramId);
+router.post("/", authorize(Permissions.api.academicYears.create), create);
+router.put("/", authorize(Permissions.api.academicYears.update), update);
+router.delete("/", authorize(Permissions.api.academicYears.delete), deleteAcademicYear);
+router.delete('/deleteAcademicYears', authorize(Permissions.api.academicYears.delete), deleteAcademicYears);
 
 module.exports = router;
 

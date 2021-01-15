@@ -2,14 +2,15 @@
 const router = express.Router();
 const groupTypeService = require('./group_type.service');
 const authorize = require('helpers/authorize')
-const Role = require('helpers/role');
+
+const Permissions = require("permissions/permissions")
 
 // routes
-router.post('/', authorize(), create); 
-router.put('/', authorize(), update);
-router.get('/', authorize(), getAll); 
-router.get('/:id', authorize(), getById); 
-router.delete('/', authorize(), deletegrouptypes); 
+router.post('/', authorize(Permissions.api.groupTypes.create), create);
+router.put('/', authorize(Permissions.api.groupTypes.update), update);
+router.get('/', authorize(Permissions.api.groupTypes.get), getAll);
+router.get('/:id', authorize(Permissions.api.groupTypes.get), getById);
+router.delete('/', authorize(Permissions.api.groupTypes.delete), deletegrouptypes);
 
 module.exports = router;
 
