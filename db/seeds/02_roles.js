@@ -42,6 +42,8 @@ exports.seed = function(knex) {
                 Permissions.api.activityTypes.create,
                 Permissions.api.activityTypes.update,
                 Permissions.api.activityTypes.get.adminaccess,
+                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activityTypes.delete,
 
                 Permissions.api.users.get,
                 Permissions.api.users.password.update,
@@ -71,8 +73,8 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.adminaccess,
                 Permissions.api.activities.delete,
-
-                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
                 Permissions.api.experienceLevels.get,
                 Permissions.api.experienceLevels.create,
@@ -155,8 +157,12 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.adminaccess,
                 Permissions.api.activities.delete,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
+                Permissions.api.activityTypes.get.adminaccess,
                 Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activityTypes.delete,
 
                 Permissions.api.experienceLevels.get,
                 Permissions.api.experienceLevels.create,
@@ -228,6 +234,8 @@ exports.seed = function(knex) {
                 Permissions.api.activityTypes.create,
                 Permissions.api.activityTypes.update,
                 Permissions.api.activityTypes.get.adminaccess,
+                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activityTypes.delete,
 
                 Permissions.api.users.get,
                 Permissions.api.users.password.update,
@@ -257,8 +265,8 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.adminaccess,
                 Permissions.api.activities.delete,
-
-                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
                 Permissions.api.experienceLevels.get,
                 Permissions.api.experienceLevels.create,
@@ -319,6 +327,8 @@ exports.seed = function(knex) {
                 Permissions.api.activityTypes.create,
                 Permissions.api.activityTypes.update,
                 Permissions.api.activityTypes.get.adminaccess,
+                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activityTypes.delete,
 
                 Permissions.api.users.get,
                 Permissions.api.users.password.update,
@@ -348,8 +358,8 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.adminaccess,
                 Permissions.api.activities.delete,
-
-                Permissions.api.activityTypes.get.useraccess,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
                 Permissions.api.experienceLevels.get,
                 Permissions.api.experienceLevels.create,
@@ -427,6 +437,8 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.adminaccess,
                 Permissions.api.activities.delete,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
                 Permissions.api.activityTypes.get.useraccess,
 
@@ -504,6 +516,8 @@ exports.seed = function(knex) {
                 Permissions.api.activities.get,
                 Permissions.api.activities.useraccess,
                 Permissions.api.activities.delete,
+                Permissions.api.activities.files.get,
+                Permissions.api.activities.files.upload,
 
                 Permissions.api.activityTypes.get.useraccess,
 

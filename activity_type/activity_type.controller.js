@@ -11,7 +11,7 @@ router.put('/', authorize(Permissions.api.activityTypes.update), update);
 router.get('/', authorize(Permissions.api.activityTypes.get.useraccess), getAll);
 router.get('/:id', authorize(Permissions.api.activityTypes.get.adminaccess), getById);
 
-router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deleteActivityTypes);
+router.delete('/', authorize(Permissions.api.activityTypes.delete), deleteActivityTypes);
 
 module.exports = router;
 

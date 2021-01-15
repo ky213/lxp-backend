@@ -94,11 +94,16 @@ const permissions = {
             get: "api.activities.get",
             adminaccess: "api.activities.adminaccess",
             useraccess: "api.activities.useraccess",
-            delete: "api.activities.delete"
+            delete: "api.activities.delete",
+            files:{
+                get: "api.activities.files.get",
+                upload: "api.activities.files.upload"
+            }
         },
         activityTypes:{
             create: "api.activity.types.create",
             update: "api.activity.types.update",
+            delete: "api.activity.types.delete",
             get: {
                 adminaccess: "api.activity.types.get.adminaccess",
                 useraccess: "api.activity.types.get.useraccess"

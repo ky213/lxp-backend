@@ -52,8 +52,8 @@ router.delete('/deleteLogActivityLink/:id', authorize(Permissions.api.activities
 
 router.post('/evaluate/:id', authorize(Permissions.api.activities.create), evaluate);
 
-router.get('/allFiles/:id', authorize(), getAllFiles);
-router.post('/upload/:id', authorize(), uploadFileToCloud);
+router.get('/allFiles/:id', authorize(Permissions.api.activities.files.get), getAllFiles);
+router.post('/upload/:id', authorize(Permissions.api.activities.files.upload), uploadFileToCloud);
 
 module.exports = router;
 
