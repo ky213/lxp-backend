@@ -522,7 +522,10 @@ async function deletePrograms(programs, user) {
             .whereIn("program_id", programs)
             .del()
             .catch(error => { 
-                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
+                if (error && error.code == '23503')
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete programs with related activities' })) 
+                else
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
     });
 }
