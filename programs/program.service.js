@@ -523,7 +523,7 @@ async function deletePrograms(programs, user) {
             .del()
             .catch(error => { 
                 if (error && error.code == '23503')
-                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete programs with related activities' })) 
+                    throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'Can not delete programs with related Activities / Announcement / Courses' })) 
                 else
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
             });
