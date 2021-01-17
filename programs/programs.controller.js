@@ -5,25 +5,27 @@ const authorize = require('helpers/authorize')
 const Role = require('helpers/role');
 
 // routes
-router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), create); 
+
+router.post('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), create); 
 router.put('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), update); 
-router.get('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getAll); 
+router.get('/', authorize(), getAll); 
+router.get('/v2', authorize(), getAllV2); 
 router.get('/block-types', authorize([Role.Admin, Role.ProgramDirector, Role.LearningManager]), getBlockTypes); 
 router.get('/currentuser', authorize(), getByCurrentUser);
 router.get('/:id', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), getById); 
-router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager, Role.ProgramDirector]), deletePrograms); 
+router.delete('/', authorize([Role.Admin, Role.SuperAdmin, Role.LearningManager]), deletePrograms); 
 
-module.exports = router;
+module.exports =  router;
 
-function getAll(req, res, next) {       
-    programService.getAll(
-        req.user,
-        req.query.organizationId,
-        req.query.pageId,
-        req.query.recordsPerPage,
-        req.query.filter
-    )
-    .then(organizations => res.json(organizations))
+function getAll(req, res, next) {   
+    programService.getAll( req.user, req.query.organizationId, req.query.pageId, req.query.recordsPerPage, req.query.filter  )
+    .then(programs => res.json(programs))
+    .catch(err => next(err));
+}
+
+function getAllV2(req, res, next) {   
+    programService.getAllV2( req.user, req.query.organizationId,  req.query.pageId,  req.query.recordsPerPage,  req.query.filter,  req.query.byName )
+    .then(programs => res.json(programs))
     .catch(err => next(err));
 }
 
