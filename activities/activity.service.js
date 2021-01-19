@@ -203,7 +203,7 @@ async function getAll(user, from, to, selectedOrganizationId) {
     const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, user.userId,selectedOrganizationId);
+    const userCourses = await courseService.getAllCoursesForUser(user, user.userId,selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     var statusIds = await getActivityStatusIds();
@@ -461,7 +461,7 @@ async function getExistingActivities(activity, user) {
     const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, user.userId, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
+    const userCourses = await courseService.getAllCoursesForUser(user, user.userId, user.role == Role.SuperAdmin ? activity.organizationId : user.organization);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     let existingActivitiesModel =  knex.select([
@@ -1791,7 +1791,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
     const userPrograms = await programService.getByCurrentUser(user, user.role == Role.SuperAdmin ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, userId , selectedOrganizationId);
+    const userCourses = await courseService.getAllCoursesForUser(user, userId , selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     console.log("getAllByLearner => ", user,  programIds  , courseIds)
