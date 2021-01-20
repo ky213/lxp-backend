@@ -1,13 +1,10 @@
 const knex = require('../db');
 const moment = require('moment');
 const Role = require('helpers/role');
-const fs = require('fs');
-const path = require('path');
 var xpath   = require('xpath');
 var dom     = require('xmldom').DOMParser;
 const {Storage} = require('@google-cloud/storage');
 const organizationService = require('../organizations/organization.service');
-var Readable = require('stream').Readable;
 var cloudStorage = new Storage();
 var bucket = process.env.STORAGE_BUCKET;
 
@@ -57,9 +54,8 @@ async function genetateCloudStorageUploadURL(dirPath, filename) {
     const [url] = await cloudStorage
         .bucket(bucket)
         .file(dirPath + filename)
-        .getSignedUrl(options).catch((err)=>{
-            console.log(err);
-            throw err
+        .getSignedUrl(options).catch((error)=>{
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
 
     console.log('Generated PUT signed URL:');
@@ -79,7 +75,7 @@ function deleteFileFromCloudStorage(filePath) {
                 console.log("deleting files in path gs://", bucket + "/" + filePath);
             } else {
                 console.log("error : " + err);
-                throw err;
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: err.code, message :  err.message })) 
             }
         })
 }
@@ -480,10 +476,8 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
         .andWhere('courses.organization_id',organizationId)
         .del()
         .catch(error => {
-            const message = 'Can not delete a course with joined learners' ;
-            let errorObj = {isValid: false, status: "error", code: error.code, message : message};
-            throw new Error(errorObj);
-          });
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'You can not delete a course with joined learners' })) 
+        });
 }
 
 async function requestToJoinCourse(loggedInUser, selectedOrganizationId, courseId) {
@@ -506,7 +500,7 @@ async function requestToJoinCourse(loggedInUser, selectedOrganizationId, courseI
         generatedByUser = courseData.generatedByUser;
 
     if (generatedByUser && (generatedByUser == ( loggedInUser.employeeId || loggedInUser.sub))){
-        throw new Error(JSON.stringify({isValid: false, status: "error", code: 99 , message :  'Cannot join the course you already created it'}));   
+        throw new Error(JSON.stringify({isValid: false, status: "error", code: 99 , message :  'You cannot join a course you created.'}));   
     }
     else{
         await knex('user_courses')
