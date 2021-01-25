@@ -43,13 +43,13 @@ function getByCurrentUser(req, res, next) {
 
 function create(req, res, next) {
     programService.create(req.body, req.user)
-        .then(() => res.json(true))
+        .then((data) => { res.json(data)})
         .catch(err => next(err));
 }
 
 function update(req, res, next) {   
     programService.update(req.body, req.user)
-        .then(() => res.json(true))
+        .then((data) => { res.json(data)})
         .catch(err => next(err));
 }
 

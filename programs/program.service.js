@@ -331,8 +331,7 @@ async function create(program, user) {
             .first();
     }
 
-    const programId =
-        await knex('programs')
+    const programId = await knex('programs')
             .insert({
                 name: program.name,
                 organization_id: program.organizationId,
@@ -361,6 +360,8 @@ async function create(program, user) {
         .catch(error => { 
             throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
+
+    return { ...program , programId }    
 }
 
 async function update(program, user) {
@@ -410,6 +411,8 @@ async function update(program, user) {
             throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message })) 
         });
     }
+
+    return program;
 }
 
 async function getBlockTypes() {
