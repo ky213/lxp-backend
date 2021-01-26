@@ -8,8 +8,8 @@ const PermissionsService = require("permissions/permissions.service")
 
 // routes
 router.get('/', authorize(Permissions.api.roles.get), getAll); // admin only
-// router.post('/create', authorize(Permissions.api.roles.create), create()); // admin only
-// router.put('/update', authorize(Permissions.api.roles.update), update()); // admin only
+router.post('/create', authorize(Permissions.api.roles.create), create()); // admin only
+router.put('/update', authorize(Permissions.api.roles.update), update()); // admin only
 router.get('/getCmRoles',authorize(Permissions.api.roles.get), getCmRoles); // admin only
 
 module.exports = router;
@@ -37,7 +37,7 @@ function getCmRoles(req, res, next) {
 
 function create(req, res, next) {
     roleService
-        .create(req.user,req.body)
+        .create(req.user, req.body, req.body.organizationId)
         .then(data => {
             res.json(data);
         })
@@ -49,7 +49,7 @@ function create(req, res, next) {
 
 function update(req, res, next) {
     roleService
-        .update(req.user,req.body)
+        .update(req.user, req.body, req.body.organizationId)
         .then(data => {
             res.json(data);
         })

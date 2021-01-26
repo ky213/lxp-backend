@@ -11,32 +11,11 @@ module.exports = {
     update
 };
 
-// var rolesCache = {}
-// var rolesCacheUpdateTimer = setInterval(updateRolesCache, 3000)
-
 async function getAll(organizationId) {
   await knex('roles')
       .where('organization_id', organizationId)
       .orWhere('global', true);
 }
-
-// async function updateRolesCache() {
-//     // console.log('Updating roles cache')
-//
-//
-//         .then(roles=>{
-//             var temp = {}
-//             roles.forEach(role=>{
-//                 temp[role.roleId] = role;
-//             })
-//
-//             rolesCache=temp
-//         })
-//         .catch(err=>{
-//             console.log(err)
-//         })
-//
-// }
 
 async function getCmRoles(organizationId) {
     return knex('roles')
@@ -58,15 +37,10 @@ async function getCmRolesMap(organizationId) {
             return rolesMap
         });
 }
-async function create(loggeduser, newRole) {
+async function create(loggeduser, newRole, organizationId) {
 
-    if(!PermissionService.isSuperAdmin(loggedInUser)){
-        newRole.global = false;
-    }
-
-    if(newRole.global === true){
-        newRole.organiztionId = false;
-    }
+    newRole.global = false; //global roles should be managed by migrations scripts
+    newRole.organiztionId = PermissionService.isSuperAdmin(loggeduser) ? organizationId: loggeduser.orgranization;
 
     return knex
         .transaction(async function (t) {
@@ -90,13 +64,9 @@ async function create(loggeduser, newRole) {
 }
 
 async function update(loggeduser, newRole) {
-    if(!PermissionService.isSuperAdmin(loggedInUser)){
-        newRole.global = false;
-    }
 
-    if(newRole.global === true){
-        newRole.organiztionId = false;
-    }
+    newRole.global = false; //global roles should be managed by migrations scripts
+    newRole.organiztionId = PermissionService.isSuperAdmin(loggeduser) ? organizationId: loggeduser.orgranization;
 
     return knex
         .transaction(async function (t) {

@@ -51,6 +51,9 @@ const permissions = {
             get: "api.employeeRoles.get",
             create: "api.employeeRoles.create"
         },
+        permissions:{
+            get: "api.permissions.get"
+        },
         organizations:{
             create: "api.organizations.create",
             update: "api.organizations.update",

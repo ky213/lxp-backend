@@ -4,12 +4,18 @@ function create_container {
     -e POSTGRES_USER=$POSTGRES_USER \
     -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
     -e POSTGRES_DB=$POSTGRES_DB \
-    -p $PORT:5432 postgres
+    -p $PORT:5432 postgres -c log_statement=all
 
-    sleep 2
+}
+function seed_db {
+    cd ./db
+    ../node_modules/.bin/knex seed:run 
+}
+
+
+function migrate_db {
     cd ./db
     ../node_modules/.bin/knex migrate:latest
-    ../node_modules/.bin/knex seed:run
 }
 
 function start_container {
@@ -36,6 +42,15 @@ case "$1" in
 "create" | "new" | "run") 
     create_container
 ;;
+"seed") 
+    seed_db
+;;
+
+
+"up") 
+    migrate_db
+;;
+
 
 "connect")
     psql -U $POSTGRES_USER -h 127.0.0.1 -p $PORT $POSTGRES_DB
