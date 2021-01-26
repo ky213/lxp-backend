@@ -36,8 +36,7 @@ function getCmRoles(req, res, next) {
 }
 
 function create(req, res, next) {
-    roleService
-        .create(req.user, req.body, req.body.organizationId)
+    roleService.create(req.user, req.body, req.body.organizationId)
         .then(data => {
             res.json(data);
         })
@@ -48,8 +47,7 @@ function create(req, res, next) {
 }
 
 function update(req, res, next) {
-    roleService
-        .update(req.user, req.body, req.body.organizationId)
+    roleService.update(req.user, req.body, req.body.organizationId)
         .then(data => {
             res.json(data);
         })
