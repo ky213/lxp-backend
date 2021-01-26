@@ -8,7 +8,7 @@ const Permissions = require("permissions/permissions")
 
 // routes
 router.get('/', authorize(Permissions.api.employeeRoles.get), getAll);
-router.get('/', authorize(Permissions.api.employeeRoles.create),createEmployeeRole);
+router.post('/', authorize(Permissions.api.employeeRoles.create),createEmployeeRole);
 
 module.exports = router;
 

@@ -63,7 +63,7 @@ async function create(loggeduser, newRole, organizationId) {
 
 }
 
-async function update(loggeduser, newRole) {
+async function update(loggeduser, newRole, organizationId) {
 
     newRole.global = false; //global roles should be managed by migrations scripts
     newRole.organiztionId = PermissionService.isSuperAdmin(loggeduser) ? organizationId: loggeduser.orgranization;

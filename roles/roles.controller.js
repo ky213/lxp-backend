@@ -8,8 +8,8 @@ const PermissionsService = require("permissions/permissions.service")
 
 // routes
 router.get('/', authorize(Permissions.api.roles.get), getAll); // admin only
-router.post('/create', authorize(Permissions.api.roles.create), create()); // admin only
-router.put('/update', authorize(Permissions.api.roles.update), update()); // admin only
+router.post('/create', authorize(Permissions.api.roles.create), create); // admin only
+router.put('/update', authorize(Permissions.api.roles.update), update); // admin only
 router.get('/getCmRoles',authorize(Permissions.api.roles.get), getCmRoles); // admin only
 
 module.exports = router;
