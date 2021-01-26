@@ -15,7 +15,7 @@ steps:
     args:
       - '-c'
       - |
-        docker build -t eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA -f Dockerfile-cloud .
+        docker build -t eu.gcr.io/$PROJECT_ID/lxp-backend-new-permissions:$SHORT_SHA -f Dockerfile-cloud .
     waitFor:
       - '-'
 
@@ -26,7 +26,7 @@ steps:
     args:
       - '-c'
       - |
-        docker push eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA
+        docker push eu.gcr.io/$PROJECT_ID/lxp-backend-new-permissions:$SHORT_SHA
     waitFor:
       - 'build image'
 
@@ -49,7 +49,7 @@ steps:
              -e DATABASE_NAME="$_DBNAME" \
              -e DATABASE_USER="$_DBUSER" \
              -e DATABASE_PASSWORD="$_DBPASS" \
-             eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+             eu.gcr.io/$PROJECT_ID/lxp-backend-new-permissions:$SHORT_SHA \
              /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 2 & /srv/app/lxp-server/node_modules/.bin/knex migrate:latest"
 
   # Apply database migration scripts
@@ -70,7 +70,7 @@ steps:
 #             -e DATABASE_NAME="$_DBNAME" \
 #             -e DATABASE_USER="$_DBUSER" \
 #             -e DATABASE_PASSWORD="$_DBPASS" \
-#             eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+#             eu.gcr.io/$PROJECT_ID/lxp-backend-new-permissions:$SHORT_SHA \
 #             /bin/bash -c "/cloud_sql_proxy -ip_address_types=PUBLIC -instances=${_DBSQLINSTANCE}=tcp:127.0.0.1:5432 & sleep 2 & /srv/app/lxp-server/node_modules/.bin/knex seed:run "
 
 
@@ -84,8 +84,8 @@ steps:
     args:
       - '-c'
       - |
-        gcloud alpha run deploy lxp-backend \
-        --image=eu.gcr.io/$PROJECT_ID/lxp-backend:$SHORT_SHA \
+        gcloud alpha run deploy lxp-backend-new-permissions \
+        --image=eu.gcr.io/$PROJECT_ID/lxp-backend-new-permissions:$SHORT_SHA \
         --vpc-connector=lxp-staging-sql-connector \
         --region=europe-west1 \
         --platform=managed \
