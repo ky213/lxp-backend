@@ -159,6 +159,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
             course.users = allUsers;
             course.inProgress = progress;
+            course.NumberOfAttendees = allUsers && allUsers.length > 0 ? allUsers.length : 0;
             course.NumofUsersInProgress = progressCounter;
             course.NumofUsersCompleted = completedCounter;
             
@@ -693,10 +694,9 @@ async function createLesson(loggedInUser, selectedOrganizationId, contentPath, c
     .max('order')
     .limit(1)
     .first();
-    console.log('order ' , order.max)
+
     order = order && order.max ? order.max + 1 : 1;
 
-console.log('order ' , order)
     return knex.transaction(async function (t) {
         const lessonId = await knex("lessons")
         .insert({
