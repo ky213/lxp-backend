@@ -205,12 +205,12 @@ async function getRepeatActivities(user, programIds, courseIds, selectedOrganiza
     return repeatingActivities;
 }
 
-async function getAll(user, from, to, selectedOrganizationId) {
+async function getAll(user, from, to, selectedOrganizationId, status) {
 
     const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, user.userId,selectedOrganizationId);
+    const userCourses = await courseService.getAllCoursesForUser(user, user.userId,selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     var statusIds = await getActivityStatusIds();
@@ -316,10 +316,18 @@ async function getAll(user, from, to, selectedOrganizationId) {
         this.select('program_id').from('programs').where('organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
     });
 
+    if(status) {
+        model.andWhere('activity_statuses.name', status);
+        logModel.andWhere('activity_statuses.name', status);
+    }
 
     let repeatingActivities = [];
     if(from && to) {
         repeatingActivities = await getRepeatingActivities(user, programIds, courseIds, from, to, selectedOrganizationId);
+    }
+
+    if(status){
+        repeatingActivities = repeatingActivities.filter(x => x.statusId == status);
     }
 
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
@@ -468,7 +476,7 @@ async function getExistingActivities(activity, user) {
     const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, user.userId, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
+    const userCourses = await courseService.getAllCoursesForUser(user, user.userId, PermissionsService.isSuperAdmin(user) ? activity.organizationId : user.organization);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     let existingActivitiesModel =  knex.select([
@@ -1793,12 +1801,12 @@ async function evaluate(activityReply , user , activityId) {
             throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}));    
     });
 }
-
-async function getAllByLearner(user, userId, employeeId, selectedOrganizationId) {
+//TODO: why we are passing here user, userId and employeeId here? User should be all we need.
+async function getAllByLearner(user, userId, employeeId, selectedOrganizationId, status) {
     const userPrograms = await programService.getByCurrentUser(user, PermissionsService.isSuperAdmin(user) ? selectedOrganizationId : user.organization);
     const programIds = userPrograms && userPrograms.map(p => p.programId) || null;
 
-    const userCourses = await courseService.getAllUserCourses(user, userId , selectedOrganizationId);
+    const userCourses = await courseService.getAllCoursesForUser(user, userId , selectedOrganizationId);
     const courseIds = userCourses && userCourses.map(p => p.courseId) || null;
 
     console.log("getAllByLearner => ", user,  programIds  , courseIds)
@@ -1841,7 +1849,7 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
         this.whereIn('activity_courses.course_id', courseIds ).orWhereNull('activity_courses.course_id')
     })
     .andWhere(function() {
-        this.where('activity_participants.employee_id', user.employeeId ).orWhereNull('activity_participants.employee_id')
+        this.where('activity_participants.employee_id', employeeId ).orWhereNull('activity_participants.employee_id')
     }); 
 
     let logModel = knex
@@ -1894,9 +1902,19 @@ async function getAllByLearner(user, userId, employeeId, selectedOrganizationId)
         this.select('program_id').from('programs').where('organization_id', PermissionsService.isSuperAdmin(user) && selectedOrganizationId || user.organization);
     });
 
+    if(status) {
+        model.andWhere('activity_statuses.name', status);
+        logModel.andWhere('activity_statuses.name', status);
+    }
+
     let repeatingActivities = [];
     repeatingActivities = await getRepeatActivities(user, programIds, courseIds, selectedOrganizationId);
     repeatingActivities = _.uniqBy(repeatingActivities, 'activityId')
+
+    if(status){
+        repeatingActivities = repeatingActivities.filter(x => x.statusId == status);
+    }
+
     const activities = await knex.unionAll(model, true).unionAll(logModel, true);
 
     return activities.concat(repeatingActivities);

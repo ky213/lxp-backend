@@ -33,12 +33,6 @@ function getById(req, res, next) {
         .catch(err => next(err));
 }
 
-function getByCurrentUser(req, res, next) {
-    activityTypeService.getByCurrentUser(req.user, req.query.organizationId)
-        .then(activityType => activityType ? res.json(activityType) : res.status(404).json({message: "Not found"}))
-        .catch(err => next(err));
-}
-
 function create(req, res, next) {
     activityTypeService.create(req.body, req.user)
         .then(() => res.json(true))
