@@ -164,7 +164,8 @@ async function getAllV2(user, organizationId, pageId, recordsPerPage, filter , b
         'programs.subject ',
         'programs.body ',
         'programs.certifcate_subject as certificateSubject',
-        'programs.certifcate_body as certificateBody '
+        'programs.certifcate_body as certificateBody ',
+        'programs.thumbnail as thumbnail'
     ]);
 
     let modelDirecotrs = knex.table('program_directors')
@@ -235,7 +236,8 @@ async function getById(id, user, selectedorganizationId) {
         'programs.subject ',
         'programs.body ',
         'programs.certifcate_subject as certificateSubject',
-        'programs.certifcate_body as certificateBody '
+        'programs.certifcate_body as certificateBody ',
+        'programs.thumbnail as thumbnail'
     ])
     .from('programs');
 
@@ -305,7 +307,8 @@ async function getDefaultProgram(user, selectedorganizationId) {
         'programs.subject ',
         'programs.body ',
         'programs.certifcate_subject as certificateSubject',
-        'programs.certifcate_body as certificateBody '
+        'programs.certifcate_body as certificateBody ',
+        'programs.thumbnail as thumbnail'
     ])
     .from('programs');
 
@@ -344,7 +347,8 @@ async function create(program, user) {
                 subject: program.subject,
                 body: program.body,
                 certifcate_subject: program.certificateSubject,
-                certifcate_body:  program.certificateBody
+                certifcate_body:  program.certificateBody,
+                thumbnail: program.thumbnail
             })
             .returning('program_id')
             .catch(error => {
@@ -387,7 +391,8 @@ async function update(program, user) {
             subject: program.subject,
             body: program.body,
             certifcate_subject: program.certificateSubject,
-            certifcate_body:  program.certificateBody
+            certifcate_body:  program.certificateBody,
+            thumbnail: program.thumbnail
         })
         .catch(error => {
             throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
@@ -458,7 +463,8 @@ async function getByCurrentUser(user, organizationId) {
         'programs.subject ',
         'programs.body ',
         'programs.certifcate_subject as certificateSubject',
-        'programs.certifcate_body as certificateBody '
+        'programs.certifcate_body as certificateBody ',
+        'programs.thumbnail'
     ]);   
 
     for(let i = 0; i < programs.length; i++) {
