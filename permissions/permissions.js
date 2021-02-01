@@ -177,6 +177,12 @@ const permissions = {
                 create: "xapi.activities.state.create",
                 update: "xapi.activities.state.update"
             },
+            lessons: {
+                get: "api.lessons.get",
+                create: "api.lessons.create",
+                update: "api.lessons.update",
+                delete: "api.lessons.delete"
+            }
         },
     }
 }
