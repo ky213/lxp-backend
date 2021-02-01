@@ -2,30 +2,27 @@ const express = require('express');
 const router = express.Router();
 const courseService = require('./course.service');
 const authorize = require('helpers/authorize');
-const converter = require("helpers/converter");
 const Permissions = require("permissions/permissions")
 
 const {v4: uuidv4} = require('uuid');
-var AdmZip = require('adm-zip');
-var fs = require('fs');
 
 // routes
-//router.get('/:id', authorize(), getById);
 router.get('/', authorize(Permissions.api.courses.get), getAll);
-router.get('/downloadFile/:id', authorize(Permissions.api.courses.get), downloadFile);
-
-router.delete('/deleteCourses', authorize(Permissions.api.courses.delete), deleteCourses);
 router.get('/getById', authorize(Permissions.api.courses.get), getById);
 router.get('/getByUser', authorize(Permissions.api.courses.get), getByUser);
-router.get('/getByUserAll', authorize(Permissions.api.courses.get), getByUserAll);
-router.get('/allCourseUsers', authorize(Permissions.api.courses.get), getAllCourseUsers);
+router.get('/allCourseUsers', authorize(Permissions.api.courses.get), getAllUsersRelatedToCourse);
+router.get('/lesson', authorize(Permissions.api.lessons.get), getAllLessons);
+router.get('/lesson/byId', authorize(Permissions.api.lessons.get), getLessonById);
 
 router.post('/', authorize(Permissions.api.courses.create), create);
+router.post('/joinCourse', authorize(Permissions.api.courses.get), requestToJoinCourse);
 router.put('/', authorize(Permissions.api.courses.update), update);
-router.post('/uploadFile', authorize(Permissions.api.courses.create), uploadFile);
-router.post('/joinCourse', authorize(Permissions.api.courses.create), requestToJoinCourse);
-router.delete('/unjoinCourse', authorize(Permissions.api.courses.delete), unJoinCourse);
+router.post('/lesson', authorize(Permissions.api.lessons.create), createLesson);
+router.put('/lesson', authorize(Permissions.api.lessons.update), updateLesson);
 
+router.delete('/deleteCourses', authorize(Permissions.api.courses.delete), deleteCourses);
+router.delete('/unjoinCourse', authorize(Permissions.api.courses.delete), unJoinCourse);
+router.delete('/deleteLessons', authorize(Permissions.api.lessons.delete), deleteLessons);
 module.exports = router;
 
 async function getAll(req, res, next) {
@@ -40,14 +37,7 @@ async function getById(req, res, next) {
 }
 
 async function getByUser(req, res, next) {
-    //console.log('getByUser', req.user);
-    courseService.getByUser(req.user, false, req.query.organizationId)
-        .then(data => res.json(data));
-}
-
-async function getByUserAll(req, res, next) {
-    //console.log('getByUser', req.user);
-    courseService.getByUser(req.user, true, req.query.organizationId)
+    courseService.getByUser(req.user, req.query.organizationId,req.query.userId, req.query.offset, req.query.pageSize , req.query.status)
         .then(data => res.json(data));
 }
 
@@ -103,52 +93,14 @@ async function update(req, res, next) {
         .catch(err => next(err));
 }
 
-async function downloadFile(req, res, next) {
-    console.log('downloadFile', req.params.id);
-    courseService.downloadFile(req.user, req.params.id)
-        .then(data => {
-            res.json({...data, file: converter.ConvertImageBufferToBase64(data.file)})
-        });
-}
-
 async function deleteCourses(req, res, next) {
-    courseService.deleteCourses(req.user, req.body.courseIds, req.body.selectedOrganizationId)
+    courseService.deleteCourses(req.user, req.body.courseIds, req.body.organizationId)
         .then(data => res.json(data))
         .catch(err => next(err));
 }
 
-async function uploadFile(file, contentPath) {
-    // console.log('uploadFile', req.files);
-    // const file = req.files.file;
-    const dir = `./upload${contentPath}`;
-    var uploadPath = `${dir}tincan.zip`
-
-    // deleteFolderContent(dir);
-    fs.mkdirSync(dir, {recursive: true});
-
-    file.mv(uploadPath, (error) => {
-        if (error) {
-            console.error(error)
-            res.writeHead(500, {
-                'Content-Type': 'application/json'
-            })
-            // res.end(JSON.stringify({ status: 'error', message: error }))
-
-            return {status: 'error', message: error};
-        }
-
-        var zip = new AdmZip(uploadPath);
-        zip.extractAllTo(dir, true);
-        // res.writeHead(200, {
-        //   'Content-Type': 'application/json'
-        // })
-        // res.end(JSON.stringify({ status: 'success', path: dir }))
-        return {status: 'success'};
-    })
-}
-
 async function requestToJoinCourse(req, res, next) {
-    courseService.requestToJoinCourse(req.user, req.query.courseId)
+    courseService.requestToJoinCourse(req.user, req.query.organizationId , req.query.courseId)
         .then(data => { 
             if(data.isValid == true){
                 courseService.sendEmailForCourse(req.user, req.query.courseId);
@@ -158,8 +110,8 @@ async function requestToJoinCourse(req, res, next) {
         .catch(err => next(err));
 }
 
-async function getAllCourseUsers(req, res, next) {
-    courseService.getAllCourseUsers(req.user, req.query.organizationId, req.query.programId, 
+async function getAllUsersRelatedToCourse(req, res, next) {
+    courseService.getAllUsersRelatedToCourse(req.user, req.query.organizationId, req.query.programId,
         req.query.courseId, req.query.offset, req.query.pageSize, req.query.status)
     .then(data => res.json(data))
     .catch(err => next(err));
@@ -169,4 +121,70 @@ async function unJoinCourse(req, res, next) {
     courseService.unJoinCourse(req.user, req.query.courseId,  req.body)
     .then(data => res.json(data))
     .catch(err => next(err));
+}
+
+async function deleteLessons(req, res, next) {
+    courseService.deleteLessons(req.user , req.body.lessonsIds, req.body.organizationId)
+        .then(data => res.json(data))
+        .catch(err => next(err));
+}
+
+async function createLesson(req, res, next) {
+    let contentPath = `${uuidv4()}/`;
+
+    let cloudFileURL = ""
+    if (req.body.tincan) {
+        let fileName = req.body.tincan;
+        cloudFileURL = await courseService.genetateCloudStorageUploadURL(contentPath, fileName);
+    }
+
+    courseService.createLesson(req.user, req.body.selectedOrganization, contentPath, req.body.courseId )
+        .then(data => {
+            var lessonId = 0;
+            if(data)
+                lessonId = data.lessonId[0];
+            data = {
+                uploadUrl: cloudFileURL
+            };
+            const timeoutObj = setTimeout(() => {
+                console.log('timeout beyond time', lessonId);
+                courseService.getMetaFileFromCloudStorage(contentPath,  lessonId);
+              }, 40000);
+            res.json(data);
+        })
+        .catch(err => next(err));
+}
+
+async function updateLesson(req, res, next) {
+
+    let cloudFileURL = ""
+    if (req.body.tincan) {
+        let fileName = req.body.tincan;
+        cloudFileURL = await courseService.genetateCloudStorageUploadURL(req.body.contentPath, fileName);
+    }
+
+    courseService.updateLesson(req.user, req.body.selectedOrganization, req.body.lessonId ,
+        req.body.name, req.body.order ,  req.body.courseId)
+        .then(data => {
+            data = {
+                uploadUrl: cloudFileURL
+            };
+            const timeoutObj = setTimeout(() => {
+                console.log('timeout beyond time',);
+                courseService.getMetaFileFromCloudStorage(req.body.contentPath,  req.body.lessonId);
+              }, 30000);
+            res.json(data);
+        })
+        .catch(err => next(err));
+}
+
+async function getAllLessons(req, res, next) {
+    courseService.getAllLessons(req.user, req.query.organizationId, req.query.courseId, req.query.page, req.query.take, req.query.filter)
+        .then(data => res.json(data))
+        .catch(err => next(err));
+}
+
+async function getLessonById(req, res, next) {
+    courseService.getLessonById(req.user, req.query.lessonId, req.query.organizationId)
+        .then(data => res.json(data));
 }

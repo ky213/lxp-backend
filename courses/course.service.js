@@ -1,13 +1,12 @@
 const knex = require('../db');
 const moment = require('moment');
 const PermissionsService = require('permissions/permissions.service')
-const fs = require('fs');
-const path = require('path');
 var xpath   = require('xpath');
 var dom     = require('xmldom').DOMParser;
 const {Storage} = require('@google-cloud/storage');
-const dashboardService = require('../dashboard/dashboard.service.js');
 const organizationService = require('../organizations/organization.service');
+var cloudStorage = new Storage();
+var bucket = process.env.STORAGE_BUCKET;
 
 module.exports = {
     getAll,
@@ -15,23 +14,25 @@ module.exports = {
     getByUser,
     create,
     update,
-    addFile,
     deleteCourses,
     requestToJoinCourse,
     genetateCloudStorageUploadURL,
     sendEmailForCourse,
     getAllCoursesIds,
     checkIfCourseExists,
-    getAllCourseUsers,
+    getAllUsersRelatedToCourse,
     unJoinCourse,
     getTinCanXMLFileFromCloudStorage,
-    getAllUserCourses
+    getAllCoursesForUser,
+    deleteLessons,
+    createLesson,
+    updateLesson,
+    getAllLessons,
+    getLessonById,
+    getMetaFileFromCloudStorage
 };
 
-var Readable = require('stream').Readable;
-var cloudStorage = new Storage();
-var bucket = process.env.STORAGE_BUCKET;
-
+// Used in Learner Services to validate courses
 async function getAllCoursesIds(organizationId) {
 
     let model = knex.table('courses')
@@ -44,7 +45,6 @@ async function getAllCoursesIds(organizationId) {
             'courses.name',
             'courses.course_code as courseCode'
         ]);
-
 
     return courses;
 }
@@ -60,9 +60,8 @@ async function genetateCloudStorageUploadURL(dirPath, filename) {
     const [url] = await cloudStorage
         .bucket(bucket)
         .file(dirPath + filename)
-        .getSignedUrl(options).catch((err)=>{
-            console.log(err);
-            throw err
+        .getSignedUrl(options).catch((error)=>{
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
         });
 
     console.log('Generated PUT signed URL:');
@@ -70,7 +69,6 @@ async function genetateCloudStorageUploadURL(dirPath, filename) {
 
     return url;
 }
-
 
 function deleteFileFromCloudStorage(filePath) {
 
@@ -83,11 +81,12 @@ function deleteFileFromCloudStorage(filePath) {
                 console.log("deleting files in path gs://", bucket + "/" + filePath);
             } else {
                 console.log("error : " + err);
-                throw err;
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: err.code, message :  err.message }))
             }
         })
 }
 
+//TODO: it is hard to understand what is going on in this function! We need to refactor it.
 async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, recordsPerPage, filter) {
     if (!loggedInUser) {
         return;
@@ -108,6 +107,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
 
     let offset = (pageId - 1) * recordsPerPage;
 
+    //we read all the courses
     var coursesIds = await model.clone()
         .orderBy('course_code', 'asc')
         .offset(offset)
@@ -121,6 +121,7 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
             'courses.period_days as periodDays',
             'courses.content_path as contentPath',
             'courses.course_code as courseCode',
+            'courses.activity_number as activityNumber',
             'programs.program_id as programId',
             'programs.name as programName'
         ]);
@@ -132,10 +133,10 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
         .select([
             'courses.course_id as courseId',
             'competencies.competency_id as competencyId',
-            'competencies.code as competencyCode', 
-            'competencies.title as competencyTitle', 
+            'competencies.code as competencyCode',
+            'competencies.title as competencyTitle',
         ]);
-        
+
         const allUserCourses = await knex.table('user_courses')
         .join('courses', 'courses.course_id', 'user_courses.course_id')
         .whereIn('user_courses.course_id', coursesIds.map(c => c.courseId))
@@ -144,46 +145,63 @@ async function getAll(loggedInUser, selectedOrganizationId, programId, pageId, r
                 'user_courses.user_id as userId',
                 'user_courses.activity_numbers_completed as activityNumbersCompleted',
                 'user_courses.is_completed as isCompleted'
-        ]); 
+        ]);
 
-        // Need to be updated to be called from user_join
         let tempCourse = coursesIds.map(async (course) => {
             let allUsers = allUserCourses.filter(c => c.courseId == course.courseId);
-            
+
             let progress = false;
             let progressCounter = 0;
             let completedCounter = 0;
             allUsers.forEach(user => {
-                progress = user && user.isCompleted == false &&  user.activityNumbersCompleted > 0 ? true : false;
+                user.inProgress = user && user.isCompleted == false &&  user.activityNumbersCompleted > 0 ? true : false;
                 progressCounter += user && user.isCompleted == false &&  user.activityNumbersCompleted > 0 ? 1 : 0;
                 completedCounter += user && user.isCompleted == true  ? 1 : 0 ;
             })
 
+            course.users = allUsers;
             course.inProgress = progress;
+            course.NumberOfAttendees = allUsers && allUsers.length > 0 ? allUsers.length : 0;
             course.NumofUsersInProgress = progressCounter;
             course.NumofUsersCompleted = completedCounter;
-            
+
             return course;
         });
 
         let courses = await Promise.all(tempCourse);
-   
+
         let totalNumber = knex.raw(
             " select count(*) as total_number_of_courses " +
-            " from courses " + 
+            " from courses " +
             " where courses.organization_id = ? " , organizationId);
-             
+
         let totalNumberOfCourses = await totalNumber.then(f => {
             if (f.rows.length === 0) {
                     return 0;
-                }    
-                console.log(f.rows);   
+                }
+                console.log(f.rows);
                 return f.rows[0].total_number_of_courses;
             }).catch(err => {
                 console.log(err);
                 throw err;
             });
 
+        //TODO:
+        // all above code is because we want to return a structure as below:
+        // [{
+        //     competencyIds: {
+        //         competencyId: d.competencyId,
+        //         competencyCode: d.competencyCode,
+        //         competencyTitle: d.competencyTitle
+        //      }
+        //   },{
+        //     competencyIds: {
+        //         competencyId: d.competencyId,
+        //         competencyCode: d.competencyCode,
+        //         competencyTitle: d.competencyTitle
+        //      }
+        // }]
+        // we need make better use of SQL
         return {
             courses: courses.map(course => {
                 return {
@@ -217,6 +235,7 @@ async function getById(loggedInUser, courseId, selectedOrganizationId) {
         'courses.program_id as programId',
         'courses.content_path as contentPath',
         'courses.course_code as courseCode',
+        'courses.activity_number as activityNumber',
         'programs.name as programName'
     ])
     .from('courses')
@@ -243,35 +262,138 @@ async function getById(loggedInUser, courseId, selectedOrganizationId) {
             competencyId: d.competencyId,
             competencyCode: d.competencyCode,
             competencyTitle: d.competencyTitle
-        }));     
+        }));
+
+        const lessons = await knex.table('lessons')
+            .leftJoin('courses', 'lessons.course_id' , 'courses.course_id')
+            .andWhere('lessons.course_id', courseId)
+            .select([
+                'lessons.lesson_id as lessonId',
+                'lessons.name as lessonName',
+                'lessons.order as lessonOrder',
+             ]);
+
+        courseData.lessons = lessons.map(d => ({
+            lessonId: d.lessonId,
+            lessonName: d.lessonName,
+            lessonOrder: d.lessonOrder
+        }));
     }
 
     return courseData
 }
-
-async function addFile(loggedInUser, data) {
-    return await knex('announcement_files')
-        .insert({
-            announcement_id: data.announcementId,
-            file: Buffer.from(data.file),
-            name: data.name,
-            type: data.type,
-            extension: data.extension,
-            size: data.size
-        })
-        .returning('announcement_file_id');
-};
-
-
-async function getByUser(loggedInUser, includeRead, selectedOrganizationId) {
-
-    if (!loggedInUser || !loggedInUser.employeeId)
+//TODO: there should be a better way to implement this function
+async function getByUser(loggedInUser, selectedOrganizationId , userId, offset, pageSize, status){
+    if (!loggedInUser) {
         return;
+    }
 
     let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
-    return knex('courses')
-        .where('course_id', courseId);
+    let model = knex('courses')
+        .join('programs', 'programs.program_id', 'courses.program_id')
+        .where('courses.organization_id', organizationId);
+
+    var totalNumberOfCourses = (await model.clone().count().first()).count;
+
+    var coursesIds = await model.clone()
+        .orderBy('course_code', 'asc')
+        .offset(offset)
+        .limit(pageSize)
+        .select([
+            'courses.course_id as courseId',
+            'courses.name',
+            'courses.description',
+            'courses.image',
+            'courses.starting_date as startingDate',
+            'courses.period_days as periodDays',
+            'courses.content_path as contentPath',
+            'courses.course_code as courseCode',
+            'courses.activity_number as activityNumber',
+            'programs.program_id as programId',
+            'programs.name as programName'
+        ]);
+
+        const allCourseCompetencies = await knex.table('competencies_tags')
+        .leftJoin('courses', 'competencies_tags.course_id' , 'courses.course_id')
+        .leftJoin('competencies', 'competencies_tags.competency_id' , 'competencies.competency_id')
+        .whereIn('courses.course_id', coursesIds.map(c => c.courseId))
+        .select([
+            'courses.course_id as courseId',
+            'competencies.competency_id as competencyId',
+            'competencies.code as competencyCode',
+            'competencies.title as competencyTitle',
+        ]);
+
+        const allUserCourses = await knex.table('user_courses')
+        .join('courses', 'courses.course_id', 'user_courses.course_id')
+        .join('users', 'users.user_id', 'user_courses.user_id')
+        .whereIn('user_courses.course_id', coursesIds.map(c => c.courseId))
+        .andWhere('user_courses.user_id', userId)
+        .select([
+            'user_courses.course_id as courseId',
+            'user_courses.joining_date as joiningDate',
+            'user_courses.user_id as userId',
+            'user_courses.activity_numbers_completed as activityCompleted',
+            'user_courses.is_completed as isCompleted',
+            'users.email',
+            'users.name as firstName',
+            'users.surname as lastName'
+        ]);
+
+        let tempCourse = coursesIds.map(async (course) => {
+            let allUsers = allUserCourses.filter(c => c.courseId == course.courseId);
+            let courseActivity = course.activityNumber;
+
+            allUsers.forEach(user => {
+                user.inProgress = user && user.isCompleted == false &&  user.activityCompleted > 0 ? true : false;
+
+                let activiryNumber = user.activityCompleted;
+
+                if(activiryNumber == 0 ||  activiryNumber == null ||  activiryNumber == undefined)
+                        user.status = 'Not Started';
+                else if(user.isCompleted == true)
+                    user.status = 'Completed';
+                else if(activiryNumber < courseActivity){
+                    user.status = 'In Progress';
+                    user.progress = activiryNumber / courseActivity;
+                }
+            })
+
+            course.users = allUsers;
+
+            return course;
+        });
+
+        let courses = await Promise.all(tempCourse);
+
+        if(status)
+        {
+            courses.map(course => {
+                course.users = course.users ? course.users.filter(user => user.status == status).map(user => user) : course.users ;
+                return course;
+            })
+
+            courses = courses  ? courses.filter(d => d.users && d.users.length > 0 ) : courses;
+        }
+
+        return {
+            courses: courses.map(course => {
+                return {
+                    ...course,
+                    competencyIds: allCourseCompetencies.filter(c => c.courseId == course.courseId).map(d => {
+                        return {
+                            competencyId: d.competencyId,
+                            competencyCode: d.competencyCode,
+                            competencyTitle: d.competencyTitle
+                        }
+                    }),
+                }
+            }),
+            totalNumberOfCourses,
+            totalNumberOfRecords : courses.length
+        };
+
 }
 
 async function create(loggedInUser, selectedOrganizationId, programId, name, description, periodDays, startingDate, logo, contentPath, courseCode , competencyIds) {
@@ -292,6 +414,7 @@ async function create(loggedInUser, selectedOrganizationId, programId, name, des
             period_days: periodDays,
             starting_date: startingDate && moment(startingDate).format() || null,
             generated: knex.fn.now(),
+            generated_by_user : loggedInUser.employeeId || loggedInUser.sub,
             course_code:  courseCode
         })
         .returning('course_id')
@@ -344,6 +467,7 @@ async function update(loggedInUser, selectedOrganizationId, courseId, programId,
             period_days: periodDays,
             starting_date: startingDate && moment(new Date(startingDate)).format() || null,
             generated: knex.fn.now(),
+            generated_by_user : loggedInUser.employeeId || loggedInUser.sub,
             course_code: courseCode
         })
         .catch(error => { 
@@ -383,34 +507,59 @@ async function deleteCourses(loggedInUser, courseIds, selectedOrganizationId) {
 
     let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
 
-    let contentPaths = await knex('courses').whereIn("course_id", courseIds).select(['content_path as contentPath']);
-
-    contentPaths.forEach(p => deleteFileFromCloudStorage(p.contentPath));
-
-    return knex("courses")
+    let deleteResult = await knex("courses")
         .whereIn("course_id", courseIds)
+        .andWhere('courses.organization_id',organizationId)
         .del()
         .catch(error => {
-            const message = 'Can not delete a course with joined learners' ;
-            let errorObj = {isValid: false, status: "error", code: error.code, message : message};
-            throw new Error(message);
-          });
+            if(error.code == '23503')
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  'You can not delete a course with joined learners' }))
+            else
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
+        });
+
+    if(deleteResult == 1){
+        let contentPaths = await knex('courses').whereIn("course_id", courseIds).select(['content_path as contentPath']);
+        contentPaths.forEach(p => deleteFileFromCloudStorage(p.contentPath));
+        return true;
+    }
+
 }
 
-async function requestToJoinCourse(loggedInUser, courseId) {
+async function requestToJoinCourse(loggedInUser, selectedOrganizationId, courseId) {
     if (!loggedInUser)
         return;
 
-    await knex('user_courses')
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let selectCourse = knex.select(['courses.generated_by_user as generatedByUser'])
+    .from('courses')
+
+    let courseData = await selectCourse
+    .where('courses.organization_id', organizationId)
+    .andWhere('courses.course_id', courseId)
+    .limit(1)
+    .first();
+
+    let generatedByUser = null;
+    if(courseData)
+        generatedByUser = courseData.generatedByUser;
+
+    if (generatedByUser && (generatedByUser == ( loggedInUser.employeeId || loggedInUser.sub))){
+        throw new Error(JSON.stringify({isValid: false, status: "error", code: 99 , message :  'You cannot join a course you created.'}));
+    }
+    else{
+        await knex('user_courses')
         .insert({
             user_id: loggedInUser.userId,
             course_id: courseId,
             is_able_to_join: true,
             joining_date: knex.fn.now()
         })
-        .catch(err => { return { isValid: false, status: "error", errorDetails: err } });
+        .catch(error => { return { isValid: false, status: "error", code: error.code, message: error } });
 
-    return {isValid: true};
+        return {isValid: true};
+    }
 }
 
 async function sendEmailForCourse(loggedInUser, courseId) {
@@ -418,6 +567,7 @@ async function sendEmailForCourse(loggedInUser, courseId) {
     await organizationService.sendEmail(email, loggedInUser);
 }
 
+// Used in Learner Services in add bulk method
 async function checkIfCourseExists(courseId, userId) {
     let model = knex("user_courses")
       .where('user_courses.user_id', userId)
@@ -425,11 +575,11 @@ async function checkIfCourseExists(courseId, userId) {
 
     let x = await model.count().first();
 
-    if (x.count == 0) return true;
+    if (x.count === 0) return true;
     else return false;
-  }
+}
 
-  async function getAllCourseUsers(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize, status){
+async function getAllUsersRelatedToCourse(loggedInUser, selectedOrganizationId , programId, courseId, offset, pageSize, status){
     if (!loggedInUser)
         return;
 
@@ -490,9 +640,9 @@ async function checkIfCourseExists(courseId, userId) {
         totalNumberOfRecords
     }
         
-  }
+}
 
-  async function unJoinCourse(loggedInUser, courseId, userIds) {
+async function unJoinCourse(loggedInUser, courseId, userIds) {
     if (!loggedInUser)
         return;
 
@@ -506,23 +656,198 @@ async function checkIfCourseExists(courseId, userId) {
     return {isValid: true};
 }
 
-async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
-    var activityCount = 0;
+// Used in Activity Services to return list of course ids for selected user
+async function getAllCoursesForUser(loggedInUser, userId , selectedOrganizationId ){
+    if (!loggedInUser)
+        return;
 
-    console.log('contentPath => ' , contentPath);
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let model = knex.table('user_courses')
+    .join('users', 'users.user_id', 'user_courses.user_id')
+    .join('courses', 'courses.course_id', 'user_courses.course_id')
+    .where('user_courses.user_id', userId)
+    .andWhere('courses.organization_id', organizationId);
+
+    const courseUsers = await model.clone()
+        .select([
+            'user_courses.course_id as courseId'
+        ])
+        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
+
+    return courseUsers;
+}
+
+async function deleteLessons(loggedInUser, lessonIds, selectedOrganizationId) {
+    if (!loggedInUser)
+        return;
+
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let deleteResult = await knex("lessons")
+        .whereIn("lessons.lesson_id", lessonIds)
+        .andWhere('lessons.organization_id', organizationId)
+        .del()
+        .catch(error => {
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
+        });
+
+    if(deleteResult == 1){
+        let contentPaths = await knex('lessons').whereIn("lesson_id", lessonIds).select(['content_path as contentPath']);
+        contentPaths.forEach(p => deleteFileFromCloudStorage(p.contentPath));
+        return true;
+    }
+
+}
+
+async function createLesson(loggedInUser, selectedOrganizationId, contentPath, courseId) {
+    if (!loggedInUser)
+        return;
+
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let order = await knex.table('lessons')
+    .where('lessons.organization_id', organizationId)
+    .andWhere('lessons.course_id', courseId)
+    .max('order')
+    .limit(1)
+    .first();
+
+    order = order && order.max ? order.max + 1 : 1;
+
+    return knex.transaction(async function (t) {
+        const lessonId = await knex("lessons")
+        .insert({
+            organization_id: organizationId,
+            course_id : courseId,
+            name : 'Lesson',
+            content_path: contentPath,
+            order: order
+        })
+        .returning('lesson_id')
+        .catch(error => {
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
+        });
+
+        return { lessonId }
+    });
+}
+
+async function updateLesson(loggedInUser, selectedOrganizationId, lessonId , name, order, courseId) {
+    if (!loggedInUser)
+        return;
+
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    return knex.transaction(async function (t) {
+        await knex("lessons")
+        .where('lesson_id', lessonId)
+        .andWhere('organization_id' , organizationId)
+        .update({
+            course_id: courseId,
+            name: name,
+            order: order
+        })
+        .catch(error => {
+            throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
+        });
+
+        return { lessonId }
+    });
+}
+
+async function getAllLessons(loggedInUser, selectedOrganizationId, courseId, pageId, recordsPerPage, filter) {
+    if (!loggedInUser) {
+        return;
+    }
+
+    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+
+    let model = knex('lessons')
+        .join('courses', 'lessons.course_id', 'courses.course_id')
+        .where('lessons.organization_id', organizationId);
+
+    if (courseId)
+        model.andWhere('lessons.course_id', courseId);
+
+    var totalNumberOfRecords = (await model.clone().count().first()).count;
+
+    let offset = (pageId - 1) * recordsPerPage;
+
+    var lessonsData = await model.clone()
+        .orderBy('order', 'asc')
+        .offset(offset)
+        .limit(recordsPerPage)
+        .select([
+            'lessons.lesson_id as lessonId',
+            'lessons.course_id as courseId',
+            'lessons.organization_id as organizationId',
+            'lessons.name as lessonName',
+            'lessons.order as lessonOrder',
+            'lessons.content_path as lessonContentPath',
+            'courses.name as courseName',
+            'courses.description as description',
+            'courses.program_id as programId'
+        ]);
+
+        return { lessonsData,  totalNumberOfRecords  };
+}
+
+async function getLessonById(loggedInUser, lessonId, selectedOrganizationId) {
+    if (!loggedInUser)
+        return;
+
+    let organizationId = PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization;
+
+    let selectLesson = knex.select([
+        'lessons.lesson_id as lessonId',
+        'lessons.course_id as courseId',
+        'lessons.organization_id as organizationId',
+        'lessons.name as lessonName',
+        'lessons.order as lessonOrder',
+        'lessons.content_path as lessonContentPath',
+        'courses.name as courseName',
+        'courses.description as courseDescription',
+        'courses.program_id as programId'
+    ])
+    .from('lessons')
+    .join('courses', 'courses.course_id', 'lessons.course_id');
+
+    let lessonData = await selectLesson
+    .where('lessons.organization_id', organizationId)
+    .andWhere('lessons.lesson_id', lessonId)
+    .limit(1)
+    .first();
+
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
+    let url = `${assetsDomain}/${lessonData.lessonContentPath}${lessonData.lessonName}`;
+
+    return { lessonData , url }
+}
+
+async function getFileFromCloudStorage(contentPath , fileName) {
 
     const chunks = []
     const fstream = cloudStorage
             .bucket(bucket)
-            .file(contentPath + "tincan.xml")
-            .createReadStream()
-    for await (const chunk of fstream) {
+            .file(contentPath + fileName)
+            .createReadStream();
+
+            for await (const chunk of fstream) {
         
         chunks.push(chunk);
     }
 
     bin = Buffer.concat(chunks).toString('utf8')
     var doc = new dom().parseFromString(bin);
+
+    return doc;
+}
+
+async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
+    var activityCount = 0;
+
+    var doc = await getFileFromCloudStorage(contentPath , 'tincan.xml');
 
     var result = xpath.evaluate("//*//*[local-name()='activity']", doc, null, xpath.XPathResult.ANY_TYPE, null);
     var node = result.iterateNext();
@@ -546,23 +871,35 @@ async function getTinCanXMLFileFromCloudStorage(contentPath , courseId) {
     return {isValid: true};
 }
 
-async function getAllUserCourses(loggedInUser, userId , selectedOrganizationId ){
-    if (!loggedInUser)
-        return;
+async function getMetaFileFromCloudStorage(contentPath , lessonId) {
+    var title = 0;
 
-    let organizationId = (PermissionsService.isSuperAdmin(loggedInUser) && selectedOrganizationId) ? selectedOrganizationId : loggedInUser.organization;
+    console.log('contentPath => ' , contentPath);
 
-    let model = knex.table('user_courses')
-    .join('users', 'users.user_id', 'user_courses.user_id')
-    .join('courses', 'courses.course_id', 'user_courses.course_id')
-    .where('user_courses.user_id', userId)
-    .andWhere('courses.organization_id', organizationId);
+    var doc = await getFileFromCloudStorage(contentPath , 'meta.xml');
 
-    const courseUsers = await model.clone()
-        .select([
-            'user_courses.course_id as courseId'
-        ])
-        .catch( error => { throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message}))});
+    var result = xpath.evaluate("/meta/project/@title", doc, null, xpath.XPathResult.ANY_TYPE, null);
 
-    return courseUsers;    
-  }
+    if (result) {
+        title = result.nodes[0].value;
+    }
+
+    console.log(" title => ", title);
+
+    await knex("lessons")
+        .where('lesson_id', lessonId)
+        .update({  name: title })
+        .catch(error => {
+                throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
+        });
+
+    return {isValid: true};
+}
+
+async function getOrganizationAssetsDomain(organizationId) {
+    settings = await organizationService.getOrganizationSettingsByOrgId(organizationId);
+
+    let assetsDomain = settings && settings.assetsDomain ?  settings.assetsDomain :  process.env.UPLOADS_URL;
+    return assetsDomain;
+
+}

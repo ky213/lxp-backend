@@ -58,7 +58,7 @@ router.post('/upload/:id', authorize(Permissions.api.activities.files.upload), u
 module.exports = router;
 
 function getAll(req, res, next) {
-    activityService.getAll(req.user, req.query.from, req.query.to, req.query.selectedOrganizationId)
+    activityService.getAll(req.user, req.query.from, req.query.to, req.query.selectedOrganizationId, req.query.status)
         .then(events => res.json(events))
         .catch(err => next(err));
 }
@@ -240,7 +240,7 @@ function evaluate(req, res, next) {
 }
 
 function getAllByLearner(req, res, next) {
-    activityService.getAllByLearner(req.user, req.query.userId , req.query.employeeId , req.query.organizationId)
+    activityService.getAllByLearner(req.user, req.query.userId , req.query.employeeId , req.query.organizationId , req.query.status)
         .then(events => res.json(events))
         .catch(err => next(err));
 }
