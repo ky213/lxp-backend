@@ -778,6 +778,8 @@ async function getAllLessons(loggedInUser, selectedOrganizationId, courseId, pag
 async function getLessonById(loggedInUser, lessonId, selectedOrganizationId) {
     if (!loggedInUser)
         return;
+   
+    let organizationId = loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization;
 
     let selectLesson = knex.select([
         'lessons.lesson_id as lessonId',
@@ -794,12 +796,15 @@ async function getLessonById(loggedInUser, lessonId, selectedOrganizationId) {
     .join('courses', 'courses.course_id', 'lessons.course_id');
 
     let lessonData = await selectLesson
-    .where('lessons.organization_id', loggedInUser.role == Role.SuperAdmin && selectedOrganizationId ? selectedOrganizationId : loggedInUser.organization)
+    .where('lessons.organization_id', organizationId)
     .andWhere('lessons.lesson_id', lessonId)
     .limit(1)
     .first();
 
-    return lessonData
+    let assetsDomain = await getOrganizationAssetsDomain(organizationId);
+    let url = `${assetsDomain}/${lessonData.lessonContentPath}${lessonData.lessonName}`;
+
+    return { lessonData , url }
 }
 
 async function getFileFromCloudStorage(contentPath , fileName) {
@@ -871,4 +876,12 @@ async function getMetaFileFromCloudStorage(contentPath , lessonId) {
         });
 
     return {isValid: true};
+}
+
+async function getOrganizationAssetsDomain(organizationId) {
+    settings = await organizationService.getOrganizationSettingsByOrgId(organizationId);
+
+    let assetsDomain = settings && settings.assetsDomain ?  settings.assetsDomain :  process.env.UPLOADS_URL;
+    return assetsDomain;
+
 }
