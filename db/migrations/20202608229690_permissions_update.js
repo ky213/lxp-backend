@@ -1,3 +1,4 @@
+
 const Permissions = require("../../permissions/permissions")
 
 exports.up = async function (knex) {
