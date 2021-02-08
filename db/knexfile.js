@@ -15,25 +15,15 @@ module.exports = {
       // host: "localhost",
       // port: 5432,
 
-
       //LOCAL DB
       database: "lxpdb",
       user: "admin",
       password: "admin",
-      host: "localhost",
-      port: 25432,
+      host: "lxp-postgresdb",
+      port: 5432,
 
-      // database: "lxpdb",
-      // user: "admin",
-      // password: "admin",
-
-      //  # WORKING
-      // host: "lxp-postgresdb",
-      // port: 5432,
-
-      //  # FOR MIGRATION
-      //  host: 'localhost',
-      //  port: 54321
+      //host: "localhost",
+      //port: 25432,
     },
     pool: {
       min: 2,
