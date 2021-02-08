@@ -14,7 +14,8 @@ module.exports = {
     getProgramIdByProgramName,
     deletePrograms,
     deleteAllInactive,
-    getDefaultProgram
+    getDefaultProgram,
+    getProgramName
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
@@ -542,4 +543,25 @@ async function deletePrograms(programs, user) {
                     throw new Error(JSON.stringify( {isValid: false, status: "error", code: error.code, message :  error.message }))
             });
     });
+}
+
+async function getProgramName(id, user, selectedorganizationId) {
+    let select = knex.select([
+        'programs.name',
+    ])
+    .from('programs');
+
+    if (PermissionsService.isSuperAdmin(user) && selectedorganizationId) {
+        select.where('programs.organization_id', selectedorganizationId);
+    }
+    else {
+        select.where('programs.organization_id', user.organization);
+    }
+
+    let program = await select
+        .where('programs.program_id', id)
+        .limit(1)
+        .first();
+
+    return program;
 }

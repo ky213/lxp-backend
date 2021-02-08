@@ -9,6 +9,7 @@ const organizationService = require('../organizations/organization.service');
 const programService = require('../programs/program.service');
 const courseService = require('../courses/course.service');
 const userService = require('../users/user.service');
+const activityTypeService = require('../activity_type/activity_type.service');
 const { RRule, RRuleSet, rrulestr } = require('rrule');
 var _ = require('lodash');
 const {v4: uuidv4} = require('uuid');
@@ -358,10 +359,14 @@ async function getById(activityId, user, selectedOrganizationId) {
         'activities.is_public as isPublic',  
         'activities_repetitions.rrule',
         'users.name as assignedByFirstName',
-        'users.surname as assignedByLastName'
+        'users.surname as assignedByLastName',
+        'programs.name as programName',
+        'activity_types.name as activityTypeName'
     ])
     .from('activities')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'activities.status')
+    .join('activity_types', 'activity_types.activity_type_id', 'activities.activity_type_id')
+    .join('programs', 'programs.program_id', 'activities.program_id')
     .leftJoin('employees', 'activities.assigned_by', 'employees.employee_id')
     .leftJoin('users', 'users.user_id', 'employees.user_id')
     .leftJoin('activities_repetitions', 'activities_repetitions.activity_id', 'activities.activity_id')
@@ -467,6 +472,9 @@ async function getById(activityId, user, selectedOrganizationId) {
             competencyTitle: d.competencyTitle
         }));      
     }
+
+    activityDetails.Programs = {programId: activityDetails.programId, name: activityDetails.programName};
+    activityDetails.ActivtyTypes = {activityTypeId: activityDetails.activityTypeId, activityTypeName: activityDetails.activityTypeName};
 
     return activityDetails;
 }
@@ -763,6 +771,12 @@ async function create(activity, user) {
             });
         }
 
+        let programName = await programService.getProgramName(activity.programId,user,activity.organizationId || user.organization);
+        let activityTypeName = await activityTypeService.getActivityTypeName(activity.activityTypeId,user,activity.organizationId || user.organization);
+        
+        activity.Programs = {programId: activity.programId, name: programName.name};
+        activity.ActivtyTypes = {activityTypeId: activity.activityTypeId, activityTypeName: activityTypeName.name};
+
         await Promise.all(notifications);
         return {...activity, warning, activityId};
     })
@@ -945,6 +959,13 @@ async function update(activity, user) {
         }
 
         await Promise.all(notifications);
+
+        let programName = await programService.getProgramName(activity.programId,user,activity.organizationId || user.organization);
+        let activityTypeName = await activityTypeService.getActivityTypeName(activity.activityTypeId,user,activity.organizationId || user.organization);
+        
+        activity.Programs = {programId: activity.programId, name: programName.name};
+        activity.ActivtyTypes = {activityTypeId: activity.activityTypeId, activityTypeName: activityTypeName.name};
+
         return {...activity, warning};
     })
     .catch(err => console.log('Update activity error', err));
@@ -1145,11 +1166,15 @@ async function getLogActivityById(activityId, user , organizationId) {
         'log_activities.logged_by as loggedBy',
         'users.name as loggedByFirstName',
         'users.surname as loggedByLastName',
+        'programs.name as programName',
+        'activity_types.name as activityTypeName'
     ])
     .from('log_activities')
     .join('employees', 'employees.employee_id', 'log_activities.logged_by')
     .join('users', 'users.user_id', 'employees.user_id')
     .join('activity_statuses', 'activity_statuses.activity_status_id', 'log_activities.status')
+    .join('activity_types', 'activity_types.activity_type_id', 'log_activities.activity_type_id')
+    .join('programs', 'programs.program_id', 'log_activities.program_id')
     .where('log_activities.log_activity_id', activityId)
     .andWhere('log_activities.status', '<>', 3)
     .limit(1)
@@ -1220,6 +1245,9 @@ async function getLogActivityById(activityId, user , organizationId) {
         activityDetails.replies = await getLogActivityReplies(activityId, user);
     }
     
+    activityDetails.Programs = {programId: activityDetails.programId, name: activityDetails.programName};
+    activityDetails.ActivtyTypes = {activityTypeId: activityDetails.activityTypeId, activityTypeName: activityDetails.activityTypeName};
+
     return activityDetails;
 }
 

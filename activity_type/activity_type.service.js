@@ -8,7 +8,8 @@ module.exports = {
     getById,
     create,
     update,
-    deleteActivityTypes
+    deleteActivityTypes,
+    getActivityTypeName
 };
 
 async function getAll(user, organizationId, pageId, recordsPerPage, filter) {
@@ -193,3 +194,23 @@ async function deleteActivityTypes(ids, user) {
         .del();
 }
 
+async function getActivityTypeName(id, user, selectedorganizationId) {
+    let select = knex.select([
+        'activity_types.name',
+    ])
+    .from('activity_types');
+
+    if (PermissionsService.isSuperAdmin(user) && selectedorganizationId) {
+        select.where('activity_types.organization_id', selectedorganizationId);
+    }
+    else {
+        select.where('activity_types.organization_id', user.organization);
+    }
+
+    let activityType = await select
+        .where('activity_types.activity_type_id', id)
+        .limit(1)
+        .first();
+
+    return activityType;
+}
